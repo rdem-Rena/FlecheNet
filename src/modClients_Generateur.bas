@@ -28,6 +28,20 @@ Private mCode As String
 '==============================================================================
 ' POINT D'ENTREE
 '==============================================================================
+'------------------------------------------------------------------------------
+' Crée le formulaire UF_Clients de toutes pièces.
+'
+' Déroulement :
+'   1. vérifie que TblClients existe et signale ses colonnes absentes du schéma ;
+'   2. demande l'accès au projet VBA, refusé par Excel tant que l'option de
+'      confiance n'est pas cochée ;
+'   3. remplace, après confirmation, une version précédente du formulaire ;
+'   4. crée le UserForm et pose ses propriétés ;
+'   5. construit les cinq zones, du fond vers le contenu ;
+'   6. écrit le module de code du formulaire.
+'
+' À relancer après toute modification de modClients_Schema ou modClients_Theme.
+'------------------------------------------------------------------------------
 Public Sub GenererFormulaireClients()
     Dim vbProj As Object, vbComp As Object, dsg As Object
     Dim lo As ListObject, manquantes As String
@@ -49,6 +63,9 @@ Public Sub GenererFormulaireClients()
     End If
 
     ' --- accès au projet VBA --------------------------------------------------
+    ' Sans l'option de confiance, cette seule ligne déclenche l'erreur 1004.
+    ' On la neutralise pour pouvoir afficher un message compréhensible plutôt
+    ' que de laisser remonter l'erreur brute.
     On Error Resume Next
     Set vbProj = ThisWorkbook.VBProject
     On Error GoTo 0
@@ -116,8 +133,10 @@ Erreur:
 End Sub
 
 '------------------------------------------------------------------------------
-' Pose une propriété du formulaire sans interrompre la génération si la version
-' d'Excel ne l'expose pas.
+' Pose une propriété du formulaire.
+' Les erreurs sont ignorées volontairement : si une version d'Excel n'expose pas
+' l'une de ces propriétés, le formulaire se génère quand même, avec la valeur par
+' défaut pour celle-là.
 '------------------------------------------------------------------------------
 Private Sub PropFormulaire(vbComp As Object, ByVal nom As String, ByVal valeur As Variant)
     On Error Resume Next
@@ -126,7 +145,8 @@ Private Sub PropFormulaire(vbComp As Object, ByVal nom As String, ByVal valeur A
 End Sub
 
 '------------------------------------------------------------------------------
-' Suppression du formulaire (utile pour repartir de zéro).
+' Retire UF_Clients du projet. Utile pour repartir de zéro, ou pour livrer le
+' classeur sans le formulaire.
 '------------------------------------------------------------------------------
 Public Sub SupprimerFormulaireClients()
     Dim vbProj As Object, vbComp As Object
@@ -145,7 +165,9 @@ Public Sub SupprimerFormulaireClients()
 End Sub
 
 '------------------------------------------------------------------------------
-' Colonnes du tableau absentes du schéma du formulaire.
+' Colonnes de TblClients absentes du schéma du formulaire.
+'   renvoie : leurs noms séparés par des virgules, chaîne vide si tout est couvert
+' Ce sont exactement les colonnes qui ne seront ni affichées ni saisissables.
 '------------------------------------------------------------------------------
 Private Function ColonnesNonCouvertes(ByVal lo As ListObject) As String
     Dim lc As ListColumn, ch() As ChampClient, i As Long, trouve As Boolean, res As String
@@ -167,6 +189,9 @@ End Function
 '==============================================================================
 ' CONSTRUCTION DES CONTROLES
 '==============================================================================
+'------------------------------------------------------------------------------
+' Zone 1 : bandeau de titre, sous-titre d'état et croix de fermeture.
+'------------------------------------------------------------------------------
 Private Sub ConstruireBandeau(dsg As Object)
     Dim c As Object
 
@@ -186,6 +211,13 @@ Private Sub ConstruireBandeau(dsg As Object)
     c.ControlTipText = "Fermer le formulaire"
 End Sub
 
+'------------------------------------------------------------------------------
+' Zone 2 : la fiche client.
+'
+' Parcourt le schéma et pose, pour chaque champ, son libellé puis son contrôle
+' aux coordonnées calculées par GrilleX et GrilleY. L'ordre de tabulation suit
+' l'ordre du schéma, les champs verrouillés étant sautés.
+'------------------------------------------------------------------------------
 Private Sub ConstruireCarteSaisie(dsg As Object)
     Dim c As Object, ch() As ChampClient, i As Long
     Dim x As Single, y As Single, larg As Single, ordreTab As Long
@@ -204,6 +236,8 @@ Private Sub ConstruireCarteSaisie(dsg As Object)
         y = GrilleY(ch(i).Ligne)
         larg = GR_BLOC
 
+        ' Deux champs peuvent partager un bloc — les cases TVA et Forfait :
+        ' chacun prend la moitié de la largeur, moins 8 points de gouttière.
         If ch(i).Moitie = 1 Then
             larg = (GR_BLOC - 8) / 2
         ElseIf ch(i).Moitie = 2 Then
@@ -244,6 +278,10 @@ Private Sub ConstruireCarteSaisie(dsg As Object)
     TexteLabel c, "FACTURATION", TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
 End Sub
 
+'------------------------------------------------------------------------------
+' Zone 3 : barre de filtrage — libellé, choix de la colonne, zone de
+' recherche, lien de réinitialisation et compteur de fiches.
+'------------------------------------------------------------------------------
 Private Sub ConstruireCarteFiltre(dsg As Object)
     Dim c As Object, y As Single
 
@@ -271,6 +309,14 @@ Private Sub ConstruireCarteFiltre(dsg As Object)
     TexteLabel c, vbNullString, TAILLE_FILTRE, False, COUL_TEXTE_DOUX, MSF_TextAlignRight
 End Sub
 
+'------------------------------------------------------------------------------
+' Zone 4 : tableau des enregistrements.
+'
+' La ListBox MSForms ne sait pas afficher d'en-têtes de colonnes autrement qu'en
+' étant liée à une plage de cellules. Les en-têtes sont donc de simples libellés
+' posés au-dessus d'elle, alignés sur les mêmes largeurs — ce qui permet en prime
+' de les rendre cliquables pour le tri.
+'------------------------------------------------------------------------------
 Private Sub ConstruireCarteTableau(dsg As Object)
     Dim c As Object, larg As Variant, lib As Variant
     Dim i As Long, x As Single, gauche As Single, largeur As Single
@@ -295,6 +341,9 @@ Private Sub ConstruireCarteTableau(dsg As Object)
                                 x, CT_TOP + 5, CSng(larg(i)) - 3, 13)
         TexteLabel c, CStr(lib(i)), TAILLE_ENTETE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
         c.ControlTipText = "Cliquez pour trier sur cette colonne"
+        ' Chaque en-tête est posé à l'abscisse cumulée des colonnes qui le
+        ' précèdent : ils restent alignés sur la ListBox quelles que soient les
+        ' largeurs choisies dans LargeursListe.
         x = x + CSng(larg(i))
         colw = colw & IIf(Len(colw) > 0, ";", "") & CStr(larg(i)) & " pt"
     Next i
@@ -317,11 +366,18 @@ Private Sub ConstruireCarteTableau(dsg As Object)
         .BoundColumn = 1
         .TabIndex = 90
     End With
+    ' IntegralHeight n'est modifiable qu'à la conception ; l'affectation est
+    ' protégée au cas où une version d'Excel la refuserait ici.
     On Error Resume Next
     c.IntegralHeight = False
     On Error GoTo 0
 End Sub
 
+'------------------------------------------------------------------------------
+' Zone 5 : les cinq boutons d'action.
+' Les quatre premiers sont alignés à gauche, Quitter est renvoyé à droite pour
+' qu'on ne le clique pas par mégarde.
+'------------------------------------------------------------------------------
 Private Sub ConstruireBoutons(dsg As Object)
     Dim c As Object, x As Single
 
@@ -353,7 +409,11 @@ Private Sub ConstruireBoutons(dsg As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Les fonds de cartes doivent rester derrière leur contenu.
+' Renvoie les fonds de cartes derrière leur contenu.
+'
+' MSForms place chaque contrôle nouvellement créé au premier plan : les cartes,
+' créées avant leur contenu, se retrouveraient donc devant lui. Elles sont
+' reculées ici dans l'ordre inverse de leur profondeur.
 '------------------------------------------------------------------------------
 Private Sub ReculerArrierePlans(dsg As Object)
     Dim noms As Variant, i As Long, c As Object
@@ -371,6 +431,12 @@ End Sub
 '==============================================================================
 ' MISE EN FORME
 '==============================================================================
+'------------------------------------------------------------------------------
+' Crée un contrôle et le positionne.
+'   progId  : Forms.Label.1, Forms.TextBox.1, Forms.ComboBox.1, Forms.CheckBox.1,
+'             Forms.ListBox.1 ou Forms.CommandButton.1
+'   renvoie : le contrôle créé, pour la suite de sa mise en forme
+'------------------------------------------------------------------------------
 Private Function AjouterControle(dsg As Object, ByVal progId As String, ByVal nom As String, _
                                  ByVal gauche As Single, ByVal haut As Single, _
                                  ByVal largeur As Single, ByVal hauteur As Single) As Object
@@ -383,6 +449,13 @@ Private Function AjouterControle(dsg As Object, ByVal progId As String, ByVal no
     Set AjouterControle = c
 End Function
 
+'------------------------------------------------------------------------------
+' Fond de carte : rectangle blanc à filet fin.
+'
+' SpecialEffect doit être posé avant BorderStyle : MSForms refuse une bordure
+' simple tant que le contrôle est encore en relief. La même règle vaut pour tous
+' les contrôles habillés plus bas.
+'------------------------------------------------------------------------------
 Private Sub Carte(c As Object)
     c.Caption = vbNullString
     c.BackStyle = MSF_BackStyleOpaque
@@ -392,6 +465,9 @@ Private Sub Carte(c As Object)
     c.BorderColor = COUL_BORDURE
 End Sub
 
+'------------------------------------------------------------------------------
+' Rectangle de couleur unie : bandeau de titre, bande d'en-tête du tableau.
+'------------------------------------------------------------------------------
 Private Sub FondPlein(c As Object, ByVal fond As Long, ByVal bordure As Long)
     c.Caption = vbNullString
     c.BackStyle = MSF_BackStyleOpaque
@@ -401,6 +477,10 @@ Private Sub FondPlein(c As Object, ByVal fond As Long, ByVal bordure As Long)
     c.BorderColor = bordure
 End Sub
 
+'------------------------------------------------------------------------------
+' Habille un libellé : texte, taille, graisse, couleur, alignement.
+' Le fond est transparent pour laisser voir la carte ou le bandeau au-dessous.
+'------------------------------------------------------------------------------
 Private Sub TexteLabel(c As Object, ByVal texte As String, ByVal taille As Single, _
                        ByVal gras As Boolean, ByVal couleur As Long, ByVal alignement As Long)
     c.Caption = texte
@@ -416,6 +496,14 @@ Private Sub TexteLabel(c As Object, ByVal texte As String, ByVal taille As Singl
     c.Font.Bold = gras
 End Sub
 
+'------------------------------------------------------------------------------
+' Habille une zone de saisie : filet fin, fond très clair.
+'   verrouille : True pour un champ géré par le programme — fond gris, texte
+'                atténué, exclu de la tabulation
+'
+' Locked plutôt qu'Enabled = False : le champ reste lisible et son contenu
+' copiable, alors qu'un contrôle désactivé s'affiche en gris illisible.
+'------------------------------------------------------------------------------
 Private Sub ZoneTexte(c As Object, ByVal verrouille As Boolean)
     c.Font.Name = POLICE
     c.Font.Size = TAILLE_CHAMP
@@ -435,6 +523,13 @@ Private Sub ZoneTexte(c As Object, ByVal verrouille As Boolean)
     End If
 End Sub
 
+'------------------------------------------------------------------------------
+' Habille un menu déroulant.
+'   choixImpose : True pour une liste fermée (Titre, colonne de filtrage),
+'                 False pour une liste ouverte où la saisie libre reste possible
+'                 (Adresse, NPA, Texte de facture), toutes les valeurs n'étant
+'                 pas forcément déjà répertoriées.
+'------------------------------------------------------------------------------
 Private Sub ZoneListe(c As Object, ByVal choixImpose As Boolean)
     c.Font.Name = POLICE
     c.Font.Size = TAILLE_CHAMP
@@ -448,6 +543,11 @@ Private Sub ZoneListe(c As Object, ByVal choixImpose As Boolean)
     c.Style = IIf(choixImpose, MSF_StyleDropDownList, MSF_StyleDropDownCombo)
 End Sub
 
+'------------------------------------------------------------------------------
+' Habille une case à cocher.
+' Le relief de la case elle-même est conservé : à plat, elle deviendrait
+' difficile à distinguer d'un simple libellé.
+'------------------------------------------------------------------------------
 Private Sub CaseACocher(c As Object, ByVal libelle As String)
     c.Caption = libelle
     c.BackStyle = MSF_BackStyleTransparent
@@ -458,6 +558,10 @@ Private Sub CaseACocher(c As Object, ByVal libelle As String)
     c.WordWrap = False
 End Sub
 
+'------------------------------------------------------------------------------
+' Habille un bouton d'action : couleur de fond, texte blanc, lettre de
+' raccourci soulignée et rang de tabulation.
+'------------------------------------------------------------------------------
 Private Sub Bouton(c As Object, ByVal libelle As String, ByVal raccourci As String, _
                    ByVal couleur As Long, ByVal ordre As Long)
     c.Caption = libelle
@@ -475,6 +579,17 @@ End Sub
 '------------------------------------------------------------------------------
 ' Chaque procédure événementielle se contente d'appeler modClients_Formulaire.
 '==============================================================================
+'------------------------------------------------------------------------------
+' Écrit le module de code du formulaire et le renvoie sous forme de texte.
+'
+' Chaque procédure événementielle tient en une ligne et se contente d'appeler
+' modClients_Formulaire. Le code métier n'est donc jamais dupliqué ici, et
+' régénérer le formulaire ne peut rien écraser d'écrit à la main.
+'
+' Les gestionnaires des champs sont produits en parcourant le schéma : ajouter un
+' champ crée automatiquement ses événements Enter, Exit et, s'il est numérique,
+' son filtre de frappe.
+'------------------------------------------------------------------------------
 Private Function CodeDuFormulaire() As String
     Dim ch() As ChampClient, i As Long, n As String
     Dim boutons As Variant, larg As Variant
@@ -552,6 +667,10 @@ Private Function CodeDuFormulaire() As String
     CodeDuFormulaire = mCode
 End Function
 
+'------------------------------------------------------------------------------
+' Écrit les trois gestionnaires qui rendent une zone du bandeau saisissable
+' pour déplacer la fenêtre.
+'------------------------------------------------------------------------------
 Private Sub EmettreZoneDeplacement(ByVal nom As String)
     Proc nom & "_MouseDown" & SIG_SOURIS, "Clients_DebutDeplacement X, Y"
     Proc nom & "_MouseMove" & SIG_SOURIS, "Clients_Deplacer Me, Button, X, Y" & vbNewLine & _
@@ -559,6 +678,14 @@ Private Sub EmettreZoneDeplacement(ByVal nom As String)
     Proc nom & "_MouseUp" & SIG_SOURIS, "Clients_FinDeplacement"
 End Sub
 
+'------------------------------------------------------------------------------
+' Écrit une procédure événementielle complète.
+'   entete : signature, sans le mot-clef Private Sub
+'   corps  : le ou les appels à placer dedans
+'
+' Trois lignes séparées, jamais une seule ligne à deux-points : VBA n'accepte pas
+' qu'une déclaration de procédure et son End Sub partagent une ligne.
+'------------------------------------------------------------------------------
 Private Sub Proc(ByVal entete As String, ByVal corps As String)
     L "Private Sub " & entete
     L "    " & corps
@@ -566,10 +693,18 @@ Private Sub Proc(ByVal entete As String, ByVal corps As String)
     L ""
 End Sub
 
+'------------------------------------------------------------------------------
+' Ajoute une ligne au code en cours d'écriture.
+'------------------------------------------------------------------------------
 Private Sub L(ByVal ligne As String)
     mCode = mCode & ligne & vbNewLine
 End Sub
 
+'------------------------------------------------------------------------------
+' Entoure un texte de guillemets doubles.
+' Évite d'avoir à doubler les guillemets dans le code générateur, où ils
+' deviendraient vite illisibles.
+'------------------------------------------------------------------------------
 Private Function Q(ByVal s As String) As String
     Q = Chr$(34) & s & Chr$(34)
 End Function

@@ -50,8 +50,10 @@ grille de 4 colonnes × 5 lignes.
 (**Entreprise**, **Nom**, **Adresse**) et une zone de texte filtre le tableau au
 fur et à mesure de la frappe, sans tenir compte des accents ni de la casse.
 
-**En dessous** — le tableau des enregistrements : 10 colonnes, tri par clic sur
-un en-tête, sélection d'une ligne pour charger la fiche dans les champs du haut.
+**En dessous** — le tableau des enregistrements : `Entreprise`, `Titre`, `Nom`,
+`Prenom`, `Adresse`, `No`, `NoPost`, `Ville`, `Cant`, `Tx_hrs_Forf` — tri par clic
+sur un en-tête, sélection d'une ligne pour charger la fiche dans les champs du
+haut.
 
 **En bas** — les cinq boutons demandés :
 
@@ -82,14 +84,22 @@ signale les interventions de `TblInterv` qui référencent le client.
 | [`modClients_Formulaire`](src/modClients_Formulaire.bas) | Comportement du formulaire : filtrage, tri, CRUD, habillage. |
 | [`modClients_Lancement`](src/modClients_Lancement.bas) | `OuvrirGestionClients`, `VerifierClasseur`. |
 
+Chaque procédure porte un en-tête qui dit ce qu'elle fait, ce qu'elle attend et
+ce qu'elle renvoie ; les passages où VBA se comporte de façon inattendue sont
+commentés sur place.
+
 Le module de code du UserForm ne contient **que** des procédures
 événementielles d'une ligne, écrites par le générateur ; toute la logique reste
 dans `modClients_Formulaire`. Conséquence pratique : le projet compile même
 avant que le formulaire existe, et le formulaire peut être régénéré à volonté
 sans rien réécrire.
 
-Mapping colonnes ↔ contrôles, plan du formulaire et personnalisation :
+Mapping colonnes ↔ contrôles et plan du formulaire :
 [`docs/STRUCTURE.md`](docs/STRUCTURE.md).
+
+Pour ajuster l'aspect du formulaire — couleurs, tailles, position de chaque
+contrôle — la fiche de réglages [`docs/REGLAGES.md`](docs/REGLAGES.md) recense
+chaque valeur, dit ce qu'elle commande et où elle se trouve.
 
 ---
 

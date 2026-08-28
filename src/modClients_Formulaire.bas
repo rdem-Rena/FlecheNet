@@ -27,6 +27,11 @@ Private mDepY As Single
 '==============================================================================
 ' INITIALISATION
 '==============================================================================
+'------------------------------------------------------------------------------
+' Prépare le formulaire : appelée une fois, depuis UserForm_Initialize.
+' Charge les données, remplit les menus déroulants, écrit les en-têtes du
+' tableau, affiche la liste et place le formulaire en mode « nouvelle fiche ».
+'------------------------------------------------------------------------------
 Public Sub Clients_Initialiser(f As Object)
     Dim lst As Object, i As Long, lib As Variant
 
@@ -75,6 +80,12 @@ Erreur:
            vbExclamation, "Gestion des clients"
 End Sub
 
+'------------------------------------------------------------------------------
+' Remplit le menu déroulant Titre : d'abord les civilités proposées par le
+' schéma, puis celles déjà présentes dans le tableau qui n'y figurent pas.
+' Sans ce complément, une fiche « Famille » ou « Docteur » s'afficherait vide,
+' puisque le menu est en liste fermée.
+'------------------------------------------------------------------------------
 Private Sub RemplirTitres(f As Object)
     Dim cbo As Object, prop As Variant, sup As Variant, i As Long, d As Object
 
@@ -103,6 +114,11 @@ Private Sub RemplirTitres(f As Object)
     End If
 End Sub
 
+'------------------------------------------------------------------------------
+' Remplit un menu déroulant à partir d'un tableau de valeurs.
+' Ne fait rien si le contrôle ou le tableau est absent : le formulaire reste
+' utilisable même si une des feuilles sources manque.
+'------------------------------------------------------------------------------
 Private Sub RemplirListeCombo(cbo As Object, ByVal valeurs As Variant)
     Dim i As Long
     If cbo Is Nothing Then Exit Sub
@@ -115,6 +131,10 @@ Private Sub RemplirListeCombo(cbo As Object, ByVal valeurs As Variant)
     On Error GoTo 0
 End Sub
 
+'------------------------------------------------------------------------------
+' Écrit les en-têtes de colonnes du tableau et ajoute le triangle de tri sur
+' la colonne active.
+'------------------------------------------------------------------------------
 Private Sub MajEntetesTableau(f As Object)
     Dim lib As Variant, i As Long, lb As Object, txt As String
 
@@ -134,6 +154,14 @@ End Sub
 '==============================================================================
 ' TABLEAU DES ENREGISTREMENTS : filtrage, tri, affichage
 '==============================================================================
+'------------------------------------------------------------------------------
+' Reconstruit le tableau des enregistrements : filtre, tri, puis affichage.
+'
+' Deux tableaux sont tenus en parallèle : ce que voit l'utilisateur, et
+' mLignesVis, qui garde pour chaque ligne affichée son numéro dans le cache.
+' C'est ce second tableau qui sert à retrouver la fiche sélectionnée, si bien que
+' les colonnes affichées peuvent être changées librement sans rien casser.
+'------------------------------------------------------------------------------
 Public Sub Clients_RafraichirListe(f As Object)
     Dim nb As Long, i As Long, champ As String, cible As String
     Dim cols As Variant, arr() As Variant, lst As Object
@@ -141,6 +169,9 @@ Public Sub Clients_RafraichirListe(f As Object)
 
     On Error GoTo Erreur
     nb = Donnees_NbLignes()
+    ' Dimensionné au pire cas — toutes les fiches visibles — puis rempli sur
+    ' mNbVis éléments. La borne minimale de 1 évite un ReDim(1 To 0), refusé
+    ' par VBA quand le tableau est vide.
     ReDim mLignesVis(1 To IIf(nb > 0, nb, 1))
     mNbVis = 0
 
@@ -168,6 +199,8 @@ Public Sub Clients_RafraichirListe(f As Object)
     If mNbVis = 0 Then
         lst.Clear
     Else
+        ' La ListBox est alimentée en une seule affectation : ajouter les
+        ' lignes une à une avec AddItem serait nettement plus lent.
         ReDim arr(1 To mNbVis, 1 To UBound(cols) - LBound(cols) + 1)
         For i = 1 To mNbVis
             For ic = LBound(cols) To UBound(cols)
@@ -186,11 +219,21 @@ Erreur:
            vbExclamation, "Gestion des clients"
 End Sub
 
+'------------------------------------------------------------------------------
+' Relance le filtrage. Appelée à chaque frappe dans la zone de filtre et à
+' chaque changement de colonne.
+' Ne fait rien pendant un remplissage programmé, pour ne pas se déclencher quand
+' le code écrit lui-même dans les contrôles.
+'------------------------------------------------------------------------------
 Public Sub Clients_AppliquerFiltre(f As Object)
     If mChargement Then Exit Sub
     Clients_RafraichirListe f
 End Sub
 
+'------------------------------------------------------------------------------
+' Vide la zone de filtre et revient à la colonne Nom.
+' Déclenchée par le lien Réinitialiser de la barre de filtrage.
+'------------------------------------------------------------------------------
 Public Sub Clients_ReinitialiserFiltre(f As Object)
     Dim garde As Boolean
     garde = mChargement
@@ -201,6 +244,11 @@ Public Sub Clients_ReinitialiserFiltre(f As Object)
     Clients_RafraichirListe f
 End Sub
 
+'------------------------------------------------------------------------------
+' Trie le tableau sur une colonne.
+'   colonne : 1 à 10, position dans ColonnesListe
+' Un clic sur la colonne déjà triée inverse simplement le sens.
+'------------------------------------------------------------------------------
 Public Sub Clients_TrierColonne(f As Object, ByVal colonne As Long)
     If mTriColonne = colonne Then
         mTriDecroissant = Not mTriDecroissant
@@ -212,6 +260,10 @@ Public Sub Clients_TrierColonne(f As Object, ByVal colonne As Long)
     Clients_RafraichirListe f
 End Sub
 
+'------------------------------------------------------------------------------
+' Trie mLignesVis sur la colonne active. Seul l'ordre des numéros de ligne
+' change : le cache lui-même n'est jamais réordonné, et le tableau Excel non plus.
+'------------------------------------------------------------------------------
 Private Sub TrierLignesVisibles()
     Dim cols As Variant, nomCol As String
     cols = ColonnesListe()
@@ -220,6 +272,9 @@ Private Sub TrierLignesVisibles()
     TriRapideLignes 1, mNbVis, nomCol
 End Sub
 
+'------------------------------------------------------------------------------
+' Tri rapide sur le tableau des lignes visibles.
+'------------------------------------------------------------------------------
 Private Sub TriRapideLignes(ByVal g As Long, ByVal d As Long, ByVal nomCol As String)
     Dim i As Long, j As Long, pivot As Long, tmp As Long
     i = g: j = d
@@ -241,7 +296,13 @@ Private Sub TriRapideLignes(ByVal g As Long, ByVal d As Long, ByVal nomCol As St
 End Sub
 
 '------------------------------------------------------------------------------
-' Comparaison de deux lignes du cache sur une colonne donnée.
+' Compare deux fiches sur une colonne.
+'   renvoie : -1, 0 ou 1, sens de tri déjà appliqué
+'
+' Les dates sont comparées chronologiquement et les nombres numériquement : un
+' tri purement alphabétique placerait le 02/01 avant le 14/08 mais aussi 100
+' avant 20. Les fiches sans valeur sont renvoyées en fin de liste, dans les deux
+' sens de tri.
 '------------------------------------------------------------------------------
 Private Function Comparer(ByVal ligneA As Long, ByVal ligneB As Long, ByVal nomCol As String) As Long
     Dim va As Variant, vb As Variant, r As Long
@@ -284,6 +345,10 @@ End Function
 '==============================================================================
 ' SELECTION D'UNE FICHE
 '==============================================================================
+'------------------------------------------------------------------------------
+' Charge la fiche sélectionnée dans les zones de saisie et passe le formulaire
+' en mode modification.
+'------------------------------------------------------------------------------
 Public Sub Clients_ChargerSelection(f As Object)
     Dim idx As Long
     If mChargement Then Exit Sub
@@ -296,6 +361,11 @@ Public Sub Clients_ChargerSelection(f As Object)
     MajEntete f
 End Sub
 
+'------------------------------------------------------------------------------
+' Sélectionne dans le tableau la ligne portant une Clef_BD donnée.
+' Le drapeau de chargement est levé pendant l'opération : écrire ListIndex
+' déclencherait sinon l'événement Click, donc un rechargement inutile des champs.
+'------------------------------------------------------------------------------
 Private Sub SelectionnerClef(f As Object, ByVal clef As String)
     Dim i As Long, lst As Object, garde As Boolean
 
@@ -317,6 +387,12 @@ End Sub
 '==============================================================================
 ' LECTURE / ECRITURE DES ZONES DE SAISIE
 '==============================================================================
+'------------------------------------------------------------------------------
+' Recopie une fiche du cache vers les zones de saisie.
+'   ligne : numéro de fiche dans le cache
+' Le drapeau de chargement empêche les événements Change des menus déroulants
+' Adresse et NPA de se déclencher et d'écraser la ville ou le canton lus.
+'------------------------------------------------------------------------------
 Private Sub EcrireChamps(f As Object, ByVal ligne As Long)
     Dim ch() As ChampClient, i As Long, c As Object, v As Variant
     Dim garde As Boolean
@@ -341,6 +417,11 @@ Private Sub EcrireChamps(f As Object, ByVal ligne As Long)
     mChargement = garde
 End Sub
 
+'------------------------------------------------------------------------------
+' Interprète une valeur de cellule comme une case à cocher.
+' Accepte le booléen d'Excel, un nombre (0 = non coché) et les textes usuels,
+' au cas où la colonne aurait été saisie à la main.
+'------------------------------------------------------------------------------
 Private Function EnBooleen(ByVal v As Variant) As Boolean
     If IsEmpty(v) Or IsNull(v) Then Exit Function
     If VarType(v) = vbBoolean Then
@@ -354,6 +435,10 @@ Private Function EnBooleen(ByVal v As Variant) As Boolean
     End If
 End Function
 
+'------------------------------------------------------------------------------
+' Valeur d'un champ mise en forme pour sa zone de saisie : date en jj/mm/aaaa,
+' montant à deux décimales, tout le reste tel quel.
+'------------------------------------------------------------------------------
 Private Function ValeurPourSaisie(ByVal ligne As Long, ByRef ch As ChampClient) As String
     Dim v As Variant
 
@@ -370,7 +455,15 @@ Private Function ValeurPourSaisie(ByVal ligne As Long, ByRef ch As ChampClient) 
 End Function
 
 '------------------------------------------------------------------------------
-' Contenu des zones de saisie sous forme de Dictionary : colonne -> valeur typée.
+' Relève le contenu des zones de saisie.
+'   renvoie : un Dictionary nom de colonne -> valeur typée
+'
+' Le typage se fait ici, une bonne fois : case à cocher en booléen, champ
+' numérique en nombre, champ vide en Empty — et non en chaîne vide, pour que la
+' cellule Excel reste réellement vide. Les champs verrouillés sont ignorés.
+'
+' Le NPA fait exception et reste du texte : c'est le type de la colonne dans le
+' tableau, et le convertir en nombre ferait perdre un éventuel zéro initial.
 '------------------------------------------------------------------------------
 Private Function LireChamps(f As Object) As Object
     Dim ch() As ChampClient, i As Long, c As Object
@@ -390,6 +483,9 @@ Private Function LireChamps(f As Object) As Object
                     Case Else
                         s = Trim$(EnTexte(c.Value))
                         If Len(s) = 0 Then
+                            ' Empty, et non "" : une chaîne vide écrite dans
+                            ' une cellule la rend non vide pour ESTVIDE et
+                            ' pour les filtres d'Excel.
                             d(ch(i).Colonne) = Empty
                         ElseIf ch(i).Numerique <> NUM_NON _
                                And StrComp(ch(i).Colonne, COL_NPA, vbTextCompare) <> 0 Then
@@ -407,6 +503,10 @@ Private Function LireChamps(f As Object) As Object
     Set LireChamps = d
 End Function
 
+'------------------------------------------------------------------------------
+' Vide toutes les zones de saisie et prépare une nouvelle fiche : la clef
+' affiche « (automatique) » et la date, celle du jour.
+'------------------------------------------------------------------------------
 Private Sub ViderChamps(f As Object)
     Dim ch() As ChampClient, i As Long, c As Object, garde As Boolean
 
@@ -435,6 +535,10 @@ End Sub
 '==============================================================================
 ' BOUTON "AJOUTER"
 '==============================================================================
+'------------------------------------------------------------------------------
+' Bouton Ajouter : contrôle la saisie, prévient en cas d'ID Crésus en doublon,
+' écrit la nouvelle fiche puis la sélectionne dans le tableau.
+'------------------------------------------------------------------------------
 Public Sub Clients_Ajouter(f As Object)
     Dim msg As String, vals As Object, clef As String, doublon As String
 
@@ -468,6 +572,10 @@ End Sub
 '==============================================================================
 ' BOUTON "MODIFIER"
 '==============================================================================
+'------------------------------------------------------------------------------
+' Bouton Modifier : enregistre les zones de saisie sur la fiche sélectionnée.
+' La clef et la date de création ne sont pas touchées.
+'------------------------------------------------------------------------------
 Public Sub Clients_Modifier(f As Object)
     Dim msg As String, vals As Object, doublon As String
 
@@ -506,6 +614,10 @@ End Sub
 '==============================================================================
 ' BOUTON "SUPPRIMER"
 '==============================================================================
+'------------------------------------------------------------------------------
+' Bouton Supprimer : demande confirmation, en signalant le nombre
+' d'interventions rattachées au client, puis supprime la ligne du tableau.
+'------------------------------------------------------------------------------
 Public Sub Clients_Supprimer(f As Object)
     Dim ligne As Long, nom As String, nbInterv As Long, question As String
     Dim clef As String
@@ -551,8 +663,12 @@ Erreur:
 End Sub
 
 '==============================================================================
-' BOUTON "EFFACER" : vide les zones de saisie, sans toucher au tableau
+' BOUTON "EFFACER"
 '==============================================================================
+'------------------------------------------------------------------------------
+' Bouton Effacer : vide les zones de saisie et repasse en mode nouvelle fiche.
+' Le tableau et la feuille ne sont pas touchés, et le filtre reste en place.
+'------------------------------------------------------------------------------
 Public Sub Clients_Effacer(f As Object)
     Dim garde As Boolean
 
@@ -576,10 +692,17 @@ End Sub
 '==============================================================================
 ' BOUTON "QUITTER"
 '==============================================================================
+'------------------------------------------------------------------------------
+' Bouton Quitter, croix du bandeau et touche Échap : ferme le formulaire.
+'------------------------------------------------------------------------------
 Public Sub Clients_Quitter(f As Object)
     Unload f
 End Sub
 
+'------------------------------------------------------------------------------
+' Remet l'état à zéro à la fermeture, pour que la prochaine ouverture reparte
+' proprement.
+'------------------------------------------------------------------------------
 Public Sub Clients_Fermeture(f As Object)
     mClefCourante = vbNullString
     mNbVis = 0
@@ -588,6 +711,14 @@ End Sub
 '==============================================================================
 ' CONTROLES DE SAISIE
 '==============================================================================
+'------------------------------------------------------------------------------
+' Contrôle la saisie avant écriture.
+'   msg     : renseigné avec le motif du refus
+'   renvoie : True si la fiche peut être écrite
+'
+' Contrôles volontairement souples : ils empêchent les fautes de frappe, pas la
+' saisie d'une fiche incomplète, courante en cours de constitution.
+'------------------------------------------------------------------------------
 Private Function Valider(f As Object, ByRef msg As String) As Boolean
     Dim s As String, npa As String, ok As Boolean
 
@@ -636,6 +767,11 @@ Private Function Valider(f As Object, ByRef msg As String) As Boolean
     Valider = True
 End Function
 
+'------------------------------------------------------------------------------
+' True si la chaîne ne contient que des chiffres.
+' Plus strict qu'IsNumeric, qui accepterait « 1e5 », « -3 » ou « 1,5 » — inadaptés
+' pour un NPA ou un identifiant.
+'------------------------------------------------------------------------------
 Private Function EstNumerique(ByVal s As String) As Boolean
     Dim i As Long, c As String
     If Len(s) = 0 Then Exit Function
@@ -649,6 +785,11 @@ End Function
 '==============================================================================
 ' RECHERCHE D'ADRESSE (onglet Adresses)
 '==============================================================================
+'------------------------------------------------------------------------------
+' Menu déroulant Adresse : renseigne NPA, ville et canton à partir de la rue.
+' Déclenchée à chaque frappe ; ne fait rien tant que la rue saisie ne correspond
+' à aucune adresse connue.
+'------------------------------------------------------------------------------
 Public Sub Clients_AdresseChoisie(f As Object)
     Dim rue As String, npa As String, ville As String, canton As String
     Dim n As Long, garde As Boolean
@@ -669,6 +810,11 @@ Public Sub Clients_AdresseChoisie(f As Object)
     mChargement = garde
 End Sub
 
+'------------------------------------------------------------------------------
+' Menu déroulant NPA : renseigne la ville et le canton.
+' N'agit qu'à partir de quatre caractères, pour ne pas réagir aux frappes
+' intermédiaires.
+'------------------------------------------------------------------------------
 Public Sub Clients_NpaChoisi(f As Object)
     Dim npa As String, ville As String, canton As String, garde As Boolean
 
@@ -687,10 +833,18 @@ End Sub
 '==============================================================================
 ' SAISIE NUMERIQUE
 '==============================================================================
+'------------------------------------------------------------------------------
+' Filtre les frappes dans un champ numérique.
+'   KeyAscii   : reçu en Object pour éviter toute dépendance à MSForms dans ce
+'                module ; mettre sa valeur à 0 annule la frappe
+'   decimales  : True pour accepter aussi le point et la virgule
+'------------------------------------------------------------------------------
 Public Sub Clients_ToucheNumerique(ByVal KeyAscii As Object, ByVal decimales As Boolean)
     Dim c As String
+    ' KeyAscii arrive en MSForms.ReturnInteger : un objet, dont la propriété
+    ' Value se lit et s'écrit. Y mettre 0 revient à ne jamais avoir tapé.
     If KeyAscii.Value = 8 Then Exit Sub          ' retour arrière
-    If KeyAscii.Value < 32 Then Exit Sub
+    If KeyAscii.Value < 32 Then Exit Sub         ' touches de contrôle
     c = Chr$(KeyAscii.Value)
     If c >= "0" And c <= "9" Then Exit Sub
     If decimales And (c = "." Or c = ",") Then Exit Sub
@@ -700,6 +854,14 @@ End Sub
 '==============================================================================
 ' HABILLAGE : survol, focus, déplacement de la fenêtre
 '==============================================================================
+'------------------------------------------------------------------------------
+' Met à jour l'effet de survol.
+'   nomControle : contrôle sous la souris, chaîne vide si la souris est ailleurs
+'
+' Un seul point d'entrée pour tous les contrôles survolables : chacun est remis
+' dans son état normal sauf celui qui est nommé. C'est ce qui remet un bouton à
+' sa couleur quand la souris le quitte, MSForms ne signalant pas la sortie.
+'------------------------------------------------------------------------------
 Public Sub Clients_Survol(f As Object, ByVal nomControle As String)
     Dim boutons As Variant, i As Long, b As Object, lb As Object
 
@@ -729,14 +891,24 @@ Public Sub Clients_Survol(f As Object, ByVal nomControle As String)
     End If
 End Sub
 
+'------------------------------------------------------------------------------
+' Change la couleur de fond seulement si elle diffère : réécrire la même
+' valeur à chaque MouseMove ferait scintiller le contrôle.
+'------------------------------------------------------------------------------
 Private Sub CouleurSi(c As Object, ByVal couleur As Long)
     If c.BackColor <> couleur Then c.BackColor = couleur
 End Sub
 
+'------------------------------------------------------------------------------
+' Change la couleur du texte seulement si elle diffère.
+'------------------------------------------------------------------------------
 Private Sub CouleurTexteSi(c As Object, ByVal couleur As Long)
     If c.ForeColor <> couleur Then c.ForeColor = couleur
 End Sub
 
+'------------------------------------------------------------------------------
+' Souligne le champ actif : filet bleu à l'entrée, filet gris à la sortie.
+'------------------------------------------------------------------------------
 Public Sub Clients_FocusChamp(f As Object, ByVal nomControle As String, ByVal actif As Boolean)
     Dim c As Object
     Set c = Ctl(f, nomControle)
@@ -746,12 +918,22 @@ Public Sub Clients_FocusChamp(f As Object, ByVal nomControle As String, ByVal ac
     On Error GoTo 0
 End Sub
 
+'------------------------------------------------------------------------------
+' Début du déplacement de la fenêtre : mémorise le point de saisie dans le
+' bandeau.
+'------------------------------------------------------------------------------
 Public Sub Clients_DebutDeplacement(ByVal x As Single, ByVal y As Single)
     mDeplacement = True
     mDepX = x
     mDepY = y
 End Sub
 
+'------------------------------------------------------------------------------
+' Déplace la fenêtre pendant le glissement.
+' Le formulaire n'a pas de barre de titre système : c'est ce trio de procédures
+' qui en tient lieu. Le déplacement se calcule en écart par rapport au point de
+' départ, ce qui fonctionne quel que soit le contrôle du bandeau saisi.
+'------------------------------------------------------------------------------
 Public Sub Clients_Deplacer(f As Object, ByVal bouton As Integer, ByVal x As Single, ByVal y As Single)
     If Not mDeplacement Then Exit Sub
     If bouton <> 1 Then Exit Sub
@@ -759,6 +941,9 @@ Public Sub Clients_Deplacer(f As Object, ByVal bouton As Integer, ByVal x As Sin
     f.Top = f.Top + (y - mDepY)
 End Sub
 
+'------------------------------------------------------------------------------
+' Fin du déplacement, au relâchement du bouton.
+'------------------------------------------------------------------------------
 Public Sub Clients_FinDeplacement()
     mDeplacement = False
 End Sub
@@ -766,6 +951,12 @@ End Sub
 '==============================================================================
 ' BANDEAU ET BOUTONS : mise à jour de l'état
 '==============================================================================
+'------------------------------------------------------------------------------
+' Met à jour la deuxième ligne du bandeau.
+'   message : texte à afficher ; si vide, l'état courant est affiché
+' Sert de zone d'information discrète : « fiche ajoutée », « fiche mise à jour »,
+' là où une boîte de dialogue interromprait la saisie.
+'------------------------------------------------------------------------------
 Private Sub MajEntete(f As Object, Optional ByVal message As String = vbNullString)
     Dim lb As Object, txt As String
 
@@ -782,6 +973,9 @@ Private Sub MajEntete(f As Object, Optional ByVal message As String = vbNullStri
     lb.Caption = txt
 End Sub
 
+'------------------------------------------------------------------------------
+' Met à jour le compteur de la barre de filtrage.
+'------------------------------------------------------------------------------
 Private Sub MajCompteur(f As Object)
     Dim lb As Object
     Set lb = Ctl(f, "lblCompteur")
@@ -789,6 +983,9 @@ Private Sub MajCompteur(f As Object)
     lb.Caption = mNbVis & " fiche(s) affichée(s) sur " & Donnees_NbLignes()
 End Sub
 
+'------------------------------------------------------------------------------
+' Active ou grise Modifier et Supprimer selon qu'une fiche est sélectionnée.
+'------------------------------------------------------------------------------
 Private Sub MajBoutons(f As Object)
     Dim actif As Boolean
     actif = (Len(mClefCourante) > 0)
@@ -796,6 +993,9 @@ Private Sub MajBoutons(f As Object)
     ActiverBouton f, "btnSupprimer", actif
 End Sub
 
+'------------------------------------------------------------------------------
+' Active ou grise un bouton, couleur comprise.
+'------------------------------------------------------------------------------
 Private Sub ActiverBouton(f As Object, ByVal nom As String, ByVal actif As Boolean)
     Dim b As Object
     Set b = Ctl(f, nom)
@@ -805,8 +1005,15 @@ Private Sub ActiverBouton(f As Object, ByVal nom As String, ByVal actif As Boole
 End Sub
 
 '==============================================================================
-' Accès sur au contrôles du formulaire
+' Accès aux contrôles du formulaire
 '==============================================================================
+'------------------------------------------------------------------------------
+' Renvoie un contrôle du formulaire par son nom, ou Nothing s'il n'existe pas.
+'
+' Le formulaire est reçu en Object, jamais en UF_Clients : c'est ce qui permet à
+' ce module de compiler avant que le formulaire ait été généré, et de survivre à
+' sa régénération.
+'------------------------------------------------------------------------------
 Private Function Ctl(f As Object, ByVal nom As String) As Object
     On Error Resume Next
     Set Ctl = f.Controls(nom)

@@ -30,6 +30,11 @@ Private mAdrCharge As Boolean
 '==============================================================================
 ' Chargement du cache des adresses
 '==============================================================================
+'------------------------------------------------------------------------------
+' Range le tableau Tabl_Adresses en mémoire et repère ses colonnes.
+' Les 500 lignes sont lues d'un coup ; les recherches suivantes ne touchent plus
+' la feuille, ce qui les rend assez rapides pour être lancées à chaque frappe.
+'------------------------------------------------------------------------------
 Private Sub ChargerAdresses()
     Dim lo As ListObject
 
@@ -48,10 +53,18 @@ Private Sub ChargerAdresses()
     mAdr = lo.DataBodyRange.Value
 End Sub
 
+'------------------------------------------------------------------------------
+' Charge le cache des adresses au premier besoin.
+'------------------------------------------------------------------------------
 Private Sub AssurerAdresses()
     If Not mAdrCharge Then ChargerAdresses
 End Sub
 
+'------------------------------------------------------------------------------
+' Force la relecture des adresses au prochain accès.
+' Appelée à l'ouverture du formulaire : les adresses ajoutées dans la feuille
+' depuis la dernière ouverture sont ainsi prises en compte.
+'------------------------------------------------------------------------------
 Public Sub Adresses_Recharger()
     mAdrCharge = False
 End Sub
@@ -59,6 +72,10 @@ End Sub
 '==============================================================================
 ' Listes proposées dans les menus déroulants
 '==============================================================================
+'------------------------------------------------------------------------------
+' Noms de rue proposés par le menu déroulant Adresse.
+'   renvoie : les valeurs distinctes de Nom_Rue_complet, triées alphabétiquement
+'------------------------------------------------------------------------------
 Public Function Adresses_ListeRues() As Variant
     Dim d As Object, i As Long, s As String
 
@@ -76,6 +93,14 @@ Public Function Adresses_ListeRues() As Variant
     Adresses_ListeRues = TrierChaines(d.Keys)
 End Function
 
+'------------------------------------------------------------------------------
+' NPA proposés par le menu déroulant NoPost.
+'   renvoie : les NPA distincts de Tabl_Adresses, triés
+'
+' Volontairement limité aux adresses du classeur : charger les 5743 localités de
+' Tabl_Villes_CH rendrait le menu inutilisable. Un NPA absent de cette liste
+' reste saisissable à la main et sera cherché dans Tabl_Villes_CH.
+'------------------------------------------------------------------------------
 Public Function Adresses_ListeNpa() As Variant
     Dim d As Object, i As Long, s As String
 
@@ -94,7 +119,9 @@ Public Function Adresses_ListeNpa() As Variant
 End Function
 
 '------------------------------------------------------------------------------
-' Textes de facture standards (onglet Parametres, tableau TblTxtStd)
+' Textes standards proposés par le menu déroulant Texte de facture.
+'   renvoie : le contenu de TblTxtStd, onglet Parametres, trié
+' Renvoie une liste vide, sans erreur, si le tableau n'existe pas.
 '------------------------------------------------------------------------------
 Public Function Adresses_TextesFacture() As Variant
     Dim lo As ListObject, v As Variant, i As Long
@@ -121,11 +148,18 @@ End Function
 
 '==============================================================================
 ' Recherche par rue
-'------------------------------------------------------------------------------
-' Renvoie le nombre de localités trouvées pour cette rue. Si npaActuel
-' correspond à l'une d'elles, c'est celle-là qui est retenue ; sinon la
-' première correspondance est utilisée.
 '==============================================================================
+'------------------------------------------------------------------------------
+' Cherche le NPA, la ville et le canton correspondant à un nom de rue.
+'   rue       : nom de rue saisi ou choisi dans la liste
+'   npaActuel : NPA déjà présent dans le formulaire, éventuellement vide
+'   npa, ville, canton : renseignés en sortie
+'   renvoie   : le nombre de localités trouvées pour cette rue
+'
+' Une même rue existe dans plusieurs communes. Si npaActuel correspond à l'une
+' d'elles, c'est celle-là qui l'emporte ; sinon la première trouvée est proposée.
+' Dans tous les cas l'utilisateur peut corriger à la main.
+'------------------------------------------------------------------------------
 Public Function Adresses_ChercherParRue(ByVal rue As String, ByVal npaActuel As String, _
                                         ByRef npa As String, ByRef ville As String, _
                                         ByRef canton As String) As Long
@@ -159,8 +193,15 @@ Public Function Adresses_ChercherParRue(ByVal rue As String, ByVal npaActuel As 
 End Function
 
 '==============================================================================
-' Recherche par NPA (Tabl_Adresses puis Tabl_Villes_CH)
+' Recherche par NPA
 '==============================================================================
+'------------------------------------------------------------------------------
+' Cherche la ville et le canton d'un NPA.
+'   renvoie : True si le NPA a été trouvé
+'
+' Tabl_Adresses d'abord, car ce sont les localités réellement utilisées par
+' l'entreprise ; puis Tabl_Villes_CH, qui couvre toute la Suisse.
+'------------------------------------------------------------------------------
 Public Function Adresses_ChercherParNpa(ByVal npa As String, ByRef ville As String, _
                                         ByRef canton As String) As Boolean
     Dim i As Long, cible As String
@@ -185,7 +226,9 @@ Public Function Adresses_ChercherParNpa(ByVal npa As String, ByRef ville As Stri
 End Function
 
 '------------------------------------------------------------------------------
-' Repli sur la liste officielle des NPA suisses.
+' Repli sur la liste officielle des NPA suisses, onglet Liste_NPA_Suisse.
+' Ce tableau n'est pas mis en cache : il est volumineux et n'est consulté que
+' pour les NPA absents de Tabl_Adresses, ce qui reste rare.
 '------------------------------------------------------------------------------
 Private Function ChercherNpaSuisse(ByVal npa As String, ByRef ville As String, _
                                    ByRef canton As String) As Boolean
@@ -214,13 +257,21 @@ Private Function ChercherNpaSuisse(ByVal npa As String, ByRef ville As String, _
     Next i
 End Function
 
+'------------------------------------------------------------------------------
+' Lit une cellule du cache des adresses, en texte, et sans erreur si la
+' colonne demandée n'existe pas dans ce classeur.
+'------------------------------------------------------------------------------
 Private Function ValeurAdr(ByVal ligne As Long, ByVal colonne As Long) As String
     If colonne > 0 Then ValeurAdr = Trim$(CStr(mAdr(ligne, colonne) & ""))
 End Function
 
 '==============================================================================
-' Tri alphabétique d'un tableau de chaînes (tri rapide)
+' Tri alphabétique
 '==============================================================================
+'------------------------------------------------------------------------------
+' Trie un tableau de chaînes par ordre alphabétique, accents ignorés.
+'   renvoie : une copie triée ; le tableau d'origine n'est pas modifié
+'------------------------------------------------------------------------------
 Public Function TrierChaines(ByVal arr As Variant) As Variant
     Dim v As Variant
     If Not IsArray(arr) Then
@@ -232,6 +283,10 @@ Public Function TrierChaines(ByVal arr As Variant) As Variant
     TrierChaines = v
 End Function
 
+'------------------------------------------------------------------------------
+' Tri rapide (quicksort) sur place, entre les bornes g et d.
+' Préféré à un tri à bulles : les listes d'adresses dépassent 300 entrées.
+'------------------------------------------------------------------------------
 Private Sub TriRapide(ByRef v As Variant, ByVal g As Long, ByVal d As Long)
     Dim i As Long, j As Long, pivot As String, tmp As Variant
     i = g: j = d

@@ -14,6 +14,11 @@ Option Explicit
 
 '------------------------------------------------------------------------------
 ' Affiche le formulaire de gestion des clients.
+' À affecter à un bouton de feuille, ou à lancer par Alt+F8.
+'
+' UserForms.Add crée le formulaire par son nom, sous forme de texte : ce module
+' compile donc même avant la première génération, et un message clair remplace
+' l'erreur VBA si le formulaire n'existe pas encore.
 '------------------------------------------------------------------------------
 Public Sub OuvrirGestionClients()
     Dim f As Object
@@ -41,9 +46,11 @@ Erreur:
 End Sub
 
 '------------------------------------------------------------------------------
-' Génère le formulaire puis rappelle comment l'ouvrir.
-' (La génération et l'affichage ne peuvent pas avoir lieu dans la même
-'  exécution : VBA doit d'abord recompiler le projet.)
+' Génère le formulaire. Alias de GenererFormulaireClients, pour retrouver
+' l'installation dans la liste des macros sans connaître le nom du module.
+'
+' La génération et l'affichage ne peuvent pas avoir lieu dans la même exécution :
+' VBA doit d'abord recompiler le projet.
 '------------------------------------------------------------------------------
 Public Sub InstallerGestionClients()
     GenererFormulaireClients
@@ -51,7 +58,9 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Diagnostic : vérifie que le classeur contient tout ce dont le formulaire a
-' besoin. Utile lorsque le formulaire ne se comporte pas comme prévu.
+' besoin — les tableaux, les colonnes attendues — et indique si le formulaire est
+' déjà généré. À lancer en premier quand quelque chose ne se comporte pas comme
+' prévu.
 '------------------------------------------------------------------------------
 Public Sub VerifierClasseur()
     Dim msg As String, lo As ListObject, ch() As ChampClient, i As Long
@@ -89,6 +98,10 @@ Public Sub VerifierClasseur()
     MsgBox msg, vbInformation, "Gestion des clients"
 End Sub
 
+'------------------------------------------------------------------------------
+' Une ligne du diagnostic pour un tableau annexe.
+'   usage : ce que le formulaire perd si ce tableau manque
+'------------------------------------------------------------------------------
 Private Function LigneTable(ByVal nomTable As String, ByVal usage As String) As String
     Dim lo As ListObject
     Set lo = ObtenirTable(nomTable)
@@ -100,6 +113,11 @@ Private Function LigneTable(ByVal nomTable As String, ByVal usage As String) As 
     End If
 End Function
 
+'------------------------------------------------------------------------------
+' État du formulaire dans le projet.
+'   renvoie : présent, à générer, ou état inconnu quand l'accès au projet VBA
+'             n'est pas autorisé — auquel cas l'absence n'est pas démontrable
+'------------------------------------------------------------------------------
 Private Function EtatFormulaire() As String
     Dim vbProj As Object, vbComp As Object
 

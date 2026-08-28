@@ -31,6 +31,7 @@ Public Const COL_VILLE As String = "Ville"
 Public Const COL_CANTON As String = "Cant"
 Public Const COL_TEXTE_FACTURE As String = "Texte_Facture"
 Public Const COL_ID_CRESUS As String = "ID_Cresus"
+Public Const COL_TAUX As String = "Tx_hrs_Forf"
 
 '--- Types de controle --------------------------------------------------------
 Public Const TYPE_TEXTE As String = "T"     ' TextBox
@@ -65,11 +66,26 @@ Private mCharges As Boolean
 '==============================================================================
 ' Schéma complet du formulaire
 '==============================================================================
+'------------------------------------------------------------------------------
+' Schéma complet du formulaire : un élément par champ, dans l'ordre de saisie.
+'   renvoie : un tableau de ChampClient indexé de 1 à NB_CHAMPS
+' Le schéma n'est construit qu'une fois par session puis conservé en mémoire.
+'------------------------------------------------------------------------------
 Public Function ObtenirChamps() As ChampClient()
     If Not mCharges Then ConstruireSchema
     ObtenirChamps = mChamps
 End Function
 
+'------------------------------------------------------------------------------
+' Remplit le schéma. C'est LA table à modifier pour ajouter, déplacer,
+' renommer ou verrouiller un champ ; le générateur et le formulaire s'y adaptent
+' sans autre changement.
+'
+' Les colonnes ci-dessous se lisent :
+'   n°  nom de la colonne Excel, libellé affiché, type de contrôle, verrouillé,
+'       ligne de grille, colonne de grille, moitié de bloc, contrainte numérique,
+'       info-bulle.
+'------------------------------------------------------------------------------
 Private Sub ConstruireSchema()
     ReDim mChamps(1 To NB_CHAMPS)
 
@@ -110,7 +126,7 @@ Private Sub ConstruireSchema()
     DefChamp mChamps, 16, "Natel", "Natel", TYPE_TEXTE, False, 4, 4, 0, NUM_NON, _
         "Téléphone mobile"
 
-    DefChamp mChamps, 17, "Tx_hrs_Forf", "Taux horaire / forfait", TYPE_TEXTE, False, 5, 1, 0, NUM_DECIMAL, _
+    DefChamp mChamps, 17, COL_TAUX, "Taux horaire / forfait", TYPE_TEXTE, False, 5, 1, 0, NUM_DECIMAL, _
         "Taux horaire ou montant forfaitaire, en CHF"
     DefChamp mChamps, 18, "TVA", "TVA", TYPE_CASE, False, 5, 2, 1, NUM_NON, _
         "Le client est assujetti à la TVA"
@@ -124,6 +140,10 @@ Private Sub ConstruireSchema()
     mCharges = True
 End Sub
 
+'------------------------------------------------------------------------------
+' Écrit une ligne du schéma. Sert uniquement à rendre ConstruireSchema lisible :
+' sans elle il faudrait neuf affectations par champ.
+'------------------------------------------------------------------------------
 Private Sub DefChamp(ByRef tb() As ChampClient, ByVal idx As Long, ByVal colonne As String, _
                 ByVal libelle As String, ByVal typeCtrl As String, ByVal verrouille As Boolean, _
                 ByVal ligne As Long, ByVal col As Long, ByVal moitie As Long, _
@@ -142,6 +162,12 @@ End Sub
 '==============================================================================
 ' Nommage des contrôles générés
 '==============================================================================
+'------------------------------------------------------------------------------
+' Nom du contrôle qui porte un champ, dans le formulaire.
+'   renvoie : txt / cbo / chk suivi du nom exact de la colonne Excel
+' C'est cette règle, et elle seule, qui relie une colonne à son contrôle : il n'y
+' a aucune table de correspondance à tenir à jour.
+'------------------------------------------------------------------------------
 Public Function NomControle(ByRef ch As ChampClient) As String
     Select Case ch.TypeCtrl
         Case TYPE_LISTE: NomControle = "cbo" & ch.Colonne
@@ -150,10 +176,22 @@ Public Function NomControle(ByRef ch As ChampClient) As String
     End Select
 End Function
 
+'------------------------------------------------------------------------------
+' Nom du libellé placé au-dessus d'un champ.
+' Le préfixe lblChamp_ évite toute collision avec les libellés de l'habillage
+' (lblTitre serait sinon à la fois le titre du formulaire et le libellé du champ
+' Titre).
+'------------------------------------------------------------------------------
 Public Function NomLibelle(ByRef ch As ChampClient) As String
     NomLibelle = "lblChamp_" & ch.Colonne
 End Function
 
+'------------------------------------------------------------------------------
+' Nom du contrôle correspondant à une colonne, cherché dans le schéma.
+'   renvoie : le nom du contrôle, ou une chaîne vide si la colonne est inconnue
+' Version pratique de NomControle quand on n'a que le nom de la colonne sous la
+' main, par exemple NomControleColonne(COL_NPA).
+'------------------------------------------------------------------------------
 Public Function NomControleColonne(ByVal nomColonne As String) As String
     Dim ch() As ChampClient, i As Long
     ch = ObtenirChamps()
@@ -166,26 +204,52 @@ Public Function NomControleColonne(ByVal nomColonne As String) As String
 End Function
 
 '==============================================================================
-' Colonnes affichées dans le tableau des enregistrements
-' (10 colonnes au maximum : limite d'une ListBox MSForms)
+' Colonnes du tableau des enregistrements
 '==============================================================================
+'------------------------------------------------------------------------------
+' Colonnes du tableau des enregistrements, de gauche à droite.
+'   renvoie : les noms EXACTS des colonnes de TblClients
+'
+' Dix au maximum : c'est la limite d'une ListBox MSForms. Les champs qui n'y
+' figurent pas restent visibles dans la fiche du haut dès qu'une ligne est
+' sélectionnée.
+'
+' Toute modification doit être reportée à l'identique dans LibellesListe et
+' LargeursListe, qui sont lues position par position.
+'------------------------------------------------------------------------------
 Public Function ColonnesListe() As Variant
-    ColonnesListe = Array(COL_CLEF, COL_DATE, "Entreprise", "Titre", "Nom", _
-                          "Prenom", COL_ADRESSE, "No", COL_NPA, COL_VILLE)
+    ColonnesListe = Array("Entreprise", "Titre", "Nom", "Prenom", COL_ADRESSE, _
+                          "No", COL_NPA, COL_VILLE, COL_CANTON, COL_TAUX)
 End Function
 
+'------------------------------------------------------------------------------
+' En-têtes affichés au-dessus du tableau. Un libellé par colonne de
+' ColonnesListe, dans le même ordre : c'est ici qu'on met les accents et les
+' abréviations, le nom réel de la colonne Excel restant dans ColonnesListe.
+'------------------------------------------------------------------------------
 Public Function LibellesListe() As Variant
-    LibellesListe = Array("Clef BD", "Création", "Entreprise", "Titre", "Nom", _
-                          "Prénom", "Adresse", "No", "NPA", "Ville")
+    LibellesListe = Array("Entreprise", "Titre", "Nom", "Prénom", "Adresse", _
+                          "No", "NPA", "Ville", "Cant.", "Taux / forf.")
 End Function
 
+'------------------------------------------------------------------------------
+' Largeur de chaque colonne, en points, dans le même ordre.
+' Leur somme doit rester sous 790 pt : la ListBox mesure 806 pt de large et il
+' faut laisser la place à la barre de défilement verticale (environ 16 pt).
+' Les en-têtes cliquables se repositionnent automatiquement d'après ces valeurs.
+'------------------------------------------------------------------------------
 Public Function LargeursListe() As Variant
-    LargeursListe = Array(46, 62, 112, 56, 100, 82, 142, 30, 42, 106)
+    LargeursListe = Array(118, 54, 102, 86, 144, 30, 42, 104, 36, 62)
 End Function
 
 '==============================================================================
 ' Champs proposés par le menu déroulant de filtrage
 '==============================================================================
+'------------------------------------------------------------------------------
+' Colonnes proposées par le menu déroulant de filtrage.
+' Ces valeurs servent à la fois d'étiquette affichée et de clef de recherche :
+' il faut donc y écrire le nom exact de la colonne Excel, sans accent ajouté.
+'------------------------------------------------------------------------------
 Public Function ChampsFiltrables() As Variant
     ChampsFiltrables = Array("Entreprise", "Nom", COL_ADRESSE)
 End Function
@@ -193,13 +257,28 @@ End Function
 '==============================================================================
 ' Valeurs proposées par le menu déroulant Titre
 '==============================================================================
+'------------------------------------------------------------------------------
+' Civilités proposées d'office par le menu déroulant Titre.
+' Les civilités déjà présentes dans la colonne Titre du tableau viennent s'y
+' ajouter automatiquement à l'ouverture : aucune fiche existante ne devient
+' inaffichable si sa civilité n'est pas dans cette liste.
+'------------------------------------------------------------------------------
 Public Function TitresProposes() As Variant
     TitresProposes = Array("Monsieur", "Madame")
 End Function
 
 '==============================================================================
-' Accès aux tableaux structures du classeur
+' Accès aux tableaux structurés du classeur
 '==============================================================================
+'------------------------------------------------------------------------------
+' Cherche un tableau structuré dans tout le classeur, feuille par feuille.
+'   nomTable : nom du tableau, par exemple TblClients
+'   renvoie  : le ListObject, ou Nothing s'il n'existe pas
+'
+' Passer par le nom du tableau plutôt que par un nom de feuille ou une plage de
+' cellules : le tableau peut être déplacé, renommé de feuille ou décalé, le code
+' continue de le trouver.
+'------------------------------------------------------------------------------
 Public Function ObtenirTable(ByVal nomTable As String) As ListObject
     Dim ws As Worksheet, lo As ListObject
     For Each ws In ThisWorkbook.Worksheets
@@ -212,12 +291,17 @@ Public Function ObtenirTable(ByVal nomTable As String) As ListObject
     Next ws
 End Function
 
+'------------------------------------------------------------------------------
+' Raccourci vers le tableau TblClients.
+'------------------------------------------------------------------------------
 Public Function TableClients() As ListObject
     Set TableClients = ObtenirTable(NOM_TABLE_CLIENTS)
 End Function
 
 '------------------------------------------------------------------------------
-' Index (base 1) d'une colonne dans un tableau structure ; 0 si absente.
+' Position d'une colonne dans un tableau structuré.
+'   renvoie : le numéro de colonne (1 = première), ou 0 si elle n'existe pas
+' La comparaison ignore la casse.
 '------------------------------------------------------------------------------
 Public Function IndexColonne(ByVal lo As ListObject, ByVal nomColonne As String) As Long
     Dim lc As ListColumn

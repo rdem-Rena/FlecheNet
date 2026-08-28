@@ -22,9 +22,9 @@ sur la fenêtre Excel.
 │ │ Filtrer sur [Nom ▾] [__________]  Réinitialiser   n/N fiches   │ │  filtre 40 pt
 │ └────────────────────────────────────────────────────────────────┘ │
 │ ┌────────────────────────────────────────────────────────────────┐ │
-│ │ Clef BD │Création│Entreprise│Titre│Nom│Prénom│Adresse│No│NPA│…  │ │  tableau
+│ │Entreprise│Titre│Nom│Prénom│Adresse│No│NPA│Ville│Canton│Taux/forf│ │  tableau
 │ │ ───────────────────────────────────────────────────────────────│ │  168 pt
-│ │ CL1     │14/08/26│          │Mme  │…                           │ │
+│ │          │Mme  │Aebi│Sylvie│Rue des Vieux Patriotes│64│2300│…   │ │
 │ └────────────────────────────────────────────────────────────────┘ │
 │  [ Ajouter ] [ Modifier ] [ Supprimer ] [ Effacer ]     [ Quitter ]│  boutons 30 pt
 └────────────────────────────────────────────────────────────────────┘
@@ -76,10 +76,17 @@ formules de la colonne.
 
 ## Tableau des enregistrements
 
-10 colonnes — le maximum d'une `ListBox` MSForms : `Clef_BD`, `Date_Crea`,
-`Entreprise`, `Titre`, `Nom`, `Prenom`, `Adresse`, `No`, `NoPost`, `Ville`.
-Les autres champs (téléphones, courriel, notes, facturation) restent visibles
-dans la fiche du haut dès qu'une ligne est sélectionnée.
+10 colonnes — le maximum d'une `ListBox` MSForms : `Entreprise`, `Titre`,
+`Nom`, `Prenom`, `Adresse`, `No`, `NoPost`, `Ville`, `Cant`, `Tx_hrs_Forf`.
+
+`Clef_BD` et `Date_Crea` n'y figurent volontairement pas : elles sont gérées par
+le programme et restent lisibles dans la fiche du haut. La sélection ne s'appuie
+d'ailleurs pas sur ce qui est affiché — chaque ligne du tableau garde en mémoire
+le numéro de la fiche correspondante — si bien que les colonnes affichées
+peuvent être changées librement.
+
+Les autres champs (téléphones, courriel, notes, texte de facture) restent eux
+aussi visibles dans la fiche dès qu'une ligne est sélectionnée.
 
 Un clic sur un en-tête trie sur cette colonne ; un second clic inverse le sens
 (▲ / ▼). Les fiches sans valeur sont renvoyées en fin de liste. Les dates sont
@@ -116,6 +123,9 @@ valeurs déjà présentes dans la colonne `Titre` s'ajoutent automatiquement.
 **Changer les colonnes du tableau** → `ColonnesListe`, `LibellesListe` et
 `LargeursListe` (10 entrées au maximum, largeurs en points ; leur somme doit
 rester sous 790 pt pour laisser la place à la barre de défilement).
+
+La liste complète des constantes et la position calculée de chacun des
+71 contrôles sont réunies dans [`REGLAGES.md`](REGLAGES.md).
 
 ## Choix d'implémentation
 

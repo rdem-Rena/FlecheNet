@@ -123,10 +123,21 @@ Public Const BT_GOUTTIERE As Single = 6
 '==============================================================================
 ' Position d'un bloc de la grille de saisie
 '==============================================================================
+'------------------------------------------------------------------------------
+' Abscisse du bloc « libellé + zone de saisie » d'une colonne de la grille.
+'   colonne : 1 à 4, de gauche à droite
+'   renvoie : la position en points, mesurée depuis le bord gauche du formulaire
+'------------------------------------------------------------------------------
 Public Function GrilleX(ByVal colonne As Long) As Single
     GrilleX = GR_X + (colonne - 1) * (GR_BLOC + GR_GOUTTIERE)
 End Function
 
+'------------------------------------------------------------------------------
+' Ordonnée du bloc « libellé + zone de saisie » d'une ligne de la grille.
+'   ligne   : 1 à 5, de haut en bas
+'   renvoie : la position en points, mesurée depuis le haut du formulaire
+' Le libellé occupe CH_LBL_HAUT points, la zone de saisie commence juste dessous.
+'------------------------------------------------------------------------------
 Public Function GrilleY(ByVal ligne As Long) As Single
     GrilleY = GR_Y + (ligne - 1) * GR_LIGNE
 End Function
@@ -134,6 +145,12 @@ End Function
 '==============================================================================
 ' Couleur de fond d'un bouton d'action (état normal ou survol)
 '==============================================================================
+'------------------------------------------------------------------------------
+' Couleur de fond d'un bouton d'action.
+'   nomBouton : btnAjouter, btnModifier, btnSupprimer, btnEffacer ou btnQuitter
+'   survol    : True pour la teinte claire appliquée au passage de la souris
+' Utilisée à la génération (état normal) et à chaque MouseMove (survol).
+'------------------------------------------------------------------------------
 Public Function CouleurBouton(ByVal nomBouton As String, ByVal survol As Boolean) As Long
     Select Case nomBouton
         Case "btnAjouter":   CouleurBouton = IIf(survol, COUL_AJOUTER_H, COUL_AJOUTER)
@@ -146,16 +163,27 @@ Public Function CouleurBouton(ByVal nomBouton As String, ByVal survol As Boolean
 End Function
 
 '==============================================================================
-' Glyphes (définis par code pour rester indépendants de l'encodage du fichier)
+' Glyphes
 '==============================================================================
+'------------------------------------------------------------------------------
+' Croix de fermeture du bandeau.
+' Construite avec ChrW plutôt qu'écrite en clair : le caractère reste correct
+' quel que soit l'encodage sous lequel ce fichier est ré-enregistré.
+'------------------------------------------------------------------------------
 Public Function GlypheFermer() As String
     GlypheFermer = ChrW(215)                ' croix de fermeture
 End Function
 
+'------------------------------------------------------------------------------
+' Triangle vers le haut, accolé à l'en-tête de la colonne triée.
+'------------------------------------------------------------------------------
 Public Function GlypheTriCroissant() As String
     GlypheTriCroissant = " " & ChrW(9650)   ' triangle vers le haut
 End Function
 
+'------------------------------------------------------------------------------
+' Triangle vers le bas, accolé à l'en-tête de la colonne triée.
+'------------------------------------------------------------------------------
 Public Function GlypheTriDecroissant() As String
     GlypheTriDecroissant = " " & ChrW(9660) ' triangle vers le bas
 End Function

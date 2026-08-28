@@ -15,8 +15,14 @@ Private mNbColonnes As Long
 Private mIdxColonne As Object   ' Dictionary : nom de colonne -> index
 
 '==============================================================================
-' Chargement du cache depuis le tableau structure
+' Chargement du cache
 '==============================================================================
+'------------------------------------------------------------------------------
+' Relit tout le tableau TblClients et le range en mémoire.
+' Un seul accès à la feuille suffit à charger les 354 fiches : le reste du code
+' travaille ensuite sur ce tableau en mémoire, ce qui rend le filtrage et le tri
+' instantanés. Appelée à l'ouverture du formulaire et après chaque écriture.
+'------------------------------------------------------------------------------
 Public Sub Donnees_Charger()
     Dim lo As ListObject, lc As ListColumn
 
@@ -26,8 +32,11 @@ Public Sub Donnees_Charger()
                   "Le tableau " & NOM_TABLE_CLIENTS & " est introuvable dans ce classeur."
     End If
 
+    ' Un dictionnaire nom de colonne -> numéro évite de reparcourir les
+    ' en-têtes à chaque lecture. CompareMode doit être posé AVANT le premier
+    ' ajout : il ne peut plus être changé ensuite.
     Set mIdxColonne = CreateObject("Scripting.Dictionary")
-    mIdxColonne.CompareMode = 1                     ' comparaison insensible à la casse
+    mIdxColonne.CompareMode = 1                     ' 1 = insensible à la casse
     For Each lc In lo.ListColumns
         If Not mIdxColonne.Exists(lc.Name) Then mIdxColonne.Add lc.Name, lc.Index
     Next lc
@@ -38,8 +47,10 @@ Public Sub Donnees_Charger()
         mDonnees = Empty
     Else
         mNbLignes = lo.ListRows.Count
+        ' Range.Value rend un tableau à deux dimensions, SAUF pour une plage
+        ' d'une seule cellule où il rend la valeur brute : ce cas est reconstruit
+        ' à la main pour que le reste du code n'ait qu'une forme à traiter.
         If mNbLignes = 1 And mNbColonnes = 1 Then
-            ' cas dégénéré : Range.Value ne renvoie pas un tableau
             Dim tmp() As Variant
             ReDim tmp(1 To 1, 1 To 1)
             tmp(1, 1) = lo.DataBodyRange.Value
@@ -50,6 +61,10 @@ Public Sub Donnees_Charger()
     End If
 End Sub
 
+'------------------------------------------------------------------------------
+' Charge le cache s'il ne l'est pas déjà. Placée en tête des procédures de
+' lecture pour qu'aucune ne dépende de l'ordre des appels.
+'------------------------------------------------------------------------------
 Private Sub AssurerCache()
     If mIdxColonne Is Nothing Then Donnees_Charger
 End Sub
@@ -57,18 +72,30 @@ End Sub
 '==============================================================================
 ' Interrogation du cache
 '==============================================================================
+'------------------------------------------------------------------------------
+' Nombre de fiches dans le tableau.
+'------------------------------------------------------------------------------
 Public Function Donnees_NbLignes() As Long
     AssurerCache
     Donnees_NbLignes = mNbLignes
 End Function
 
+'------------------------------------------------------------------------------
+' Position d'une colonne dans le cache.
+'   renvoie : le numéro de colonne, ou 0 si elle n'existe pas
+'------------------------------------------------------------------------------
 Public Function Donnees_IndexColonne(ByVal nomColonne As String) As Long
     AssurerCache
     If mIdxColonne.Exists(nomColonne) Then Donnees_IndexColonne = mIdxColonne(nomColonne)
 End Function
 
 '------------------------------------------------------------------------------
-' Valeur brute d'une cellule du cache.
+' Valeur brute d'une cellule, telle qu'Excel la rend : nombre, date, booléen
+' ou texte.
+'   ligne      : numéro de fiche dans le cache, à partir de 1
+'   nomColonne : nom de la colonne dans TblClients
+' Renvoie Empty si la ligne ou la colonne n'existe pas, plutôt que de déclencher
+' une erreur : les appelants n'ont pas à se protéger.
 '------------------------------------------------------------------------------
 Public Function Donnees_Valeur(ByVal ligne As Long, ByVal nomColonne As String) As Variant
     Dim ic As Long
@@ -82,7 +109,9 @@ Public Function Donnees_Valeur(ByVal ligne As Long, ByVal nomColonne As String) 
 End Function
 
 '------------------------------------------------------------------------------
-' Valeur mise en forme pour l'affichage (dates, montants, cases à cocher).
+' Valeur convertie en texte lisible, pour le tableau et les zones de saisie.
+' Les dates deviennent jj/mm/aaaa, le taux prend deux décimales, les booléens
+' deviennent Oui / Non, et une cellule vide devient une chaîne vide.
 '------------------------------------------------------------------------------
 Public Function Donnees_ValeurAffichee(ByVal ligne As Long, ByVal nomColonne As String) As String
     Dim v As Variant
@@ -93,18 +122,24 @@ Public Function Donnees_ValeurAffichee(ByVal ligne As Long, ByVal nomColonne As 
     ElseIf VarType(v) = vbBoolean Then
         Donnees_ValeurAffichee = IIf(v, "Oui", "Non")
     ElseIf StrComp(nomColonne, COL_DATE, vbTextCompare) = 0 Then
+        ' Excel rend une date soit en Date, soit en numéro de série : les deux
+        ' cas mènent au même affichage jj/mm/aaaa.
         If IsNumeric(v) Then
             If CDbl(v) > 0 Then Donnees_ValeurAffichee = Format$(CDate(CDbl(v)), "dd/mm/yyyy")
         ElseIf IsDate(v) Then
             Donnees_ValeurAffichee = Format$(CDate(v), "dd/mm/yyyy")
         End If
+    ElseIf StrComp(nomColonne, COL_TAUX, vbTextCompare) = 0 And IsNumeric(v) Then
+        ' Montant : deux décimales, avec le séparateur décimal de Windows.
+        Donnees_ValeurAffichee = Format$(CDbl(v), "0.00")
     Else
         Donnees_ValeurAffichee = CStr(v)
     End If
 End Function
 
 '------------------------------------------------------------------------------
-' Numéro de ligne (dans le cache) correspondant à une Clef_BD ; 0 si absente.
+' Retrouve une fiche par sa Clef_BD.
+'   renvoie : le numéro de ligne dans le cache, ou 0 si la clef est introuvable
 '------------------------------------------------------------------------------
 Public Function Donnees_TrouverLigne(ByVal clef As String) As Long
     Dim i As Long, ic As Long
@@ -121,8 +156,15 @@ Public Function Donnees_TrouverLigne(ByVal clef As String) As Long
 End Function
 
 '==============================================================================
-' Génération de la clef : PREFIXE_CLEF + plus grand numéro existant + 1
+' Génération de la clef
 '==============================================================================
+'------------------------------------------------------------------------------
+' Fabrique la clef de la prochaine fiche : CL suivi du plus grand numéro
+' présent, augmenté de 1.
+' Le plus grand numéro est recalculé à chaque fois plutôt que déduit du nombre de
+' lignes : supprimer une fiche au milieu du tableau ne provoque donc jamais de
+' clef en double.
+'------------------------------------------------------------------------------
 Public Function Donnees_NouvelleClef() As String
     Dim i As Long, ic As Long, maxi As Long, n As Long, s As String
     AssurerCache
@@ -137,6 +179,11 @@ Public Function Donnees_NouvelleClef() As String
     Donnees_NouvelleClef = PREFIXE_CLEF & CStr(maxi + 1)
 End Function
 
+'------------------------------------------------------------------------------
+' Extrait les chiffres d'une chaîne : CL349 donne 349.
+' Renvoie 0 si la chaîne n'en contient aucun, ou plus de neuf (au-delà, la
+' conversion en Long déborderait).
+'------------------------------------------------------------------------------
 Private Function PartieNumerique(ByVal s As String) As Long
     Dim i As Long, c As String, res As String
     For i = 1 To Len(s)
@@ -152,6 +199,14 @@ End Function
 ' "valeurs" est un Dictionary : nom de colonne -> valeur déjà typée.
 ' Les colonnes Clef_BD et Date_Crea sont ignorées : elles sont posées ici.
 '==============================================================================
+'------------------------------------------------------------------------------
+' Ajoute une fiche en fin de tableau.
+'   valeurs : Dictionary nom de colonne -> valeur déjà typée
+'   renvoie : la Clef_BD attribuée
+'
+' Clef_BD et Date_Crea sont posées ici, jamais par l'appelant : c'est ce qui
+' garantit qu'elles restent cohérentes quoi que contienne le formulaire.
+'------------------------------------------------------------------------------
 Public Function Donnees_Ajouter(ByVal valeurs As Object) As String
     Dim lo As ListObject, lr As ListRow, ligne() As Variant
     Dim clef As String
@@ -160,11 +215,16 @@ Public Function Donnees_Ajouter(ByVal valeurs As Object) As String
     Set lo = TableClients()
     clef = Donnees_NouvelleClef()
 
+    ' La ligne est préparée entièrement en mémoire, puis écrite en un seul
+    ' accès à la feuille : c'est rapide, et les formats et formules de colonne
+    ' du tableau structuré sont préservés.
     ReDim ligne(1 To 1, 1 To mNbColonnes)
     RemplirLigne ligne, valeurs
     PoserValeur ligne, COL_CLEF, clef
     PoserValeur ligne, COL_DATE, Date
 
+    ' EnableEvents est remis à True par l'étiquette Fin même en cas d'erreur :
+    ' le laisser à False figerait le recalcul dans tout Excel.
     On Error GoTo Fin
     Application.EnableEvents = False
     Set lr = lo.ListRows.Add
@@ -178,6 +238,13 @@ Fin:
     Donnees_Ajouter = clef
 End Function
 
+'------------------------------------------------------------------------------
+' Met à jour une fiche existante.
+'   clef    : Clef_BD de la fiche à modifier
+'   valeurs : Dictionary nom de colonne -> valeur ; les colonnes absentes du
+'             dictionnaire gardent leur valeur actuelle
+'   renvoie : True si la fiche a été trouvée et écrite
+'------------------------------------------------------------------------------
 Public Function Donnees_Modifier(ByVal clef As String, ByVal valeurs As Object) As Boolean
     Dim lo As ListObject, i As Long, ligne() As Variant, ic As Long, c As Variant
 
@@ -188,6 +255,9 @@ Public Function Donnees_Modifier(ByVal clef As String, ByVal valeurs As Object) 
     Set lo = TableClients()
 
     ' on repart de la ligne existante pour ne toucher qu'aux colonnes fournies
+    ' On repart de la ligne telle qu'elle est dans le tableau, puis on n'écrase
+    ' que les colonnes fournies : une colonne absente du formulaire, ou ajoutée
+    ' plus tard dans TblClients, conserve ainsi sa valeur.
     ReDim ligne(1 To 1, 1 To mNbColonnes)
     For ic = 1 To mNbColonnes
         ligne(1, ic) = mDonnees(i, ic)
@@ -207,6 +277,11 @@ Fin:
     Donnees_Modifier = True
 End Function
 
+'------------------------------------------------------------------------------
+' Supprime la ligne du tableau correspondant à une Clef_BD.
+'   renvoie : True si la fiche existait
+' La confirmation de l'utilisateur est demandée en amont, par le formulaire.
+'------------------------------------------------------------------------------
 Public Function Donnees_Supprimer(ByVal clef As String) As Boolean
     Dim lo As ListObject, i As Long
 
@@ -228,6 +303,12 @@ Fin:
     Donnees_Supprimer = True
 End Function
 
+'------------------------------------------------------------------------------
+' Reporte les valeurs d'un Dictionary dans un tableau d'une ligne, prêt à être
+' écrit dans la feuille.
+' Clef_BD et Date_Crea sont volontairement ignorées : elles sont posées juste
+' après par l'appelant, ce qui empêche le formulaire de les écraser.
+'------------------------------------------------------------------------------
 Private Sub RemplirLigne(ByRef ligne() As Variant, ByVal valeurs As Object)
     Dim k As Variant, ic As Long
     For Each k In valeurs.Keys
@@ -239,6 +320,10 @@ Private Sub RemplirLigne(ByRef ligne() As Variant, ByVal valeurs As Object)
     Next k
 End Sub
 
+'------------------------------------------------------------------------------
+' Écrit une valeur dans la ligne en préparation, en silence si la colonne
+' n'existe pas dans ce classeur.
+'------------------------------------------------------------------------------
 Private Sub PoserValeur(ByRef ligne() As Variant, ByVal nomColonne As String, ByVal v As Variant)
     Dim ic As Long
     ic = Donnees_IndexColonne(nomColonne)
@@ -246,9 +331,16 @@ Private Sub PoserValeur(ByRef ligne() As Variant, ByVal nomColonne As String, By
 End Sub
 
 '==============================================================================
-' Intégrité : interventions rattachées à un client (TblInterv.Client_No
-' contient l'ID Cresus du client).
+' Intégrité référentielle
 '==============================================================================
+'------------------------------------------------------------------------------
+' Compte les interventions rattachées à un client.
+'   idCresus : identifiant Crésus du client
+'   renvoie  : le nombre de lignes de TblInterv qui le référencent
+'
+' La colonne Client_No de TblInterv contient l'ID Crésus, et non la Clef_BD.
+' Sert à prévenir avant une suppression, sans jamais l'empêcher.
+'------------------------------------------------------------------------------
 Public Function Donnees_NbInterventions(ByVal idCresus As String) As Long
     Dim lo As ListObject, v As Variant, i As Long, ic As Long, n As Long
 
@@ -269,8 +361,13 @@ Public Function Donnees_NbInterventions(ByVal idCresus As String) As Long
 End Function
 
 '==============================================================================
-' Doublon d'ID Cresus (hors fiche en cours d'édition)
+' Doublons
 '==============================================================================
+'------------------------------------------------------------------------------
+' Cherche une autre fiche portant le même ID Crésus.
+'   clefExclue : fiche en cours d'édition, à ne pas comparer avec elle-même
+'   renvoie    : la Clef_BD de la fiche en doublon, ou une chaîne vide
+'------------------------------------------------------------------------------
 Public Function Donnees_ClefAvecMemeIdCresus(ByVal idCresus As String, ByVal clefExclue As String) As String
     Dim i As Long, icId As Long, icClef As Long, s As String
 
@@ -292,8 +389,12 @@ Public Function Donnees_ClefAvecMemeIdCresus(ByVal idCresus As String, ByVal cle
 End Function
 
 '==============================================================================
-' Valeurs distinctes d'une colonne (utilise pour compléter la liste des titres)
+' Valeurs distinctes
 '==============================================================================
+'------------------------------------------------------------------------------
+' Valeurs différentes présentes dans une colonne, sans les vides.
+' Sert à compléter le menu déroulant Titre avec les civilités déjà utilisées.
+'------------------------------------------------------------------------------
 Public Function Donnees_ValeursDistinctes(ByVal nomColonne As String) As Variant
     Dim d As Object, i As Long, ic As Long, s As String
 
@@ -313,8 +414,16 @@ Public Function Donnees_ValeursDistinctes(ByVal nomColonne As String) As Variant
 End Function
 
 '==============================================================================
-' Comparaison insensible à la casse et aux accents
+' Normalisation
 '==============================================================================
+'------------------------------------------------------------------------------
+' Met une chaîne en minuscules et remplace les caractères accentués par leur
+' équivalent sans accent.
+'   renvoie : la chaîne comparable
+'
+' C'est ce qui permet de trouver « Apothéloz » en tapant « apotheloz », et de
+' trier « Éric » à sa vraie place alphabétique.
+'------------------------------------------------------------------------------
 Public Function Normaliser(ByVal s As String) As String
     Const AVEC As String = "àáâãäåçèéêëìíîïñòóôõöùúûüýÿÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝ"
     Const SANS As String = "aaaaaaceeeeiiiinooooouuuuyyAAAAAACEEEEIIIINOOOOOUUUUY"
@@ -332,6 +441,12 @@ End Function
 '==============================================================================
 ' Conversions utilitaires
 '==============================================================================
+'------------------------------------------------------------------------------
+' Convertit une saisie en nombre, en acceptant les conventions locales.
+'   ok      : passé à True si la conversion a réussi
+'   renvoie : le nombre, ou 0 en cas d'échec
+' La virgule décimale et l'apostrophe des milliers (1'250.50) sont admises.
+'------------------------------------------------------------------------------
 Public Function EnNombre(ByVal s As String, ByRef ok As Boolean) As Double
     Dim t As String
     t = Trim$(Replace$(Replace$(s, " ", ""), ",", "."))
@@ -348,6 +463,10 @@ Public Function EnNombre(ByVal s As String, ByRef ok As Boolean) As Double
     End If
 End Function
 
+'------------------------------------------------------------------------------
+' Convertit en texte sans déclencher d'erreur sur Empty ou Null.
+' À utiliser partout où la valeur vient d'un contrôle ou d'une cellule.
+'------------------------------------------------------------------------------
 Public Function EnTexte(ByVal v As Variant) As String
     If IsEmpty(v) Or IsNull(v) Then
         EnTexte = vbNullString
