@@ -1,0 +1,575 @@
+Attribute VB_Name = "modClients_Generateur"
+Option Explicit
+'==============================================================================
+' modClients_Generateur
+'------------------------------------------------------------------------------
+' Génère de toutes pièces le UserForm "UF_Clients" à partir du schéma décrit
+' dans modClients_Schéma : création du formulaire, de ses contrôles, de leur
+' mise en forme, puis injection de son module de code.
+'
+'   >>> Procédure à lancer : GenererFormulaireClients
+'
+' PREREQUIS : Fichier > Options > Centre de gestion de la confidentialité >
+'             Parametres du Centre de gestion de la confidentialité >
+'             Parametres des macros > cocher
+'             "Accès approuve au modèle d'objet du projet VBA".
+'
+' Ce module n'est nécessaire qu'au moment de la génération : une fois le
+' formulaire créé, il peut rester en place (il permet de le régénérer après
+' toute modification du schéma ou de la charte graphique).
+'==============================================================================
+
+Private Const CT_MSFORM As Long = 3         ' vbext_ct_MSForm
+Private Const SIG_SOURIS As String = "(ByVal Button As Integer, ByVal Shift As Integer, " & _
+                                     "ByVal X As Single, ByVal Y As Single)"
+
+Private mCode As String
+
+'==============================================================================
+' POINT D'ENTREE
+'==============================================================================
+Public Sub GenererFormulaireClients()
+    Dim vbProj As Object, vbComp As Object, dsg As Object
+    Dim lo As ListObject, manquantes As String
+
+    ' --- le tableau source doit exister ---------------------------------------
+    Set lo = TableClients()
+    If lo Is Nothing Then
+        MsgBox "Le tableau " & NOM_TABLE_CLIENTS & " est introuvable dans ce classeur." & vbCrLf & _
+               "Le formulaire ne peut pas être généré.", vbCritical, "Génération du formulaire"
+        Exit Sub
+    End If
+
+    manquantes = ColonnesNonCouvertes(lo)
+    If Len(manquantes) > 0 Then
+        If MsgBox("Ces colonnes de " & NOM_TABLE_CLIENTS & " ne figurent pas dans le schéma du " & _
+                  "formulaire et ne seront donc pas saisissables :" & vbCrLf & vbCrLf & manquantes & _
+                  vbCrLf & vbCrLf & "Poursuivre la génération ?", _
+                  vbQuestion + vbYesNo, "Génération du formulaire") <> vbYes Then Exit Sub
+    End If
+
+    ' --- accès au projet VBA --------------------------------------------------
+    On Error Resume Next
+    Set vbProj = ThisWorkbook.VBProject
+    On Error GoTo 0
+    If vbProj Is Nothing Then
+        MsgBox "Excel refuse l'accès au projet VBA." & vbCrLf & vbCrLf & _
+               "Activez d'abord l'option :" & vbCrLf & _
+               "Fichier > Options > Centre de gestion de la confidentialité >" & vbCrLf & _
+               "Paramètres du Centre de gestion de la confidentialité >" & vbCrLf & _
+               "Paramètres des macros > " & Chr$(34) & "Accès approuvé au modèle d'objet du " & _
+               "projet VBA" & Chr$(34) & vbCrLf & vbCrLf & _
+               "Fermez puis rouvrez le classeur, et relancez cette procédure.", _
+               vbCritical, "Génération du formulaire"
+        Exit Sub
+    End If
+
+    ' --- remplacement d'une version précédente --------------------------------
+    On Error Resume Next
+    Set vbComp = vbProj.VBComponents(NOM_FORMULAIRE)
+    On Error GoTo 0
+    If Not vbComp Is Nothing Then
+        If MsgBox("Le formulaire " & NOM_FORMULAIRE & " existe déjà." & vbCrLf & _
+                  "Le remplacer par une version neuve ?", vbQuestion + vbYesNo, _
+                  "Génération du formulaire") <> vbYes Then Exit Sub
+        vbProj.VBComponents.Remove vbComp
+        Set vbComp = Nothing
+        DoEvents
+    End If
+
+    On Error GoTo Erreur
+
+    ' --- création du formulaire ----------------------------------------------
+    Set vbComp = vbProj.VBComponents.Add(CT_MSFORM)
+    vbComp.Name = NOM_FORMULAIRE
+    Set dsg = vbComp.Designer
+
+    PropFormulaire vbComp, "Caption", "Gestion des clients"
+    PropFormulaire vbComp, "Width", F_LARGEUR
+    PropFormulaire vbComp, "Height", F_HAUTEUR
+    PropFormulaire vbComp, "BackColor", COUL_FOND
+    PropFormulaire vbComp, "SpecialEffect", MSF_SpecialEffectFlat
+    PropFormulaire vbComp, "BorderStyle", MSF_BorderStyleNone
+    PropFormulaire vbComp, "StartUpPosition", 1          ' centre sur Excel
+    PropFormulaire vbComp, "ShowModal", True
+
+    ConstruireBandeau dsg
+    ConstruireCarteSaisie dsg
+    ConstruireCarteFiltre dsg
+    ConstruireCarteTableau dsg
+    ConstruireBoutons dsg
+    ReculerArrierePlans dsg
+
+    ' --- module de code du formulaire ----------------------------------------
+    vbComp.CodeModule.AddFromString CodeDuFormulaire()
+
+    MsgBox "Le formulaire " & NOM_FORMULAIRE & " a été généré." & vbCrLf & vbCrLf & _
+           dsg.Controls.Count & " contrôles créés pour " & NB_CHAMPS & " champs du tableau " & _
+           NOM_TABLE_CLIENTS & "." & vbCrLf & vbCrLf & _
+           "Lancez maintenant la procédure OuvrirGestionClients pour l'afficher.", _
+           vbInformation, "Génération du formulaire"
+    Exit Sub
+
+Erreur:
+    MsgBox "La génération a échoué :" & vbCrLf & vbCrLf & _
+           Err.Number & " - " & Err.Description, vbCritical, "Génération du formulaire"
+End Sub
+
+'------------------------------------------------------------------------------
+' Pose une propriété du formulaire sans interrompre la génération si la version
+' d'Excel ne l'expose pas.
+'------------------------------------------------------------------------------
+Private Sub PropFormulaire(vbComp As Object, ByVal nom As String, ByVal valeur As Variant)
+    On Error Resume Next
+    vbComp.Properties(nom) = valeur
+    On Error GoTo 0
+End Sub
+
+'------------------------------------------------------------------------------
+' Suppression du formulaire (utile pour repartir de zéro).
+'------------------------------------------------------------------------------
+Public Sub SupprimerFormulaireClients()
+    Dim vbProj As Object, vbComp As Object
+
+    On Error Resume Next
+    Set vbProj = ThisWorkbook.VBProject
+    If vbProj Is Nothing Then Exit Sub
+    Set vbComp = vbProj.VBComponents(NOM_FORMULAIRE)
+    On Error GoTo 0
+    If vbComp Is Nothing Then
+        MsgBox "Le formulaire " & NOM_FORMULAIRE & " n'existe pas.", vbInformation, "Suppression"
+        Exit Sub
+    End If
+    vbProj.VBComponents.Remove vbComp
+    MsgBox "Formulaire " & NOM_FORMULAIRE & " supprimé.", vbInformation, "Suppression"
+End Sub
+
+'------------------------------------------------------------------------------
+' Colonnes du tableau absentes du schéma du formulaire.
+'------------------------------------------------------------------------------
+Private Function ColonnesNonCouvertes(ByVal lo As ListObject) As String
+    Dim lc As ListColumn, ch() As ChampClient, i As Long, trouve As Boolean, res As String
+
+    ch = ObtenirChamps()
+    For Each lc In lo.ListColumns
+        trouve = False
+        For i = LBound(ch) To UBound(ch)
+            If StrComp(ch(i).Colonne, lc.Name, vbTextCompare) = 0 Then
+                trouve = True
+                Exit For
+            End If
+        Next i
+        If Not trouve Then res = res & IIf(Len(res) > 0, ", ", "") & lc.Name
+    Next lc
+    ColonnesNonCouvertes = res
+End Function
+
+'==============================================================================
+' CONSTRUCTION DES CONTROLES
+'==============================================================================
+Private Sub ConstruireBandeau(dsg As Object)
+    Dim c As Object
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblEntete", 0, 0, F_LARGEUR, BAND_HAUT)
+    FondPlein c, COUL_BANDEAU, COUL_BANDEAU
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblTitre", 24, 9, 520, 19)
+    TexteLabel c, "Gestion des clients", TAILLE_TITRE, True, COUL_BANDEAU_TXT, MSF_TextAlignLeft
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblSousTitre", 24, 28, 620, 13)
+    TexteLabel c, "Tableau " & NOM_TABLE_CLIENTS & " — feuille Clients", _
+               TAILLE_SOUSTITRE, False, COUL_BANDEAU_SOUS, MSF_TextAlignLeft
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblFermer", F_LARGEUR - 40, 11, 26, 26)
+    TexteLabel c, GlypheFermer(), 14, True, COUL_BANDEAU_TXT, MSF_TextAlignCenter
+    c.BackColor = COUL_FERMER_H
+    c.ControlTipText = "Fermer le formulaire"
+End Sub
+
+Private Sub ConstruireCarteSaisie(dsg As Object)
+    Dim c As Object, ch() As ChampClient, i As Long
+    Dim x As Single, y As Single, larg As Single, ordreTab As Long
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblCarteSaisie", MARGE, CS_TOP, CARTE_LARG, CS_HAUT)
+    Carte c
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblSectionSaisie", GR_X, CS_TOP + 8, 400, 14)
+    TexteLabel c, "FICHE CLIENT", TAILLE_SECTION, True, COUL_SECTION, MSF_TextAlignLeft
+
+    ch = ObtenirChamps()
+    ordreTab = 1
+
+    For i = LBound(ch) To UBound(ch)
+        x = GrilleX(ch(i).Col)
+        y = GrilleY(ch(i).Ligne)
+        larg = GR_BLOC
+
+        If ch(i).Moitie = 1 Then
+            larg = (GR_BLOC - 8) / 2
+        ElseIf ch(i).Moitie = 2 Then
+            larg = (GR_BLOC - 8) / 2
+            x = x + larg + 8
+        End If
+
+        If ch(i).TypeCtrl = TYPE_CASE Then
+            ' une case à cocher porte son propre libellé
+            Set c = AjouterControle(dsg, "Forms.CheckBox.1", NomControle(ch(i)), _
+                                    x, y + CH_LBL_HAUT + 1, larg, CH_CTL_HAUT)
+            CaseACocher c, ch(i).Libelle
+        Else
+            Set c = AjouterControle(dsg, "Forms.Label.1", NomLibelle(ch(i)), x, y, larg, CH_LBL_HAUT)
+            TexteLabel c, UCase$(ch(i).Libelle), TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+
+            If ch(i).TypeCtrl = TYPE_LISTE Then
+                Set c = AjouterControle(dsg, "Forms.ComboBox.1", NomControle(ch(i)), _
+                                        x, y + CH_LBL_HAUT + 1, larg, CH_CTL_HAUT)
+                ZoneListe c, (StrComp(ch(i).Colonne, "Titre", vbTextCompare) = 0)
+            Else
+                Set c = AjouterControle(dsg, "Forms.TextBox.1", NomControle(ch(i)), _
+                                        x, y + CH_LBL_HAUT + 1, larg, CH_CTL_HAUT)
+                ZoneTexte c, ch(i).Verrouille
+            End If
+        End If
+
+        c.ControlTipText = ch(i).Aide
+        If Not ch(i).Verrouille Then
+            c.TabIndex = ordreTab
+            ordreTab = ordreTab + 1
+        End If
+    Next i
+
+    ' les deux cases à cocher partagent un même libellé de bloc
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblChamp_Facturation", _
+                            GrilleX(2), GrilleY(5), GR_BLOC, CH_LBL_HAUT)
+    TexteLabel c, "FACTURATION", TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+End Sub
+
+Private Sub ConstruireCarteFiltre(dsg As Object)
+    Dim c As Object, y As Single
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblCarteFiltre", MARGE, CF_TOP, CARTE_LARG, CF_HAUT)
+    Carte c
+
+    y = CF_TOP + 11
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblFiltreTitre", GR_X, y + 2, 62, 14)
+    TexteLabel c, "Filtrer sur", TAILLE_FILTRE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
+
+    Set c = AjouterControle(dsg, "Forms.ComboBox.1", "cboChampFiltre", GR_X + 66, y, 124, CH_CTL_HAUT)
+    ZoneListe c, True
+    c.ControlTipText = "Colonne du tableau sur laquelle porte le filtre"
+
+    Set c = AjouterControle(dsg, "Forms.TextBox.1", "txtFiltre", GR_X + 198, y, 290, CH_CTL_HAUT)
+    ZoneTexte c, False
+    c.ControlTipText = "Texte à rechercher (accents et majuscules sont ignorés)"
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblResetFiltre", GR_X + 496, y + 2, 80, 14)
+    TexteLabel c, "Réinitialiser", TAILLE_FILTRE, False, COUL_LIEN, MSF_TextAlignLeft
+    c.ControlTipText = "Effacer le filtre et réafficher toutes les fiches"
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblCompteur", GR_X + 584, y + 2, 200, 14)
+    TexteLabel c, vbNullString, TAILLE_FILTRE, False, COUL_TEXTE_DOUX, MSF_TextAlignRight
+End Sub
+
+Private Sub ConstruireCarteTableau(dsg As Object)
+    Dim c As Object, larg As Variant, lib As Variant
+    Dim i As Long, x As Single, gauche As Single, largeur As Single
+    Dim colw As String, hautListe As Single
+
+    gauche = MARGE + 1
+    largeur = CARTE_LARG - 2
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblCarteTable", MARGE, CT_TOP, CARTE_LARG, CT_HAUT)
+    Carte c
+
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblEnteteTable", gauche, CT_TOP + 1, largeur, CT_ENTETE - 1)
+    FondPlein c, COUL_ENTETE_TBL, COUL_ENTETE_TBL
+
+    larg = LargeursListe()
+    lib = LibellesListe()
+    colw = vbNullString
+    x = gauche + 3
+
+    For i = LBound(larg) To UBound(larg)
+        Set c = AjouterControle(dsg, "Forms.Label.1", "lblEnt_" & CStr(i + 1), _
+                                x, CT_TOP + 5, CSng(larg(i)) - 3, 13)
+        TexteLabel c, CStr(lib(i)), TAILLE_ENTETE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
+        c.ControlTipText = "Cliquez pour trier sur cette colonne"
+        x = x + CSng(larg(i))
+        colw = colw & IIf(Len(colw) > 0, ";", "") & CStr(larg(i)) & " pt"
+    Next i
+
+    hautListe = CT_TOP + CT_HAUT - 2 - (CT_TOP + CT_ENTETE + 1)
+    Set c = AjouterControle(dsg, "Forms.ListBox.1", "lstClients", _
+                            gauche, CT_TOP + CT_ENTETE + 1, largeur, hautListe)
+    With c
+        .Font.Name = POLICE
+        .Font.Size = TAILLE_LISTE
+        .BackColor = COUL_CARTE
+        .ForeColor = COUL_TEXTE
+        .SpecialEffect = MSF_SpecialEffectFlat
+        .BorderStyle = MSF_BorderStyleNone
+        .ColumnCount = UBound(larg) - LBound(larg) + 1
+        .ColumnWidths = colw
+        .ColumnHeads = False
+        .MultiSelect = MSF_MultiSelectSingle
+        .ListStyle = MSF_ListStylePlain
+        .BoundColumn = 1
+        .TabIndex = 90
+    End With
+    On Error Resume Next
+    c.IntegralHeight = False
+    On Error GoTo 0
+End Sub
+
+Private Sub ConstruireBoutons(dsg As Object)
+    Dim c As Object, x As Single
+
+    x = MARGE
+    Set c = AjouterControle(dsg, "Forms.CommandButton.1", "btnAjouter", x, BT_TOP, BT_LARG, BT_HAUT)
+    Bouton c, "Ajouter", "A", COUL_AJOUTER, 91
+    c.ControlTipText = "Créer une nouvelle fiche à partir des champs saisis"
+
+    x = x + BT_LARG + BT_GOUTTIERE
+    Set c = AjouterControle(dsg, "Forms.CommandButton.1", "btnModifier", x, BT_TOP, BT_LARG, BT_HAUT)
+    Bouton c, "Modifier", "M", COUL_MODIFIER, 92
+    c.ControlTipText = "Enregistrer les modifications sur la fiche sélectionnée"
+
+    x = x + BT_LARG + BT_GOUTTIERE
+    Set c = AjouterControle(dsg, "Forms.CommandButton.1", "btnSupprimer", x, BT_TOP, BT_LARG, BT_HAUT)
+    Bouton c, "Supprimer", "S", COUL_SUPPRIMER, 93
+    c.ControlTipText = "Supprimer la fiche sélectionnée du tableau"
+
+    x = x + BT_LARG + BT_GOUTTIERE
+    Set c = AjouterControle(dsg, "Forms.CommandButton.1", "btnEffacer", x, BT_TOP, BT_LARG, BT_HAUT)
+    Bouton c, "Effacer", "E", COUL_EFFACER, 94
+    c.ControlTipText = "Vider les zones de saisie sans toucher au tableau"
+
+    Set c = AjouterControle(dsg, "Forms.CommandButton.1", "btnQuitter", _
+                            F_LARGEUR - MARGE - BT_LARG, BT_TOP, BT_LARG, BT_HAUT)
+    Bouton c, "Quitter", "Q", COUL_QUITTER, 95
+    c.Cancel = True
+    c.ControlTipText = "Fermer le formulaire (touche Échap)"
+End Sub
+
+'------------------------------------------------------------------------------
+' Les fonds de cartes doivent rester derrière leur contenu.
+'------------------------------------------------------------------------------
+Private Sub ReculerArrierePlans(dsg As Object)
+    Dim noms As Variant, i As Long, c As Object
+
+    noms = Array("lblEnteteTable", "lblCarteTable", "lblCarteFiltre", "lblCarteSaisie", "lblEntete")
+    For i = LBound(noms) To UBound(noms)
+        On Error Resume Next
+        Set c = dsg.Controls(CStr(noms(i)))
+        If Not c Is Nothing Then c.ZOrder MSF_ZOrderBack
+        Set c = Nothing
+        On Error GoTo 0
+    Next i
+End Sub
+
+'==============================================================================
+' MISE EN FORME
+'==============================================================================
+Private Function AjouterControle(dsg As Object, ByVal progId As String, ByVal nom As String, _
+                                 ByVal gauche As Single, ByVal haut As Single, _
+                                 ByVal largeur As Single, ByVal hauteur As Single) As Object
+    Dim c As Object
+    Set c = dsg.Controls.Add(progId, nom, True)
+    c.Left = gauche
+    c.Top = haut
+    c.Width = largeur
+    c.Height = hauteur
+    Set AjouterControle = c
+End Function
+
+Private Sub Carte(c As Object)
+    c.Caption = vbNullString
+    c.BackStyle = MSF_BackStyleOpaque
+    c.BackColor = COUL_CARTE
+    c.SpecialEffect = MSF_SpecialEffectFlat
+    c.BorderStyle = MSF_BorderStyleSingle
+    c.BorderColor = COUL_BORDURE
+End Sub
+
+Private Sub FondPlein(c As Object, ByVal fond As Long, ByVal bordure As Long)
+    c.Caption = vbNullString
+    c.BackStyle = MSF_BackStyleOpaque
+    c.BackColor = fond
+    c.SpecialEffect = MSF_SpecialEffectFlat
+    c.BorderStyle = MSF_BorderStyleSingle
+    c.BorderColor = bordure
+End Sub
+
+Private Sub TexteLabel(c As Object, ByVal texte As String, ByVal taille As Single, _
+                       ByVal gras As Boolean, ByVal couleur As Long, ByVal alignement As Long)
+    c.Caption = texte
+    c.BackStyle = MSF_BackStyleTransparent
+    c.SpecialEffect = MSF_SpecialEffectFlat
+    c.BorderStyle = MSF_BorderStyleNone
+    c.ForeColor = couleur
+    c.TextAlign = alignement
+    c.WordWrap = False
+    c.AutoSize = False
+    c.Font.Name = POLICE
+    c.Font.Size = taille
+    c.Font.Bold = gras
+End Sub
+
+Private Sub ZoneTexte(c As Object, ByVal verrouille As Boolean)
+    c.Font.Name = POLICE
+    c.Font.Size = TAILLE_CHAMP
+    c.SpecialEffect = MSF_SpecialEffectFlat
+    c.BorderStyle = MSF_BorderStyleSingle
+    c.BorderColor = COUL_CHAMP_BORD
+    c.TextAlign = MSF_TextAlignLeft
+    c.EnterKeyBehavior = False
+    If verrouille Then
+        c.Locked = True
+        c.TabStop = False
+        c.BackColor = COUL_VERROU_FOND
+        c.ForeColor = COUL_VERROU_TXT
+    Else
+        c.BackColor = COUL_CHAMP_FOND
+        c.ForeColor = COUL_TEXTE
+    End If
+End Sub
+
+Private Sub ZoneListe(c As Object, ByVal choixImpose As Boolean)
+    c.Font.Name = POLICE
+    c.Font.Size = TAILLE_CHAMP
+    c.SpecialEffect = MSF_SpecialEffectFlat
+    c.BorderStyle = MSF_BorderStyleSingle
+    c.BorderColor = COUL_CHAMP_BORD
+    c.BackColor = COUL_CHAMP_FOND
+    c.ForeColor = COUL_TEXTE
+    c.ListRows = 12
+    c.MatchEntry = MSF_MatchEntryComplete
+    c.Style = IIf(choixImpose, MSF_StyleDropDownList, MSF_StyleDropDownCombo)
+End Sub
+
+Private Sub CaseACocher(c As Object, ByVal libelle As String)
+    c.Caption = libelle
+    c.BackStyle = MSF_BackStyleTransparent
+    c.ForeColor = COUL_TEXTE
+    c.Font.Name = POLICE
+    c.Font.Size = TAILLE_FILTRE
+    c.Font.Bold = False
+    c.WordWrap = False
+End Sub
+
+Private Sub Bouton(c As Object, ByVal libelle As String, ByVal raccourci As String, _
+                   ByVal couleur As Long, ByVal ordre As Long)
+    c.Caption = libelle
+    c.Accelerator = raccourci
+    c.BackColor = couleur
+    c.ForeColor = COUL_BOUTON_TXT
+    c.Font.Name = POLICE
+    c.Font.Size = TAILLE_BOUTON
+    c.Font.Bold = True
+    c.TabIndex = ordre
+End Sub
+
+'==============================================================================
+' MODULE DE CODE DU FORMULAIRE
+'------------------------------------------------------------------------------
+' Chaque procédure événementielle se contente d'appeler modClients_Formulaire.
+'==============================================================================
+Private Function CodeDuFormulaire() As String
+    Dim ch() As ChampClient, i As Long, n As String
+    Dim boutons As Variant, larg As Variant
+
+    mCode = vbNullString
+
+    L "Option Explicit"
+    L "'=============================================================================="
+    L "' Module de code du formulaire " & NOM_FORMULAIRE
+    L "'------------------------------------------------------------------------------"
+    L "' GÉNÉRÉ AUTOMATIQUEMENT par modClients_Generateur.GenererFormulaireClients."
+    L "' Ne rien écrire ici : toute la logique se trouve dans modClients_Formulaire,"
+    L "' et ce module est écrasé à chaque régénération du formulaire."
+    L "'=============================================================================="
+    L ""
+
+    ' --- formulaire -----------------------------------------------------------
+    Proc "UserForm_Initialize()", "Clients_Initialiser Me"
+    Proc "UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)", "Clients_Fermeture Me"
+    Proc "UserForm_MouseMove" & SIG_SOURIS, "Clients_Survol Me, " & Q("")
+
+    ' --- bandeau : déplacement de la fenêtre ---------------------------------
+    EmettreZoneDeplacement "lblEntete"
+    EmettreZoneDeplacement "lblTitre"
+    EmettreZoneDeplacement "lblSousTitre"
+
+    Proc "lblFermer_Click()", "Clients_Quitter Me"
+    Proc "lblFermer_MouseMove" & SIG_SOURIS, "Clients_Survol Me, " & Q("lblFermer")
+
+    ' --- boutons d'action -----------------------------------------------------
+    boutons = Array("Ajouter", "Modifier", "Supprimer", "Effacer", "Quitter")
+    For i = LBound(boutons) To UBound(boutons)
+        n = "btn" & CStr(boutons(i))
+        Proc n & "_Click()", "Clients_" & CStr(boutons(i)) & " Me"
+        Proc n & "_MouseMove" & SIG_SOURIS, "Clients_Survol Me, " & Q(n)
+    Next i
+
+    ' --- filtrage -------------------------------------------------------------
+    Proc "cboChampFiltre_Change()", "Clients_AppliquerFiltre Me"
+    Proc "txtFiltre_Change()", "Clients_AppliquerFiltre Me"
+    Proc "lblResetFiltre_Click()", "Clients_ReinitialiserFiltre Me"
+    Proc "lblResetFiltre_MouseMove" & SIG_SOURIS, "Clients_Survol Me, " & Q("lblResetFiltre")
+
+    ' --- tableau des enregistrements ------------------------------------------
+    Proc "lstClients_Click()", "Clients_ChargerSelection Me"
+    Proc "lstClients_DblClick(ByVal Cancel As MSForms.ReturnBoolean)", "Clients_ChargerSelection Me"
+
+    larg = LargeursListe()
+    For i = LBound(larg) To UBound(larg)
+        Proc "lblEnt_" & CStr(i + 1) & "_Click()", "Clients_TrierColonne Me, " & CStr(i + 1)
+    Next i
+
+    ' --- zones de saisie ------------------------------------------------------
+    ch = ObtenirChamps()
+    For i = LBound(ch) To UBound(ch)
+        If Not ch(i).Verrouille And ch(i).TypeCtrl <> TYPE_CASE Then
+            n = NomControle(ch(i))
+            Proc n & "_Enter()", "Clients_FocusChamp Me, " & Q(n) & ", True"
+            Proc n & "_Exit(ByVal Cancel As MSForms.ReturnBoolean)", _
+                 "Clients_FocusChamp Me, " & Q(n) & ", False"
+
+            If StrComp(ch(i).Colonne, COL_ADRESSE, vbTextCompare) = 0 Then
+                Proc n & "_Change()", "Clients_AdresseChoisie Me"
+            ElseIf StrComp(ch(i).Colonne, COL_NPA, vbTextCompare) = 0 Then
+                Proc n & "_Change()", "Clients_NpaChoisi Me"
+            End If
+
+            If ch(i).Numerique <> NUM_NON Then
+                Proc n & "_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)", _
+                     "Clients_ToucheNumerique KeyAscii, " & IIf(ch(i).Numerique = NUM_DECIMAL, "True", "False")
+            End If
+        End If
+    Next i
+
+    CodeDuFormulaire = mCode
+End Function
+
+Private Sub EmettreZoneDeplacement(ByVal nom As String)
+    Proc nom & "_MouseDown" & SIG_SOURIS, "Clients_DebutDeplacement X, Y"
+    Proc nom & "_MouseMove" & SIG_SOURIS, "Clients_Deplacer Me, Button, X, Y" & vbNewLine & _
+         "    Clients_Survol Me, " & Q("")
+    Proc nom & "_MouseUp" & SIG_SOURIS, "Clients_FinDeplacement"
+End Sub
+
+Private Sub Proc(ByVal entete As String, ByVal corps As String)
+    L "Private Sub " & entete
+    L "    " & corps
+    L "End Sub"
+    L ""
+End Sub
+
+Private Sub L(ByVal ligne As String)
+    mCode = mCode & ligne & vbNewLine
+End Sub
+
+Private Function Q(ByVal s As String) As String
+    Q = Chr$(34) & s & Chr$(34)
+End Function
