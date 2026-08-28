@@ -255,11 +255,11 @@ Private Sub ConstruireCarteFiltre(dsg As Object)
     Set c = AjouterControle(dsg, "Forms.Label.1", "lblFiltreTitre", GR_X, y + 2, 62, 14)
     TexteLabel c, "Filtrer sur", TAILLE_FILTRE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
 
-    Set c = AjouterControle(dsg, "Forms.ComboBox.1", "cboChampFiltre", GR_X + 66, y, 124, CH_CTL_HAUT)
+    Set c = AjouterControle(dsg, "Forms.ComboBox.1", "cboChampFiltre", GR_X + 72, y, 124, CH_CTL_HAUT)
     ZoneListe c, True
     c.ControlTipText = "Colonne du tableau sur laquelle porte le filtre"
 
-    Set c = AjouterControle(dsg, "Forms.TextBox.1", "txtFiltre", GR_X + 198, y, 290, CH_CTL_HAUT)
+    Set c = AjouterControle(dsg, "Forms.TextBox.1", "txtFiltre", GR_X + 204, y, 284, CH_CTL_HAUT)
     ZoneTexte c, False
     c.ControlTipText = "Texte à rechercher (accents et majuscules sont ignorés)"
 

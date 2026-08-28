@@ -180,7 +180,7 @@ Public Function LibellesListe() As Variant
 End Function
 
 Public Function LargeursListe() As Variant
-    LargeursListe = Array(50, 58, 124, 50, 100, 82, 138, 28, 42, 106)
+    LargeursListe = Array(46, 62, 112, 56, 100, 82, 142, 30, 42, 106)
 End Function
 
 '==============================================================================
