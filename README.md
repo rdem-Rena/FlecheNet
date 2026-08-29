@@ -78,7 +78,7 @@ signale les interventions de `TblInterv` qui référencent le client.
 |---|---|
 | [`modClients_Schema`](src/modClients_Schema.bas) | Description des 21 champs : colonne, libellé, type de contrôle, position, contraintes. **Source de vérité du formulaire.** |
 | [`modClients_Theme`](src/modClients_Theme.bas) | Charte graphique : palette, typographie, géométrie. |
-| [`modClients_Generateur`](src/modClients_Generateur.bas) | Crée le UserForm, ses 71 contrôles et son module de code. |
+| [`modClients_Generateur`](src/modClients_Generateur.bas) | Crée le UserForm, ses 71 contrôles et son module de code. Aussi : `NettoyerFormulairesOrphelins`. |
 | [`modClients_Donnees`](src/modClients_Donnees.bas) | Lecture / écriture de `TblClients`, clefs, contrôles d'intégrité. |
 | [`modClients_Adresses`](src/modClients_Adresses.bas) | Recherches dans `Tabl_Adresses`, `Tabl_Villes_CH`, `TblTxtStd`. |
 | [`modClients_Formulaire`](src/modClients_Formulaire.bas) | Comportement du formulaire : filtrage, tri, CRUD, habillage. |

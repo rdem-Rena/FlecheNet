@@ -100,6 +100,20 @@ Le formulaire est sans barre de titre : il se déplace en faisant glisser le
 bandeau bleu foncé du haut. Le `×` en haut à droite et la touche `Échap` le
 ferment.
 
+**« La génération a échoué : 75 » ou « objet spécifié introuvable »**
+Ce message venait d'une version antérieure du générateur, qui supprimait le
+formulaire avant de le recréer sous le même nom. VBA ne libère le nom d'un
+composant supprimé qu'au retour à Excel : la première génération réussissait,
+toutes les suivantes échouaient. Le générateur reconstruit désormais le
+formulaire sur place, sans jamais le supprimer.
+
+Si vous rencontrez encore ce message avec la version à jour :
+1. fermez puis rouvrez le classeur — cela solde les suppressions en attente ;
+2. lancez `NettoyerFormulairesOrphelins`, qui retire les `UserForm1`,
+   `UserForm2`… qu'une tentative interrompue aurait laissés (seuls les
+   formulaires au nom automatique, sans contrôle ni code, sont concernés) ;
+3. relancez `GenererFormulaireClients`.
+
 **Repartir de zéro**
 `SupprimerFormulaireClients` retire `UF_Clients` du projet ; relancer ensuite
 `GenererFormulaireClients`.

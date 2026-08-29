@@ -45,6 +45,7 @@ Private mCode As String
 Public Sub GenererFormulaireClients()
     Dim vbProj As Object, vbComp As Object, dsg As Object
     Dim lo As ListObject, manquantes As String
+    Dim cree As Boolean          ' True si le composant vient d'être créé ici
 
     ' --- le tableau source doit exister ---------------------------------------
     Set lo = TableClients()
@@ -81,24 +82,19 @@ Public Sub GenererFormulaireClients()
         Exit Sub
     End If
 
-    ' --- remplacement d'une version précédente --------------------------------
+    ' --- création ou remise à neuf du formulaire ------------------------------
     On Error Resume Next
     Set vbComp = vbProj.VBComponents(NOM_FORMULAIRE)
     On Error GoTo 0
+
     If Not vbComp Is Nothing Then
         If MsgBox("Le formulaire " & NOM_FORMULAIRE & " existe déjà." & vbCrLf & _
-                  "Le remplacer par une version neuve ?", vbQuestion + vbYesNo, _
+                  "Le reconstruire à neuf ?", vbQuestion + vbYesNo, _
                   "Génération du formulaire") <> vbYes Then Exit Sub
-        vbProj.VBComponents.Remove vbComp
-        Set vbComp = Nothing
-        DoEvents
     End If
 
     On Error GoTo Erreur
-
-    ' --- création du formulaire ----------------------------------------------
-    Set vbComp = vbProj.VBComponents.Add(CT_MSFORM)
-    vbComp.Name = NOM_FORMULAIRE
+    PreparerComposant vbProj, vbComp, cree
     Set dsg = vbComp.Designer
 
     PropFormulaire vbComp, "Caption", "Gestion des clients"
@@ -120,7 +116,8 @@ Public Sub GenererFormulaireClients()
     ' --- module de code du formulaire ----------------------------------------
     vbComp.CodeModule.AddFromString CodeDuFormulaire()
 
-    MsgBox "Le formulaire " & NOM_FORMULAIRE & " a été généré." & vbCrLf & vbCrLf & _
+    MsgBox "Le formulaire " & NOM_FORMULAIRE & _
+           IIf(cree, " a été généré.", " a été reconstruit.") & vbCrLf & vbCrLf & _
            dsg.Controls.Count & " contrôles créés pour " & NB_CHAMPS & " champs du tableau " & _
            NOM_TABLE_CLIENTS & "." & vbCrLf & vbCrLf & _
            "Lancez maintenant la procédure OuvrirGestionClients pour l'afficher.", _
@@ -128,8 +125,18 @@ Public Sub GenererFormulaireClients()
     Exit Sub
 
 Erreur:
+    ' Un composant tout juste créé mais inachevé est retiré : sans cela, chaque
+    ' tentative laisserait un UserForm1, UserForm2 … orphelin dans le projet.
+    If cree And Not vbComp Is Nothing Then
+        On Error Resume Next
+        vbProj.VBComponents.Remove vbComp
+        On Error GoTo 0
+    End If
     MsgBox "La génération a échoué :" & vbCrLf & vbCrLf & _
-           Err.Number & " - " & Err.Description, vbCritical, "Génération du formulaire"
+           Err.Number & " - " & Err.Description & vbCrLf & vbCrLf & _
+           "Si le problème persiste : fermez puis rouvrez le classeur, lancez " & _
+           "NettoyerFormulairesOrphelins, et relancez la génération.", _
+           vbCritical, "Génération du formulaire"
 End Sub
 
 '------------------------------------------------------------------------------
@@ -143,6 +150,102 @@ Private Sub PropFormulaire(vbComp As Object, ByVal nom As String, ByVal valeur A
     vbComp.Properties(nom) = valeur
     On Error GoTo 0
 End Sub
+
+'------------------------------------------------------------------------------
+' Rend un composant UF_Clients prêt à être reconstruit.
+'   vbComp : en entrée le composant déjà présent, ou Nothing ; en sortie celui
+'            à garnir. Renseigné dès la création, pour que l'appelant puisse le
+'            retirer même si la suite échoue.
+'   cree   : passé à True si le composant vient d'être créé ici
+'
+' Trois cas, du plus sûr au plus rustique :
+'
+'   1. le formulaire n'existe pas    -> on l'ajoute et on le nomme ;
+'   2. il existe                     -> on le VIDE et on le réutilise ;
+'   3. le vidage échoue              -> on renomme l'ancien, on le supprime,
+'                                       puis on ajoute un composant neuf.
+'
+' Ce qu'on ne fait jamais, c'est supprimer puis recréer sous le même nom dans la
+' même exécution : VBA ne libère le nom d'un composant supprimé qu'au retour à
+' Excel, et l'affectation du nom échouerait — erreur 75, « objet spécifié
+' introuvable ». Le renommage du cas 3 libère le nom immédiatement, lui.
+'------------------------------------------------------------------------------
+Private Sub PreparerComposant(vbProj As Object, ByRef vbComp As Object, ByRef cree As Boolean)
+    cree = False
+
+    ' cas 1 : rien à reprendre, on crée
+    If vbComp Is Nothing Then
+        Set vbComp = vbProj.VBComponents.Add(CT_MSFORM)
+        cree = True
+        vbComp.Name = NOM_FORMULAIRE
+        Exit Sub
+    End If
+
+    ' cas 2 : remise à neuf sur place
+    On Error GoTo Repli
+    ViderFormulaire vbComp
+    On Error GoTo 0
+    Exit Sub
+
+    ' cas 3 : le renommage libère le nom tout de suite, la suppression peut
+    ' bien attendre le retour à Excel
+Repli:
+    On Error GoTo 0
+    vbComp.Name = NomLibre(vbProj, "UF_Clients_remplace")
+    vbProj.VBComponents.Remove vbComp
+    Set vbComp = Nothing
+    Set vbComp = vbProj.VBComponents.Add(CT_MSFORM)
+    cree = True
+    vbComp.Name = NOM_FORMULAIRE
+End Sub
+
+'------------------------------------------------------------------------------
+' Vide un formulaire existant : tous ses contrôles, puis tout son module de code.
+'------------------------------------------------------------------------------
+Private Sub ViderFormulaire(vbComp As Object)
+    Dim dsg As Object, i As Long
+
+    ' une instance restée chargée en mémoire empêcherait la modification
+    On Error Resume Next
+    For i = UserForms.Count - 1 To 0 Step -1
+        If StrComp(UserForms(i).Name, NOM_FORMULAIRE, vbTextCompare) = 0 Then
+            Unload UserForms(i)
+        End If
+    Next i
+    On Error GoTo 0
+
+    Set dsg = vbComp.Designer
+    For i = dsg.Controls.Count - 1 To 0 Step -1
+        dsg.Controls.Remove dsg.Controls(i).Name
+    Next i
+
+    With vbComp.CodeModule
+        If .CountOfLines > 0 Then .DeleteLines 1, .CountOfLines
+    End With
+End Sub
+
+'------------------------------------------------------------------------------
+' Nom de composant encore disponible dans le projet, dérivé d'une base.
+'   renvoie : base, ou base suivie d'un numéro
+'------------------------------------------------------------------------------
+Private Function NomLibre(vbProj As Object, ByVal base As String) As String
+    Dim n As Long, essai As String, pris As Object
+
+    essai = base
+    Do
+        Set pris = Nothing
+        On Error Resume Next
+        Set pris = vbProj.VBComponents(essai)
+        On Error GoTo 0
+        If pris Is Nothing Then
+            NomLibre = essai
+            Exit Function
+        End If
+        n = n + 1
+        essai = base & CStr(n)
+    Loop While n < 200
+    NomLibre = base & Format$(Now, "hhnnss")
+End Function
 
 '------------------------------------------------------------------------------
 ' Retire UF_Clients du projet. Utile pour repartir de zéro, ou pour livrer le
@@ -160,9 +263,84 @@ Public Sub SupprimerFormulaireClients()
         MsgBox "Le formulaire " & NOM_FORMULAIRE & " n'existe pas.", vbInformation, "Suppression"
         Exit Sub
     End If
+    ' Le composant est d'abord renommé : VBA ne libère le nom d'un composant
+    ' supprimé qu'au retour à Excel, et une génération lancée dans la foulée
+    ' échouerait sinon sur un nom encore pris.
+    On Error Resume Next
+    vbComp.Name = NomLibre(vbProj, "UF_Clients_supprime")
+    On Error GoTo 0
     vbProj.VBComponents.Remove vbComp
     MsgBox "Formulaire " & NOM_FORMULAIRE & " supprimé.", vbInformation, "Suppression"
 End Sub
+
+'------------------------------------------------------------------------------
+' Retire les UserForm1, UserForm2 … qu'une génération interrompue a pu laisser
+' dans le projet. Ne sont concernés que les composants portant un nom
+' automatique, sans aucun contrôle ni la moindre ligne de code : un formulaire
+' construit à la main ne peut donc pas être supprimé par erreur.
+'------------------------------------------------------------------------------
+Public Sub NettoyerFormulairesOrphelins()
+    Dim vbProj As Object, vbComp As Object, liste As String, n As Long
+    Dim aRetirer As Collection, i As Long
+
+    On Error Resume Next
+    Set vbProj = ThisWorkbook.VBProject
+    On Error GoTo 0
+    If vbProj Is Nothing Then
+        MsgBox "Excel refuse l'accès au projet VBA.", vbExclamation, "Nettoyage"
+        Exit Sub
+    End If
+
+    ' les noms sont relevés d'abord : on ne modifie pas une collection
+    ' pendant qu'on la parcourt
+    Set aRetirer = New Collection
+    For Each vbComp In vbProj.VBComponents
+        If EstFormulaireOrphelin(vbComp) Then
+            n = n + 1
+            liste = liste & vbCrLf & "   " & vbComp.Name
+            aRetirer.Add vbComp.Name
+        End If
+    Next vbComp
+
+    If n = 0 Then
+        MsgBox "Aucun formulaire orphelin dans ce projet.", vbInformation, "Nettoyage"
+        Exit Sub
+    End If
+
+    If MsgBox(n & " formulaire(s) vide(s) trouvé(s) :" & vbCrLf & liste & vbCrLf & vbCrLf & _
+              "Les supprimer ?", vbQuestion + vbYesNo, "Nettoyage") <> vbYes Then Exit Sub
+
+    For i = 1 To aRetirer.Count
+        On Error Resume Next
+        vbProj.VBComponents.Remove vbProj.VBComponents(aRetirer(i))
+        On Error GoTo 0
+    Next i
+    MsgBox n & " formulaire(s) supprimé(s).", vbInformation, "Nettoyage"
+End Sub
+
+'------------------------------------------------------------------------------
+' True si le composant est un UserForm au nom automatique, sans contrôle ni code.
+'------------------------------------------------------------------------------
+Private Function EstFormulaireOrphelin(vbComp As Object) As Boolean
+    Dim nom As String, suffixe As String, i As Long
+
+    On Error GoTo Fin
+    If vbComp.Type <> CT_MSFORM Then Exit Function
+
+    nom = vbComp.Name
+    If Len(nom) <= 8 Then Exit Function
+    If StrComp(Left$(nom, 8), "UserForm", vbTextCompare) <> 0 Then Exit Function
+
+    suffixe = Mid$(nom, 9)
+    For i = 1 To Len(suffixe)
+        If Mid$(suffixe, i, 1) < "0" Or Mid$(suffixe, i, 1) > "9" Then Exit Function
+    Next i
+
+    If vbComp.Designer.Controls.Count > 0 Then Exit Function
+    If vbComp.CodeModule.CountOfLines > 0 Then Exit Function
+    EstFormulaireOrphelin = True
+Fin:
+End Function
 
 '------------------------------------------------------------------------------
 ' Colonnes de TblClients absentes du schéma du formulaire.
