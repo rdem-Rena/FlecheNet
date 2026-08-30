@@ -57,7 +57,9 @@ La cellule `AnneeEnCours` contient une **date** (1ᵉʳ janvier de l'année) et 
 
 ## Fiche 2 — statistiques
 
-Le graphique **`CAGraphique`** de la feuille Statistiques est **exporté en PNG** dans le dossier temporaire de Windows à chaque ouverture, puis chargé dans un contrôle Image : MSForms ne sait pas afficher un graphique Excel autrement. L'export est refait après chaque ajout, modification ou suppression, pour que le graphique suive les données.
+Le graphique **`CAGraphique`** de la feuille Statistiques est **exporté en GIF** dans le dossier temporaire de Windows à chaque ouverture, puis chargé dans un contrôle Image : MSForms ne sait pas afficher un graphique Excel autrement. L'export est refait après chaque ajout, modification ou suppression, pour que le graphique suive les données.
+
+> **Pourquoi GIF et non PNG.** `LoadPicture` vient de la bibliothèque OLE, qui ne lit que bmp, ico, wmf, emf, gif et jpg. Un PNG s'exporte sans erreur mais reste ensuite illisible — le cadre du graphique restait vide, sans le moindre message. Le graphique est cherché d'abord par le nom de l'objet graphique, puis par celui de la forme, puis, s'il n'y en a qu'un sur la feuille, par défaut. Si rien n'aboutit, la raison s'affiche à la suite du titre « STATISTIQUES » plutôt que d'être passée sous silence.
 
 Les six tuiles lisent des cellules nommées :
 

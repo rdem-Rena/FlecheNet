@@ -540,16 +540,71 @@ End Function
 ' image. Le fichier est écrit dans le dossier temporaire de Windows et réécrit
 ' à chaque ouverture, pour refléter les données du moment.
 '------------------------------------------------------------------------------
-Public Function Interv_ExporterGraphique() As String
-    Dim ws As Worksheet, co As ChartObject, chemin As String
+Public Function Interv_ExporterGraphique(Optional ByRef motif As String) As String
+    Dim ws As Worksheet, gr As Chart, chemin As String
 
-    On Error GoTo Fin
+    motif = vbNullString
+    On Error GoTo Erreur
+
     Set ws = ThisWorkbook.Worksheets(NOM_FEUILLE_STATS)
-    Set co = ws.ChartObjects(NOM_GRAPHIQUE)
-    chemin = Environ$("TEMP") & "\" & NOM_GRAPHIQUE & ".png"
-    co.Chart.Export chemin, "PNG"
+    Set gr = GraphiqueDeLaFeuille(ws)
+    If gr Is Nothing Then
+        motif = "graphique " & NOM_GRAPHIQUE & " introuvable sur la feuille " & NOM_FEUILLE_STATS
+        Exit Function
+    End If
+
+    ' GIF et non PNG : LoadPicture vient de la bibliothèque OLE, qui ne lit que
+    ' bmp, ico, wmf, emf, gif et jpg. Un PNG s'exporte sans erreur mais reste
+    ' ensuite illisible — le graphique n'apparaissait pas, en silence.
+    chemin = Environ$("TEMP") & Application.PathSeparator & NOM_GRAPHIQUE & ".gif"
+
+    ' un fichier resté d'une session précédente ferait échouer l'export
+    On Error Resume Next
+    If Len(Dir$(chemin)) > 0 Then Kill chemin
+    On Error GoTo Erreur
+
+    gr.Export chemin, "GIF"
+    If Len(Dir$(chemin)) = 0 Then
+        motif = "l'export n'a produit aucun fichier"
+        Exit Function
+    End If
+
     Interv_ExporterGraphique = chemin
-Fin:
+    Exit Function
+
+Erreur:
+    motif = "erreur " & Err.Number & " - " & Err.Description
+End Function
+
+'------------------------------------------------------------------------------
+' Retrouve le graphique de la feuille des statistiques.
+'   renvoie : le Chart, ou Nothing
+'
+' Trois tentatives : par le nom de l'objet graphique, puis par celui de la forme
+' — les deux ne coïncident pas toujours — puis, s'il n'y a qu'un seul graphique
+' sur la feuille, celui-là.
+'------------------------------------------------------------------------------
+Private Function GraphiqueDeLaFeuille(ws As Worksheet) As Chart
+    Dim co As ChartObject, sh As Shape
+
+    On Error Resume Next
+    Set co = ws.ChartObjects(NOM_GRAPHIQUE)
+    On Error GoTo 0
+    If Not co Is Nothing Then
+        Set GraphiqueDeLaFeuille = co.Chart
+        Exit Function
+    End If
+
+    For Each sh In ws.Shapes
+        If StrComp(sh.Name, NOM_GRAPHIQUE, vbTextCompare) = 0 Then
+            On Error Resume Next
+            Set GraphiqueDeLaFeuille = sh.Chart
+            On Error GoTo 0
+            If Not GraphiqueDeLaFeuille Is Nothing Then Exit Function
+        End If
+    Next sh
+
+    If ws.ChartObjects.Count = 1 Then Set GraphiqueDeLaFeuille = ws.ChartObjects(1).Chart
 End Function
 
 '------------------------------------------------------------------------------
@@ -559,6 +614,8 @@ End Function
 Public Function Interv_CheminImageTuile() As String
     Dim chemin As String
     On Error Resume Next
+    ' un classeur jamais enregistré n'a pas de dossier : rien à chercher
+    If Len(ThisWorkbook.Path) = 0 Then Exit Function
     chemin = ThisWorkbook.Path & Application.PathSeparator & DOSSIER_IMAGES & _
              Application.PathSeparator & IMAGE_TUILE
     If Len(Dir$(chemin)) > 0 Then Interv_CheminImageTuile = chemin

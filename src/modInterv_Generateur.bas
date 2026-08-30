@@ -220,7 +220,9 @@ Private Sub ConstruireFiche2(dsg As Object)
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte2", I_MARGE, F2_TOP, I_CARTE_LARG, F2_HAUT)
     CarteI c
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblSectionStats", 30, F2_TOP + 6, 300, 13)
+    ' large : ce libellé accueille aussi, le cas échéant, la raison pour laquelle
+    ' le graphique ne s'affiche pas
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblSectionStats", 30, F2_TOP + 6, 700, 13)
     Texte c, "STATISTIQUES", TAILLE_SECTION, True, COUL_SECTION, MSF_TextAlignLeft
 
     Set c = AjCtrl(dsg, "Forms.Image.1", "imgGraphique", 30, F2_TOP + 24, F2_GRAPH_LARG, 118)

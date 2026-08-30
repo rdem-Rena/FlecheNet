@@ -142,32 +142,77 @@ End Sub
 ' FICHE 2 : STATISTIQUES
 '==============================================================================
 '------------------------------------------------------------------------------
-' Rafraîchit le graphique et les six tuiles de chiffres.
+ Rafraîchit le graphique et les six tuiles de chiffres.
+'
+' Chaque tuile reçoit son image de fond — celle qui lui donne ses coins
+' arrondis — puis le montant lu dans sa cellule nommée. L'image n'est chargée
+' qu'une fois et partagée par les six contrôles.
 '
 ' Le graphique est réexporté à chaque ouverture pour refléter les données du
-' moment ; les tuiles lisent les cellules nommées de la feuille Statistiques.
+' moment. S'il ne peut pas être affiché, la raison est écrite à la suite du
+' titre de la fiche plutôt que passée sous silence.
 '------------------------------------------------------------------------------
 Public Sub Interv_MajStatistiques(f As Object)
-    Dim chemin As String, img As Object, i As Long
-    Dim tuiles As Variant, lb As Object
+    Dim chemin As String, motif As String, img As Object, lb As Object
+    Dim tuiles As Variant, i As Long, fond As Object
 
-    On Error Resume Next
+    tuiles = TuilesStatistiques()
+    chemin = Interv_CheminImageTuile()
 
-    ' --- graphique ------------------------------------------------------------
-    Set img = ICtl(f, "imgGraphique")
-    If Not img Is Nothing Then
-        chemin = Interv_ExporterGraphique()
-        If Len(chemin) > 0 Then Set img.Picture = LoadPicture(chemin)
+    ' --- tuiles : image de fond, puis montant ---------------------------------
+    If Len(chemin) > 0 Then
+        On Error Resume Next
+        Set fond = LoadPicture(chemin)
+        On Error GoTo 0
     End If
 
-    ' --- tuiles ---------------------------------------------------------------
-    tuiles = TuilesStatistiques()
     For i = LBound(tuiles) To UBound(tuiles)
+        If Not fond Is Nothing Then
+            Set img = ICtl(f, "imgTuile_" & CStr(i + 1))
+            If Not img Is Nothing Then
+                On Error Resume Next
+                Set img.Picture = fond
+                On Error GoTo 0
+            End If
+        End If
         Set lb = ICtl(f, "lblStatVal_" & CStr(i + 1))
         If Not lb Is Nothing Then lb.Caption = Interv_MontantNomme(CStr(tuiles(i)(1)))
     Next i
 
-    On Error GoTo 0
+    ' --- graphique ------------------------------------------------------------
+    Set img = ICtl(f, "imgGraphique")
+    If img Is Nothing Then Exit Sub
+
+    chemin = Interv_ExporterGraphique(motif)
+    If Len(chemin) > 0 Then
+        On Error Resume Next
+        Err.Clear
+        Set img.Picture = LoadPicture(chemin)
+        If Err.Number <> 0 Then motif = "image illisible : " & Err.Description
+        On Error GoTo 0
+    End If
+
+    MajTitreStats f, motif
+End Sub
+
+'------------------------------------------------------------------------------
+' Titre de la fiche des statistiques, qui sert aussi à signaler un graphique
+' manquant.
+'   motif : cause de l'absence, ou chaîne vide si tout va bien
+'
+' Une boîte de dialogue serait pénible à chaque ouverture, et se taire laissait
+' l'utilisateur devant un cadre vide sans explication : le motif s'affiche donc
+' à la suite du titre.
+'------------------------------------------------------------------------------
+Private Sub MajTitreStats(f As Object, ByVal motif As String)
+    Dim lb As Object
+    Set lb = ICtl(f, "lblSectionStats")
+    If lb Is Nothing Then Exit Sub
+    If Len(motif) = 0 Then
+        lb.Caption = "STATISTIQUES"
+    Else
+        lb.Caption = "STATISTIQUES  -  graphique indisponible : " & motif
+    End If
 End Sub
 
 '------------------------------------------------------------------------------

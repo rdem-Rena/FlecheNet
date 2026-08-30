@@ -114,14 +114,25 @@ Public Function ILargeurBlocs(ByVal nbBlocs As Long) As Single
 End Function
 
 '==============================================================================
-' Couleur de fond d'un bouton d'action du formulaire des interventions.
-' Les quatre premiers reprennent les couleurs du formulaire des clients ;
-' Facturer et Info ont les leurs, pour se distinguer du groupe de saisie.
+ Couleur de fond d'un bouton d'action du formulaire des interventions.
+'   nomBouton : nom EXACT du contrôle, tel que ConstruireBoutonsInterv le crée
+'   survol    : True pour la teinte claire du passage de souris
+'
+' Les sept boutons sont énumérés ici, y compris ceux dont la teinte vient de
+' modClients_Theme. Déléguer à CouleurBouton pour ces derniers ne marchait pas :
+' les contrôles s'appellent btnIAjouter, btnIModifier… avec un I, que
+' CouleurBouton ne reconnaît pas — les cinq tombaient dans son cas par défaut et
+' viraient au gris dès le premier déplacement de souris.
 '==============================================================================
 Public Function ICouleurBouton(ByVal nomBouton As String, ByVal survol As Boolean) As Long
     Select Case nomBouton
-        Case "btnFacturer": ICouleurBouton = IIf(survol, COUL_FACTURER_H, COUL_FACTURER)
-        Case "btnInfo":     ICouleurBouton = IIf(survol, COUL_INFO_H, COUL_INFO)
-        Case Else:          ICouleurBouton = CouleurBouton(nomBouton, survol)
+        Case "btnIAjouter":   ICouleurBouton = IIf(survol, COUL_AJOUTER_H, COUL_AJOUTER)
+        Case "btnIModifier":  ICouleurBouton = IIf(survol, COUL_MODIFIER_H, COUL_MODIFIER)
+        Case "btnISupprimer": ICouleurBouton = IIf(survol, COUL_SUPPRIMER_H, COUL_SUPPRIMER)
+        Case "btnIEffacer":   ICouleurBouton = IIf(survol, COUL_EFFACER_H, COUL_EFFACER)
+        Case "btnIQuitter":   ICouleurBouton = IIf(survol, COUL_QUITTER_H, COUL_QUITTER)
+        Case "btnFacturer":   ICouleurBouton = IIf(survol, COUL_FACTURER_H, COUL_FACTURER)
+        Case "btnInfo":       ICouleurBouton = IIf(survol, COUL_INFO_H, COUL_INFO)
+        Case Else:            ICouleurBouton = IIf(survol, COUL_EFFACER_H, COUL_EFFACER)
     End Select
 End Function
