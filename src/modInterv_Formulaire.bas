@@ -121,6 +121,11 @@ Private Function AnneeAffichee() As String
     End If
 End Function
 
+'------------------------------------------------------------------------------
+' Remplit un menu déroulant à partir d'un tableau de valeurs.
+' Ne fait rien si le contrôle ou le tableau est absent : le formulaire reste
+' utilisable même si une des feuilles sources manque.
+'------------------------------------------------------------------------------
 Private Sub RemplirCombo(cbo As Object, ByVal valeurs As Variant)
     Dim i As Long
     If cbo Is Nothing Then Exit Sub
@@ -261,11 +266,21 @@ Erreur:
            vbExclamation, "Interventions"
 End Sub
 
+'------------------------------------------------------------------------------
+' Relance le filtrage. Appelée à chaque frappe dans la zone de filtre et à
+' chaque changement de colonne.
+' Ne fait rien pendant un remplissage programmé, pour ne pas se déclencher quand
+' le code écrit lui-même dans les contrôles.
+'------------------------------------------------------------------------------
 Public Sub Interv_AppliquerFiltre(f As Object)
     If mChargement Then Exit Sub
     Interv_RafraichirListe f
 End Sub
 
+'------------------------------------------------------------------------------
+' Vide la zone de filtre et revient à la première colonne filtrable.
+' Déclenchée par le lien Réinitialiser de la barre de filtrage.
+'------------------------------------------------------------------------------
 Public Sub Interv_ReinitialiserFiltre(f As Object)
     Dim garde As Boolean
     garde = mChargement
@@ -276,6 +291,11 @@ Public Sub Interv_ReinitialiserFiltre(f As Object)
     Interv_RafraichirListe f
 End Sub
 
+'------------------------------------------------------------------------------
+' Trie le tableau sur une colonne.
+'   colonne : 1 à 10, position dans IColonnesListe
+' Un clic sur la colonne déjà triée inverse simplement le sens.
+'------------------------------------------------------------------------------
 Public Sub Interv_TrierColonne(f As Object, ByVal colonne As Long)
     If mTriColonne = colonne Then
         mTriDecroissant = Not mTriDecroissant
@@ -287,6 +307,10 @@ Public Sub Interv_TrierColonne(f As Object, ByVal colonne As Long)
     Interv_RafraichirListe f
 End Sub
 
+'------------------------------------------------------------------------------
+' Trie mLignesVis sur la colonne active. Seul l'ordre des numéros de ligne
+' change : ni le cache ni le tableau Excel ne sont réordonnés.
+'------------------------------------------------------------------------------
 Private Sub TrierVisibles()
     Dim cols As Variant
     cols = IColonnesListe()
@@ -294,6 +318,9 @@ Private Sub TrierVisibles()
     TriRapideVis 1, mNbVis, CStr(cols(LBound(cols) + mTriColonne - 1))
 End Sub
 
+'------------------------------------------------------------------------------
+' Tri rapide sur le tableau des lignes visibles.
+'------------------------------------------------------------------------------
 Private Sub TriRapideVis(ByVal g As Long, ByVal d As Long, ByVal nomCol As String)
     Dim i As Long, j As Long, pivot As Long, tmp As Long
     i = g: j = d
@@ -373,6 +400,11 @@ Public Sub Interv_ChargerSelection(f As Object)
     MajEtatInterv f
 End Sub
 
+'------------------------------------------------------------------------------
+' Sélectionne dans le tableau la ligne portant un numéro d'intervention donné.
+' Le drapeau de chargement est levé pendant l'opération : écrire ListIndex
+' déclencherait sinon l'événement Click, donc un rechargement inutile des champs.
+'------------------------------------------------------------------------------
 Private Sub SelectionnerNo(f As Object, ByVal noInterv As String)
     Dim i As Long, lst As Object, garde As Boolean
 
@@ -420,6 +452,11 @@ Private Sub EcrireChampsInterv(f As Object, ByVal ligne As Long)
     mChargement = garde
 End Sub
 
+'------------------------------------------------------------------------------
+' Interprète une valeur de cellule comme une case à cocher.
+' Accepte le booléen d'Excel, un nombre — 0 valant non coché — et les textes
+' usuels, au cas où la colonne aurait été saisie à la main.
+'------------------------------------------------------------------------------
 Private Function EnBooleenI(ByVal v As Variant) As Boolean
     If IsEmpty(v) Or IsNull(v) Then Exit Function
     If VarType(v) = vbBoolean Then
@@ -755,6 +792,10 @@ Erreur:
     MsgBox "Ajout impossible :" & vbCrLf & vbCrLf & Err.Description, vbCritical, "Interventions"
 End Sub
 
+'------------------------------------------------------------------------------
+' Bouton Modifier : enregistre les zones de saisie sur l'intervention
+' sélectionnée. Le numéro et le chiffre d'affaires ne sont pas touchés.
+'------------------------------------------------------------------------------
 Public Sub Interv_Modifier(f As Object)
     Dim msg As String, vals As Object
 
@@ -785,6 +826,10 @@ Erreur:
            vbCritical, "Interventions"
 End Sub
 
+'------------------------------------------------------------------------------
+' Bouton Supprimer : demande confirmation, en signalant la facture sur laquelle
+' l'intervention figure éventuellement, puis supprime la ligne du tableau.
+'------------------------------------------------------------------------------
 Public Sub Interv_Supprimer(f As Object)
     Dim ligne As Long, no As String, question As String, facture As String
 
@@ -832,6 +877,11 @@ Erreur:
            vbCritical, "Interventions"
 End Sub
 
+'------------------------------------------------------------------------------
+' Bouton Effacer : vide les zones de saisie et repasse en mode nouvelle
+' intervention. Le tableau et la feuille ne sont pas touchés, et le filtre reste
+' en place.
+'------------------------------------------------------------------------------
 Public Sub Interv_Effacer(f As Object)
     Dim garde As Boolean
 
@@ -852,10 +902,17 @@ Public Sub Interv_Effacer(f As Object)
     On Error GoTo 0
 End Sub
 
+'------------------------------------------------------------------------------
+' Bouton Quitter et touche Échap : ferme le formulaire.
+'------------------------------------------------------------------------------
 Public Sub Interv_Quitter(f As Object)
     Unload f
 End Sub
 
+'------------------------------------------------------------------------------
+' Remet l'état à zéro à la fermeture, pour que la prochaine ouverture reparte
+' proprement — y compris le drapeau d'ajustement de la fenêtre.
+'------------------------------------------------------------------------------
 Public Sub Interv_Fermeture(f As Object)
     mNoCourant = vbNullString
     mNbVis = 0
@@ -874,6 +931,9 @@ Public Sub Interv_Facturer(f As Object)
            vbInformation, "Facturer"
 End Sub
 
+'------------------------------------------------------------------------------
+' Bouton Info : le formulaire d'informations reste à définir.
+'------------------------------------------------------------------------------
 Public Sub Interv_Info(f As Object)
     MsgBox "Le formulaire d'informations reste à définir." & vbCrLf & vbCrLf & _
            "Point de branchement : modInterv_Formulaire.Interv_Info.", _
@@ -954,10 +1014,17 @@ Public Sub Interv_Survol(f As Object, ByVal nomControle As String)
     End If
 End Sub
 
+'------------------------------------------------------------------------------
+' Change la couleur de fond seulement si elle diffère : réécrire la même valeur
+' à chaque MouseMove ferait scintiller le contrôle.
+'------------------------------------------------------------------------------
 Private Sub CouleurFondSi(c As Object, ByVal couleur As Long)
     If c.BackColor <> couleur Then c.BackColor = couleur
 End Sub
 
+'------------------------------------------------------------------------------
+' Souligne le champ actif : filet bleu à l'entrée, filet gris à la sortie.
+'------------------------------------------------------------------------------
 Public Sub Interv_FocusChamp(f As Object, ByVal nomControle As String, ByVal actif As Boolean)
     Dim c As Object
     Set c = ICtl(f, nomControle)
@@ -986,6 +1053,9 @@ Private Sub MajEtatInterv(f As Object, Optional ByVal message As String = vbNull
     lb.Caption = txt
 End Sub
 
+'------------------------------------------------------------------------------
+' Met à jour le compteur de la barre de filtrage.
+'------------------------------------------------------------------------------
 Private Sub MajCompteurInterv(f As Object)
     Dim lb As Object
     Set lb = ICtl(f, "lblCompteurI")
@@ -993,6 +1063,10 @@ Private Sub MajCompteurInterv(f As Object)
     lb.Caption = mNbVis & " intervention(s) affichée(s) sur " & Interv_NbLignes()
 End Sub
 
+'------------------------------------------------------------------------------
+' Active ou grise Modifier, Supprimer et Facturer selon qu'une intervention est
+' sélectionnée.
+'------------------------------------------------------------------------------
 Private Sub MajBoutonsInterv(f As Object)
     Dim actif As Boolean
     actif = (Len(mNoCourant) > 0)
@@ -1001,6 +1075,9 @@ Private Sub MajBoutonsInterv(f As Object)
     ActiverBoutonI f, "btnFacturer", actif
 End Sub
 
+'------------------------------------------------------------------------------
+' Active ou grise un bouton, couleur comprise.
+'------------------------------------------------------------------------------
 Private Sub ActiverBoutonI(f As Object, ByVal nom As String, ByVal actif As Boolean)
     Dim b As Object
     Set b = ICtl(f, nom)

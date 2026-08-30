@@ -142,6 +142,12 @@ Private Function PreparerForm(vbProj As Object, ByVal nom As String) As Object
     Set PreparerForm = vbComp
 End Function
 
+'------------------------------------------------------------------------------
+' Pose une propriété du formulaire.
+' Les erreurs sont ignorées volontairement : si une version d'Excel n'expose pas
+' l'une de ces propriétés, le formulaire se génère quand même, avec la valeur par
+' défaut pour celle-là.
+'------------------------------------------------------------------------------
 Private Sub PropForm(vbComp As Object, ByVal nom As String, ByVal valeur As Variant)
     On Error Resume Next
     vbComp.Properties(nom) = valeur
@@ -558,6 +564,9 @@ Private Sub CarteI(c As Object)
     c.BorderColor = COUL_BORDURE
 End Sub
 
+'------------------------------------------------------------------------------
+' Rectangle de couleur unie : bandeau du calendrier, bande d'en-tête du tableau.
+'------------------------------------------------------------------------------
 Private Sub Fond(c As Object, ByVal fond As Long, ByVal bordure As Long)
     c.Caption = vbNullString
     c.BackStyle = MSF_BackStyleOpaque
@@ -567,6 +576,10 @@ Private Sub Fond(c As Object, ByVal fond As Long, ByVal bordure As Long)
     c.BorderColor = bordure
 End Sub
 
+'------------------------------------------------------------------------------
+' Habille un libellé : texte, taille, graisse, couleur, alignement.
+' Le fond est transparent pour laisser voir la carte au-dessous.
+'------------------------------------------------------------------------------
 Private Sub Texte(c As Object, ByVal texte As String, ByVal taille As Single, _
                   ByVal gras As Boolean, ByVal couleur As Long, ByVal alignement As Long)
     c.Caption = texte
@@ -625,6 +638,11 @@ Private Sub Liste(c As Object, ByVal filtree As Boolean)
     c.MatchEntry = IIf(filtree, 2, MSF_MatchEntryComplete)   ' 2 = fmMatchEntryNone
 End Sub
 
+'------------------------------------------------------------------------------
+' Habille une case à cocher.
+' Le relief de la case elle-même est conservé : à plat, elle deviendrait difficile
+' à distinguer d'un simple libellé.
+'------------------------------------------------------------------------------
 Private Sub Case_(c As Object, ByVal libelle As String)
     c.Caption = libelle
     c.BackStyle = MSF_BackStyleTransparent
@@ -635,6 +653,10 @@ Private Sub Case_(c As Object, ByVal libelle As String)
     c.WordWrap = False
 End Sub
 
+'------------------------------------------------------------------------------
+' Habille un bouton d'action : couleur de fond, texte blanc, lettre de raccourci
+' soulignée et rang de tabulation.
+'------------------------------------------------------------------------------
 Private Sub Bouton_(c As Object, ByVal libelle As String, ByVal raccourci As String, _
                     ByVal couleur As Long, ByVal ordre As Long)
     c.Caption = libelle
@@ -816,6 +838,9 @@ Private Sub ProcI(ByVal entete As String, ByVal corps As String)
     AjLigne ""
 End Sub
 
+'------------------------------------------------------------------------------
+' Ajoute une ligne au code en cours d'écriture.
+'------------------------------------------------------------------------------
 Private Sub AjLigne(ByVal ligne As String)
     mCode = mCode & ligne & vbNewLine
 End Sub

@@ -97,6 +97,11 @@ Public Function IGrilleX(ByVal colonne As Long) As Single
     IGrilleX = IG_X + (colonne - 1) * (IG_BLOC + IG_GOUTTIERE)
 End Function
 
+'------------------------------------------------------------------------------
+' Ordonnée du bloc « libellé + zone de saisie » d'une ligne de la grille.
+'   ligne   : 1 à 4, de haut en bas
+'   renvoie : la position en points, mesurée depuis le haut du formulaire
+'------------------------------------------------------------------------------
 Public Function IGrilleY(ByVal ligne As Long) As Single
     IGrilleY = IG_Y + (ligne - 1) * IG_LIGNE
 End Function

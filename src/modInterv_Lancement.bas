@@ -109,6 +109,10 @@ Public Sub VerifierClasseurInterventions()
     MsgBox msg, vbInformation, "Interventions"
 End Sub
 
+'------------------------------------------------------------------------------
+' Une ligne du diagnostic pour un tableau annexe.
+'   usage : ce que le formulaire perd si ce tableau manque
+'------------------------------------------------------------------------------
 Private Function LigneTableI(ByVal nomTable As String, ByVal usage As String) As String
     Dim lo As ListObject
     Set lo = ObtenirTable(nomTable)
@@ -120,6 +124,10 @@ Private Function LigneTableI(ByVal nomTable As String, ByVal usage As String) As
     End If
 End Function
 
+'------------------------------------------------------------------------------
+' Une ligne du diagnostic pour une cellule nommée, avec sa valeur si elle
+' existe.
+'------------------------------------------------------------------------------
 Private Function LigneNom(ByVal nom As String) As String
     Dim v As Variant
     v = Interv_CelluleNommee(nom)
@@ -130,6 +138,10 @@ Private Function LigneNom(ByVal nom As String) As String
     End If
 End Function
 
+'------------------------------------------------------------------------------
+' État d'un formulaire dans le projet : présent, à générer, ou indéterminable
+' quand l'accès au projet VBA n'est pas autorisé.
+'------------------------------------------------------------------------------
 Private Function EtatFormI(ByVal nom As String) As String
     Dim vbProj As Object, vbComp As Object
 

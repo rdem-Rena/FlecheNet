@@ -63,6 +63,10 @@ Public Sub Interv_Charger()
     End If
 End Sub
 
+'------------------------------------------------------------------------------
+' Charge le cache des interventions au premier besoin. Placée en tête des
+' procédures de lecture pour qu'aucune ne dépende de l'ordre des appels.
+'------------------------------------------------------------------------------
 Private Sub AssurerInterv()
     If mIdxColonne Is Nothing Then Interv_Charger
 End Sub
@@ -91,10 +95,18 @@ Private Sub ChargerClients()
     mClients = lo.DataBodyRange.Value
 End Sub
 
+'------------------------------------------------------------------------------
+' Charge le cache des clients au premier besoin.
+'------------------------------------------------------------------------------
 Private Sub AssurerClients()
     If Not mClientsCharges Then ChargerClients
 End Sub
 
+'------------------------------------------------------------------------------
+' Force la relecture des deux caches au prochain accès. Appelée à l'ouverture
+' du formulaire, pour prendre en compte ce qui a changé dans les feuilles depuis
+' la dernière fois.
+'------------------------------------------------------------------------------
 Public Sub Interv_ToutRecharger()
     Set mIdxColonne = Nothing
     mClientsCharges = False
@@ -108,6 +120,10 @@ Public Function Interv_NbLignes() As Long
     Interv_NbLignes = mNbLignes
 End Function
 
+'------------------------------------------------------------------------------
+' Position d'une colonne dans le cache.
+'   renvoie : le numéro de colonne, ou 0 si elle n'existe pas
+'------------------------------------------------------------------------------
 Public Function Interv_IndexColonne(ByVal nomColonne As String) As Long
     AssurerInterv
     If mIdxColonne.Exists(nomColonne) Then Interv_IndexColonne = mIdxColonne(nomColonne)
@@ -151,6 +167,10 @@ Public Function Interv_ValeurAffichee(ByVal ligne As Long, ByVal nomColonne As S
     End If
 End Function
 
+'------------------------------------------------------------------------------
+' Met une date en forme jj/mm/aaaa, qu'Excel la rende en Date ou en numéro de
+' série.
+'------------------------------------------------------------------------------
 Public Function Interv_DateAffichee(ByVal v As Variant) As String
     If IsEmpty(v) Or IsNull(v) Then Exit Function
     If VarType(v) = vbDate Then
@@ -197,6 +217,11 @@ Public Function Interv_NouveauNumero() As String
     Interv_NouveauNumero = PREFIXE_NO_INTERV & CStr(maxi + 1)
 End Function
 
+'------------------------------------------------------------------------------
+' Extrait les chiffres d'une chaîne : IN29 donne 29.
+' Renvoie 0 si la chaîne n'en contient aucun, ou plus de neuf — au-delà, la
+' conversion en Long déborderait.
+'------------------------------------------------------------------------------
 Private Function ChiffresDe(ByVal s As String) As Long
     Dim i As Long, c As String, res As String
     For i = 1 To Len(s)
@@ -255,6 +280,11 @@ Public Function Interv_TexteVersHeures(ByVal s As String, ByRef ok As Boolean) A
     Interv_TexteVersHeures = (CDbl(h) * 60# + CDbl(m)) / 1440#
 End Function
 
+'------------------------------------------------------------------------------
+' True si la chaîne ne contient que des chiffres.
+' Plus strict qu'IsNumeric, qui accepterait « 1e5 », « -3 » ou « 1,5 » — inadaptés
+' pour un nombre de personnes.
+'------------------------------------------------------------------------------
 Public Function QueDesChiffres(ByVal s As String) As Boolean
     Dim i As Long, c As String
     If Len(s) = 0 Then Exit Function
@@ -292,6 +322,13 @@ Fin:
     IntervBD_Ajouter = noInterv
 End Function
 
+'------------------------------------------------------------------------------
+' Met à jour une intervention existante.
+'   noInterv : numéro de l'intervention à modifier
+'   valeurs  : Dictionary nom de colonne -> valeur ; les colonnes absentes du
+'              dictionnaire gardent leur valeur actuelle
+'   renvoie  : True si l'intervention a été trouvée et écrite
+'------------------------------------------------------------------------------
 Public Function IntervBD_Modifier(ByVal noInterv As String, ByVal valeurs As Object) As Boolean
     Dim lo As ListObject, i As Long
 
@@ -312,6 +349,11 @@ Fin:
     IntervBD_Modifier = True
 End Function
 
+'------------------------------------------------------------------------------
+' Supprime la ligne correspondant à un numéro d'intervention.
+'   renvoie : True si l'intervention existait
+' La confirmation de l'utilisateur est demandée en amont, par le formulaire.
+'------------------------------------------------------------------------------
 Public Function IntervBD_Supprimer(ByVal noInterv As String) As Boolean
     Dim lo As ListObject, i As Long
 

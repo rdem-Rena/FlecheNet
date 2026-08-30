@@ -128,6 +128,9 @@ Public Sub Cal_MoisPrecedent(f As Object)
     Cal_Dessiner f
 End Sub
 
+'------------------------------------------------------------------------------
+' Affiche le mois suivant.
+'------------------------------------------------------------------------------
 Public Sub Cal_MoisSuivant(f As Object)
     mMois = DateAdd("m", 1, mMois)
     Cal_Dessiner f
@@ -162,6 +165,11 @@ Public Sub Cal_ChoisirJour(f As Object, ByVal indice As Long)
     Unload f
 End Sub
 
+'------------------------------------------------------------------------------
+' Referme le calendrier sans rien choisir : la date du formulaire reste
+' inchangée. Fermer la fenêtre par sa croix produit le même effet, le drapeau de
+' validation restant à False.
+'------------------------------------------------------------------------------
 Public Sub Cal_Annuler(f As Object)
     mValide = False
     Unload f

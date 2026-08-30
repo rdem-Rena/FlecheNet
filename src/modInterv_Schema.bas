@@ -131,6 +131,10 @@ Private Sub ConstruireSchemaInterv()
     mCharges = True
 End Sub
 
+'------------------------------------------------------------------------------
+' Écrit une ligne du schéma. Sert uniquement à rendre ConstruireSchemaInterv
+' lisible : sans elle il faudrait dix affectations par champ.
+'------------------------------------------------------------------------------
 Private Sub DefInterv(ByRef tb() As ChampInterv, ByVal idx As Long, ByVal colonne As String, _
                       ByVal libelle As String, ByVal typeCtrl As String, ByVal verrouille As Boolean, _
                       ByVal ligne As Long, ByVal col As Long, ByVal moitie As Long, _
@@ -161,6 +165,11 @@ Public Function INomControle(ByRef ch As ChampInterv) As String
     End Select
 End Function
 
+'------------------------------------------------------------------------------
+' Nom du libellé placé au-dessus d'un champ.
+' Le préfixe lblI_ évite toute collision avec les libellés de l'habillage et avec
+' ceux du formulaire des clients.
+'------------------------------------------------------------------------------
 Public Function INomLibelle(ByRef ch As ChampInterv) As String
     INomLibelle = "lblI_" & ch.Colonne
 End Function
@@ -192,6 +201,11 @@ Public Function IColonnesListe() As Variant
                            IC_HEURES, IC_PERS, IC_TEXTE, IC_COMMENT, IC_FACTURE)
 End Function
 
+'------------------------------------------------------------------------------
+' En-têtes affichés au-dessus du tableau, un par colonne de IColonnesListe et
+' dans le même ordre. C'est ici que se mettent accents et abréviations, le nom
+' réel de la colonne Excel restant dans IColonnesListe.
+'------------------------------------------------------------------------------
 Public Function ILibellesListe() As Variant
     ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom", "Prénom", _
                            "Heures", "Pers.", "Texte de facture", "Commentaires", "Facture")
