@@ -1,8 +1,19 @@
-# FlècheNet — Formulaire de gestion des clients
+# FlècheNet — Formulaires de gestion
 
-Procédures VBA qui **génèrent** et font fonctionner le UserForm `UF_Clients`, un
-formulaire de saisie complet pour le tableau **`TblClients`** de l'onglet
-**Clients** du classeur `FlecheNettoyageSACL01.xlsm`.
+Procédures VBA qui **génèrent** et font fonctionner les formulaires de saisie du
+classeur `FlecheNettoyageSA2026.xlsm` :
+
+| Formulaire | Tableau | Onglet | Documentation |
+|---|---|---|---|
+| `UF_Clients` | `TblClients` | Clients | [`docs/STRUCTURE.md`](docs/STRUCTURE.md) |
+| `UF_Interventions` + `UF_Calendrier` | `TblInterv` | Interventions | [`docs/INTERVENTIONS.md`](docs/INTERVENTIONS.md) |
+
+Les deux partagent une seule charte graphique et les mêmes utilitaires : les
+modules `modInterv_*` s'ajoutent aux `modClients_*`, ils ne les remplacent pas.
+
+---
+
+## Formulaire des clients
 
 Le formulaire n'est pas dessiné à la main : il est construit par code à partir du
 schéma décrit dans `modClients_Schema`. Un champ ajouté au schéma devient une
@@ -17,10 +28,11 @@ zone de saisie dans le formulaire à la régénération suivante.
    → cocher **« Accès approuvé au modèle d'objet du projet VBA »**, puis fermer
    et rouvrir le classeur.
 2. **Alt + F11** pour ouvrir l'éditeur VBA, puis **Fichier ▸ Importer un
-   fichier…** pour importer les 6 modules du dossier [`src/`](src).
-3. Lancer la macro **`GenererFormulaireClients`** → le formulaire `UF_Clients`
-   est créé.
-4. Lancer la macro **`OuvrirGestionClients`** → le formulaire s'affiche.
+   fichier…** pour importer les modules du dossier [`src/`](src) : les sept
+   `modClients_*` pour le formulaire des clients, les sept `modInterv_*` pour
+   celui des interventions — ces derniers ont besoin des premiers.
+3. Lancer **`GenererFormulaireClients`** et **`GenererFormulaireInterventions`**.
+4. Lancer **`OuvrirGestionClients`** ou **`OuvrirGestionInterventions`**.
 
 Détails et dépannage : [`docs/INSTALLATION.md`](docs/INSTALLATION.md).
 
@@ -100,6 +112,52 @@ Mapping colonnes ↔ contrôles et plan du formulaire :
 Pour ajuster l'aspect du formulaire — couleurs, tailles, position de chaque
 contrôle — la fiche de réglages [`docs/REGLAGES.md`](docs/REGLAGES.md) recense
 chaque valeur, dit ce qu'elle commande et où elle se trouve.
+
+---
+
+---
+
+## Formulaire des interventions
+
+Même principe, appliqué au tableau `TblInterv` — mais le formulaire est plus
+riche, et deux points méritaient un traitement particulier.
+
+**Quatre fiches empilées.** L'intitulé, repris des cellules nommées
+`TitreInterventions` et `AnneeEnCours` ; les statistiques, avec le graphique
+`CAGraphique` exporté en image et six tuiles de chiffres ; les quinze champs de
+saisie ; le tableau des interventions.
+
+**`CA` est une colonne calculée.** Sa formule va chercher le taux du client dans
+`TblClients`. Le formulaire ne l'écrit jamais — l'écriture se fait cellule par
+cellule en sautant toute colonne portant une formule — et se contente d'en
+afficher une estimation pendant la saisie.
+
+**`Nb_Hres` est une fraction de jour.** Excel l'affiche au format `[h]:mm` :
+`0,125` vaut 3 heures. Le formulaire parle en heures — `420:00` — et convertit
+dans les deux sens.
+
+**Saisie assistée.** Taper les premières lettres d'une entreprise ou d'un nom
+filtre la liste des clients au fil de la frappe ; le choix reporte d'un coup
+neuf informations du client dans la fiche.
+
+**Sélecteur de date.** `UF_Calendrier` est construit en contrôles standard :
+MSForms ne fournit aucun calendrier, et le `MonthView` de Microsoft dépend d'un
+OCX absent de la plupart des postes.
+
+Deux écarts avec la demande, l'un imposé, l'autre corrigé :
+
+- le tableau affiche **dix** des onze colonnes demandées — une `ListBox`
+  MSForms n'en accepte pas davantage. `Titre` a été laissée de côté, elle reste
+  visible dans la fiche ;
+- « CA mois actuel non facturé » désignait la cellule `CATotalMmoisActuel`,
+  déjà employée par « CA mois actuel ». C'est **`CATotalMoisActuelNonFacture`**
+  qui est lue, la cellule effectivement définie dans le classeur.
+
+Les boutons **Facturer** et **Info** sont en place ; leurs formulaires restent à
+définir, les points de branchement sont prêts.
+
+Plan complet, carte des champs et réglages :
+[`docs/INTERVENTIONS.md`](docs/INTERVENTIONS.md).
 
 ---
 

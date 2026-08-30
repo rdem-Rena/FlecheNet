@@ -23,14 +23,18 @@ dossier `src/` : **Fichier ▸ Importer un fichier…** (`Ctrl + M`).
 Ordre indifférent :
 
 ```
-modClients_Theme.bas
-modClients_Schema.bas
-modClients_Donnees.bas
-modClients_Adresses.bas
-modClients_Formulaire.bas
-modClients_Generateur.bas
-modClients_Lancement.bas
+modClients_Theme.bas        modInterv_Theme.bas
+modClients_Schema.bas       modInterv_Schema.bas
+modClients_Donnees.bas      modInterv_Donnees.bas
+modClients_Adresses.bas     modInterv_Calendrier.bas
+modClients_Formulaire.bas   modInterv_Formulaire.bas
+modClients_Generateur.bas   modInterv_Generateur.bas
+modClients_Lancement.bas    modInterv_Lancement.bas
 ```
+
+Les modules `modInterv_*` s'appuient sur les `modClients_*` — palette,
+typographie et utilitaires partagés : importer les sept de gauche même si seul
+le formulaire des interventions vous intéresse.
 
 Vérification : **Débogage ▸ Compiler VBAProject** ne doit signaler aucune erreur.
 Le projet compile même si le UserForm n'existe pas encore.
