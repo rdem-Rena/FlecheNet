@@ -59,24 +59,27 @@ La cellule `AnneeEnCours` contient une **date** (1ᵉʳ janvier de l'année) et 
 
 Le graphique **`CAGraphique`** de la feuille Statistiques est **exporté en GIF** dans le dossier temporaire de Windows à chaque ouverture, puis chargé dans un contrôle Image : MSForms ne sait pas afficher un graphique Excel autrement. L'export est refait après chaque ajout, modification ou suppression, pour que le graphique suive les données.
 
-> **Pourquoi GIF et non PNG.** `LoadPicture` vient de la bibliothèque OLE, qui ne lit que bmp, ico, wmf, emf, gif et jpg. Un PNG s'exporte sans erreur mais reste ensuite illisible — le cadre du graphique restait vide, sans le moindre message. Le graphique est cherché d'abord par le nom de l'objet graphique, puis par celui de la forme, puis, s'il n'y en a qu'un sur la feuille, par défaut. Si rien n'aboutit, la raison s'affiche à la suite du titre « STATISTIQUES » plutôt que d'être passée sous silence.
+> **Pourquoi GIF et non PNG.** `LoadPicture` vient de la bibliothèque OLE, qui ne lit que bmp, ico, wmf, emf, gif et jpg. Un PNG s'exporte sans erreur mais reste ensuite illisible — le cadre du graphique restait vide, sans le moindre message. Le graphique est cherché d'abord par le nom de l'objet graphique, puis par celui de la forme, puis, s'il n'y en a qu'un sur la feuille, par défaut. Si rien n'aboutit, la raison s'affiche à la suite du titre « STATISTIQUES ».
 
 Les six tuiles lisent des cellules nommées :
 
 | Tuile | Cellule Excel |
 |---|---|
 | CA total | `CATotal` |
-| Total facturé | `CATotalFacture` |
-| Total non facturé | `CATotalNonFacture` |
+| Facturé | `CATotalFacture` |
+| Non facturé | `CATotalNonFacture` |
 | Mois précédent | `CATotalMmoisPrecedent` |
 | Mois actuel | `CATotalMmoisActuel` |
-| Mois act. non facturé | `CATotalMoisActuelNonFacture` |
+| Mois non facturé | `CATotalMoisActuelNonFacture` |
 
 > **Un nom corrigé.** La demande indiquait `CATotalMmoisActuel` pour « CA mois actuel non facturé », nom déjà employé par « CA mois actuel ». La cellule réellement définie dans le classeur est **`CATotalMoisActuelNonFacture`** (Statistiques!$C$24) : c'est celle-là qui est lue.
 
 Chaque tuile est un contrôle Image portant **`CartePremium.jpg`** (sous-dossier `Images`, à côté du classeur), surmonté de deux libellés à fond blanc — l'image donne les coins arrondis, les libellés portent le texte. Si l'image est absente, la tuile retombe sur un aplat blanc et reste lisible ; `VerifierClasseurInterventions` le signale.
 
-L'image est étirée aux dimensions de la tuile (150 × 56 pt). Une source dans ces proportions évite de déformer l'arrondi des coins.
+L'image est étirée aux dimensions de la tuile (118 × 56 pt). Une source dans ces proportions évite de déformer l'arrondi des coins.
+
+
+Le graphique et le bloc de tuiles se partagent la largeur de la carte&nbsp;: le graphique occupe **518 pt** à gauche, les 6 tuiles de **118 pt** sont calées sur le bord droit. Élargir les tuiles rétrécit d'autant le graphique&nbsp;; leur position se recalcule toute seule, seule `F2_GRAPH_LARG` est à ajuster en regard.
 
 
 ---
@@ -224,9 +227,11 @@ La date choisie et le jour même sont mis en évidence ; les jours des mois vois
 | `F1_HAUT` | 46 pt | hauteur de la fiche 1 |
 | `F2_TOP` | 66 pt | haut de la fiche 2 |
 | `F2_HAUT` | 152 pt | hauteur de la fiche 2 |
-| `F2_GRAPH_LARG` | 420 pt | largeur de l'image du graphique |
-| `F2_TUILE_LARG` | 150 pt | largeur d'une tuile |
+| `F2_GRAPH_LARG` | 518 pt | largeur de l'image du graphique |
+| `F2_TUILE_LARG` | 118 pt | largeur d'une tuile |
 | `F2_TUILE_HAUT` | 56 pt | hauteur d'une tuile |
+| `F2_TUILE_INSET` | 10 pt | retrait des libellés dans une tuile |
+| `F2_PADDING` | 14 pt | retrait intérieur de la carte des statistiques |
 | `F3_TOP` | 226 pt | haut de la fiche 3 |
 | `F3_HAUT` | 168 pt | hauteur de la fiche 3 |
 | `IG_BLOC` | 210 pt | largeur d'un bloc libellé + champ |

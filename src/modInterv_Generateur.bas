@@ -238,7 +238,7 @@ Private Sub ConstruireFiche2(dsg As Object)
     For i = LBound(tuiles) To UBound(tuiles)
         col = i Mod F2_TUILES_COL
         lig = i \ F2_TUILES_COL
-        x = 462 + col * (F2_TUILE_LARG + F2_TUILE_GX)
+        x = F2TuilesX() + col * (F2_TUILE_LARG + F2_TUILE_GX)
         y = F2_TOP + 24 + lig * (F2_TUILE_HAUT + F2_TUILE_GY)
 
         Set c = AjCtrl(dsg, "Forms.Image.1", "imgTuile_" & CStr(i + 1), x, y, _
@@ -252,14 +252,14 @@ Private Sub ConstruireFiche2(dsg As Object)
         End With
 
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatCap_" & CStr(i + 1), _
-                       x + 12, y + 8, F2_TUILE_LARG - 24, 11)
+                       x + F2_TUILE_INSET, y + 8, F2_TUILE_LARG - 2 * F2_TUILE_INSET, 11)
         Texte c, UCase$(CStr(tuiles(i)(0))), TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
         c.BackStyle = MSF_BackStyleOpaque
         c.BackColor = COUL_CARTE
 
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatVal_" & CStr(i + 1), _
-                       x + 12, y + 22, F2_TUILE_LARG - 24, 22)
-        Texte c, vbNullString, 12.5, True, COUL_BANDEAU, MSF_TextAlignLeft
+                       x + F2_TUILE_INSET, y + 22, F2_TUILE_LARG - 2 * F2_TUILE_INSET, 22)
+        Texte c, vbNullString, TAILLE_STAT, True, COUL_BANDEAU, MSF_TextAlignLeft
         c.BackStyle = MSF_BackStyleOpaque
         c.BackColor = COUL_CARTE
     Next i

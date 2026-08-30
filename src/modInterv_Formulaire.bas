@@ -224,13 +224,15 @@ End Sub
 ' c'est donc celle-là qui est lue.
 '------------------------------------------------------------------------------
 Public Function TuilesStatistiques() As Variant
+    ' Libellés courts : les tuiles sont étroites, et la grille se lit d'elle-même
+    ' — la première ligne donne les totaux, la seconde les mois.
     TuilesStatistiques = Array( _
         Array("CA total", "CATotal"), _
-        Array("Total facturé", "CATotalFacture"), _
-        Array("Total non facturé", "CATotalNonFacture"), _
+        Array("Facturé", "CATotalFacture"), _
+        Array("Non facturé", "CATotalNonFacture"), _
         Array("Mois précédent", "CATotalMmoisPrecedent"), _
         Array("Mois actuel", "CATotalMmoisActuel"), _
-        Array("Mois act. non facturé", "CATotalMoisActuelNonFacture"))
+        Array("Mois non facturé", "CATotalMoisActuelNonFacture"))
 End Function
 
 '==============================================================================

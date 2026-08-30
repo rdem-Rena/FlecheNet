@@ -40,12 +40,21 @@ Public Const F1_HAUT As Single = 46
 '--- Fiche 2 : statistiques ---------------------------------------------------
 Public Const F2_TOP As Single = 66
 Public Const F2_HAUT As Single = 152
-Public Const F2_GRAPH_LARG As Single = 420    ' largeur de l'image du graphique
-Public Const F2_TUILE_LARG As Single = 150    ' une tuile de statistique
+' Le graphique et le bloc de tuiles se partagent la largeur de la carte : ce que
+' l'un prend, l'autre le perd. Les tuiles sont calées sur le bord droit, le
+' graphique occupe tout ce qui reste à gauche.
+Public Const F2_GRAPH_LARG As Single = 518    ' largeur de l'image du graphique
+Public Const F2_TUILE_LARG As Single = 118    ' une tuile de statistique
 Public Const F2_TUILE_HAUT As Single = 56
-Public Const F2_TUILE_GX As Single = 9        ' gouttière horizontale entre tuiles
+Public Const F2_TUILE_GX As Single = 8        ' gouttière horizontale entre tuiles
 Public Const F2_TUILE_GY As Single = 6        ' gouttière verticale
 Public Const F2_TUILES_COL As Long = 3        ' 3 colonnes sur 2 lignes = 6 tuiles
+Public Const F2_PADDING As Single = 14        ' retrait intérieur de la carte
+' Retrait des libellés dans une tuile : assez pour que le blanc des libellés ne
+' touche pas les coins arrondis de l'image, assez peu pour laisser la place aux
+' montants une fois les tuiles resserrées.
+Public Const F2_TUILE_INSET As Single = 10
+Public Const TAILLE_STAT As Single = 11.5     ' montant affiché dans une tuile
 
 '--- Fiche 3 : saisie ---------------------------------------------------------
 Public Const F3_TOP As Single = 226
@@ -89,6 +98,18 @@ Public Const CAL_GRILLE_Y As Single = 62
 ' formulaire reste utilisable, seuls les coins arrondis sont perdus.
 Public Const DOSSIER_IMAGES As String = "Images"
 Public Const IMAGE_TUILE As String = "CartePremium.jpg"
+
+'==============================================================================
+' Abscisse du bloc de tuiles, calé sur le bord droit de la carte.
+'
+' Calculée plutôt qu'écrite en dur : changer la largeur des tuiles, leur
+' gouttière ou leur nombre de colonnes les repositionne toutes seules, et le
+' graphique n'a qu'à s'arrêter F2_ECART_GRAPH points avant.
+'==============================================================================
+Public Function F2TuilesX() As Single
+    F2TuilesX = I_MARGE + I_CARTE_LARG - F2_PADDING _
+                - (F2_TUILES_COL * F2_TUILE_LARG + (F2_TUILES_COL - 1) * F2_TUILE_GX)
+End Function
 
 '==============================================================================
 ' Position d'un bloc de la grille de saisie
