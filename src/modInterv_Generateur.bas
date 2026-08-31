@@ -329,7 +329,7 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub ConstruireFiche3(dsg As Object)
     Dim c As Object, ch() As ChampInterv, i As Long
-    Dim x As Single, y As Single, larg As Single, ordre As Long
+    Dim x As Single, y As Single, larg As Single, haut As Single, ordre As Long
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte3", I_MARGE, F3_TOP, I_CARTE_LARG, F3_HAUT)
     CarteI c
@@ -344,14 +344,7 @@ Private Sub ConstruireFiche3(dsg As Object)
         x = IGrilleX(ch(i).Col)
         y = IGrilleY(ch(i).Ligne)
         larg = ILargeurBlocs(ch(i).Blocs)
-
-        ' deux champs peuvent se partager un bloc : les cases TVA et Forfait
-        If ch(i).Moitie = 1 Then
-            larg = (IG_BLOC - 8) / 2
-        ElseIf ch(i).Moitie = 2 Then
-            larg = (IG_BLOC - 8) / 2
-            x = x + larg + 8
-        End If
+        haut = IHauteurLignes(ch(i).NbLignes)
 
         If ch(i).TypeCtrl = ITYPE_CASE Then
             Set c = AjCtrl(dsg, "Forms.CheckBox.1", INomControle(ch(i)), _
@@ -364,16 +357,16 @@ Private Sub ConstruireFiche3(dsg As Object)
             Select Case ch(i).TypeCtrl
                 Case ITYPE_LISTE, ITYPE_AUTO
                     Set c = AjCtrl(dsg, "Forms.ComboBox.1", INomControle(ch(i)), _
-                                   x, y + ICH_LBL_HAUT + 1, larg, ICH_CTL_HAUT)
+                                   x, y + ICH_LBL_HAUT + 1, larg, haut)
                     Liste c, (ch(i).TypeCtrl = ITYPE_AUTO)
 
                 Case ITYPE_DATE
                     ' la zone de date laisse la place au bouton du calendrier
                     Set c = AjCtrl(dsg, "Forms.TextBox.1", INomControle(ch(i)), _
-                                   x, y + ICH_LBL_HAUT + 1, larg - 20, ICH_CTL_HAUT)
+                                   x, y + ICH_LBL_HAUT + 1, larg - 20, haut)
                     Zone c, False
                     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalendrier", _
-                                   x + larg - 18, y + ICH_LBL_HAUT + 1, 18, ICH_CTL_HAUT)
+                                   x + larg - 18, y + ICH_LBL_HAUT + 1, 18, haut)
                     Texte c, ChrW(9662), 9, True, COUL_BOUTON_TXT, MSF_TextAlignCenter
                     c.BackStyle = MSF_BackStyleOpaque
                     c.BackColor = COUL_MODIFIER
@@ -382,8 +375,16 @@ Private Sub ConstruireFiche3(dsg As Object)
 
                 Case Else
                     Set c = AjCtrl(dsg, "Forms.TextBox.1", INomControle(ch(i)), _
-                                   x, y + ICH_LBL_HAUT + 1, larg, ICH_CTL_HAUT)
+                                   x, y + ICH_LBL_HAUT + 1, larg, haut)
                     Zone c, ch(i).Verrouille
+                    ' une zone haute de plusieurs lignes accueille du texte long :
+                    ' le retour à la ligne et l'ascenseur y deviennent utiles.
+                    ' Zone a laissé EnterKeyBehavior à False : Entrée valide la
+                    ' fiche, Ctrl+Entrée va à la ligne.
+                    If ch(i).NbLignes > 1 Then
+                        c.MultiLine = True
+                        c.ScrollBars = MSF_ScrollBarsVertical
+                    End If
             End Select
         End If
 
@@ -394,9 +395,10 @@ Private Sub ConstruireFiche3(dsg As Object)
         End If
     Next i
 
-    ' libellé commun aux deux cases à cocher, qui n'en ont pas d'individuel
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblI_Facturation", IGrilleX(3), IGrilleY(3), _
-                   IG_BLOC, ICH_LBL_HAUT)
+    ' libellé commun aux deux cases à cocher, qui n'en ont pas d'individuel :
+    ' il occupe la ligne de libellés que TVA et Forfait laissent vide
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblI_Facturation", IGrilleX(3), IGrilleY(4), _
+                   ILargeurBlocs(2), ICH_LBL_HAUT)
     Texte c, "FACTURATION", TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
 End Sub
 

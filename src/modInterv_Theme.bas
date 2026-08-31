@@ -83,7 +83,7 @@ Public Const F2_PADDING As Single = 14        ' retrait intérieur de la carte
 ' Retrait des libellés dans une tuile : assez pour que le blanc des libellés ne
 ' touche pas les coins arrondis de l'image, assez peu pour laisser la place aux
 ' montants une fois les tuiles resserrées.
-Public Const F2_TUILE_INSET As Single = 10
+Public Const F2_TUILE_INSET As Single = 17    ' 118 - 2 x 17 = 84 pt de texte
 Public Const TAILLE_STAT As Single = 11.5     ' montant affiché dans une tuile
 Public Const TAILLE_TUILE_CAP As Single = 7.5 ' libellé de tuile, le plus long étant « MOIS NON FACTURÉ »
 
@@ -100,10 +100,23 @@ Public Const F2_TUILE_ECART As Single = 3     ' entre le libellé et le montant
 '--- Fiche 3 : saisie ---------------------------------------------------------
 Public Const F3_TOP As Single = 226
 Public Const F3_HAUT As Single = 168
+' La grille se lit en TROIS RÉGIONS de deux colonnes chacune :
+'
+'   région 1 (col. 1-2)   région 2 (col. 3-4)   région 3 (col. 5-6)
+'   le client             l'intervention        les textes libres
+'
+' Les six colonnes ont la même largeur et les trois régions aussi : c'est
+' l'écart entre régions, plus large que la gouttière intérieure, qui les fait
+' lire comme trois groupes plutôt que comme six colonnes alignées.
+'
+'   6 x 126 + 3 x 20 + 2 x 42 = 900 = I_CARTE_LARG
+'
 Public Const IG_X As Single = 30              ' abscisse de la 1re colonne
 Public Const IG_Y As Single = 254             ' ordonnée de la 1re ligne
-Public Const IG_BLOC As Single = 210          ' largeur d'un bloc libellé + champ
-Public Const IG_GOUTTIERE As Single = 20
+Public Const IG_BLOC As Single = 126          ' largeur d'un bloc libellé + champ
+Public Const IG_GOUTTIERE As Single = 20      ' entre deux colonnes d'une même région
+Public Const IG_ECART_REGION As Single = 42   ' entre deux régions
+Public Const IG_COL_PAR_REGION As Long = 2
 Public Const IG_LIGNE As Single = 32          ' pas vertical
 Public Const ICH_LBL_HAUT As Single = 11
 Public Const ICH_CTL_HAUT As Single = 18
@@ -157,8 +170,33 @@ End Function
 '==============================================================================
 ' Position d'un bloc de la grille de saisie
 '==============================================================================
+' Chaque frontière de région franchie remplace la gouttière ordinaire par
+' l'écart de région : on ajoute donc la DIFFÉRENCE entre les deux, une fois par
+' frontière déjà passée.
 Public Function IGrilleX(ByVal colonne As Long) As Single
-    IGrilleX = IG_X + (colonne - 1) * (IG_BLOC + IG_GOUTTIERE)
+    IGrilleX = IG_X + (colonne - 1) * (IG_BLOC + IG_GOUTTIERE) _
+               + IRegionDe(colonne) * (IG_ECART_REGION - IG_GOUTTIERE)
+End Function
+
+'------------------------------------------------------------------------------
+' Numéro de région d'une colonne, à partir de 0 : colonnes 1-2 -> 0,
+' colonnes 3-4 -> 1, colonnes 5-6 -> 2.
+'------------------------------------------------------------------------------
+Public Function IRegionDe(ByVal colonne As Long) As Long
+    If colonne < 1 Then Exit Function
+    IRegionDe = (colonne - 1) \ IG_COL_PAR_REGION
+End Function
+
+'------------------------------------------------------------------------------
+' Hauteur d'un champ qui occupe plusieurs lignes de la grille : sa zone de
+' saisie descend jusqu'au bas de la dernière ligne couverte.
+'------------------------------------------------------------------------------
+Public Function IHauteurLignes(ByVal nbLignes As Long) As Single
+    If nbLignes < 2 Then
+        IHauteurLignes = ICH_CTL_HAUT
+    Else
+        IHauteurLignes = ICH_CTL_HAUT + (nbLignes - 1) * IG_LIGNE
+    End If
 End Function
 
 '------------------------------------------------------------------------------

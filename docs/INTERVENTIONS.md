@@ -25,10 +25,10 @@ Fenêtre de **960 × 748 points** de surface utile (≈ 1280 × 997 pixels à 96
 │ └─────────────────────┘  │Mois -1 │ │Mois    │ │Mois nf │            │
 ├──────────────────────────────────────────────────────────────────────┤
 │ FICHE INTERVENTION                                                   │
-│  N° interv. │ Date      │ N° client │ Entreprise                     │  fiche 3
-│  Titre      │ Nom       │ Prénom    │ Texte de facture               │  168 pt
-│  Heures     │ Personnes │ ☐TVA ☐Forf│ Chiffre d'affaires             │
-│  N° facture │ Commentaires ........................................  │
+│  N° client  │ Titre     │ N° interv.│ Date      │ Texte de       │  fiche 3
+│  Entreprise ............ │ N° facture│ Heures    │ facture ......  │  168 pt
+│  Nom ................... │ Chiffre   │ Personnes │ Commentaires    │
+│  Prénom ................ │ ☐ TVA     │ ☐ Forfait │ ..............  │
 ├──────────────────────────────────────────────────────────────────────┤
 │ Filtrer sur [Entreprise ▾] [__________]  Réinit.   n/N interventions  │  38 pt
 ├──────────────────────────────────────────────────────────────────────┤
@@ -90,23 +90,33 @@ Le graphique et le bloc de tuiles se partagent la largeur de la carte&nbsp;: le 
 
 ## Fiche 3 — les quinze champs
 
+La grille compte quatre lignes et six colonnes de **126 pt**, groupées en **trois régions** de deux colonnes. L'écart entre régions (**42 pt**) est plus large que la gouttière intérieure (**20 pt**) : ce sont ces respirations, et non un trait, qui font lire trois groupes.
+
+| Région | Colonnes | Ce qu'elle porte |
+|---|---|---|
+| 1 | 1-2 | **Le client** — n° et titre, puis entreprise, nom, prénom sur toute la largeur |
+| 2 | 3-4 | **L'intervention** — n° et date, n° de facture et heures, CA et personnes, TVA et forfait |
+| 3 | 5-6 | **Les textes libres** — texte de facture et commentaires, hauts de deux lignes |
+
+L'identité du client d'abord, les chiffres de l'intervention ensuite, les textes libres enfin : c'est l'ordre dans lequel une fiche se remplit. La colonne « Case » ci-dessous se lit *région, ligne, colonne*.
+
 | # | Colonne | Libellé | Contrôle | Case | Saisie | Particularité |
 |---|---|---|---|---|---|---|
-| 1 | `NoInterv` | N° intervention | `txtNoInterv` | L1 C1 | libre | verrouillé — `IN` + plus grand numéro + 1, à l'ajout |
-| 2 | `Date` | Date | `txtDate` | L1 C2 | libre | date du jour par défaut ; le bouton ▾ ouvre le calendrier |
-| 3 | `Client_No` | N° client (Crésus) | `txtClient_No` | L1 C3 | libre | verrouillé à la frappe, mais **enregistré** — repris de `ID_Cresus` du client choisi |
-| 4 | `Entreprise` | Entreprise | `cboEntreprise` | L1 C4 | libre | liste filtrée au fil de la frappe sur `TblClients[Entreprise]` |
-| 5 | `Titre` | Titre | `cboTitre` | L2 C1 | libre | civilités présentes dans `TblClients` |
-| 6 | `Nom` | Nom | `cboNom` | L2 C2 | libre | liste filtrée au fil de la frappe sur `TblClients[Nom]` |
-| 7 | `Prenom` | Prénom | `txtPrenom` | L2 C3 | libre | — |
-| 8 | `Texte_Facture` | Texte de facture | `cboTexte_Facture` | L2 C4 | libre | textes standards de `TblTxtStd` |
-| 9 | `Nb_Hres` | Heures | `txtNb_Hres` | L3 C1 | hhh:mm | saisie en heures : `420:00`. Excel stocke une fraction de jour. |
-| 10 | `Nb_Pers` | Personnes | `txtNb_Pers` | L3 C2 | chiffres | entier de 1 à 99 |
-| 11 | `TVA` | TVA | `chkTVA` | L3 C3 ½g | libre | repris du client |
-| 12 | `Forfait` | Forfait | `chkForfait` | L3 C3 ½d | libre | repris du client ; change le calcul du CA |
-| 13 | `CA` | Chiffre d'affaires | `txtCA` | L3 C4 | libre | **colonne calculée** — jamais écrite ; estimation affichée pendant la saisie |
-| 14 | `No_Facture` | N° de facture | `txtNo_Facture` | L4 C1 | libre | verrouillé — attribué par la facturation |
-| 15 | `Commentaires` | Commentaires | `txtCommentaires` | L4 C2 ×3 | libre | repris de `Note_Interne` du client |
+| 1 | `Client_No` | N° client | `txtClient_No` | R1 L1 C1 | libre | verrouillé à la frappe, mais **enregistré** — repris de `ID_Cresus` du client choisi |
+| 2 | `Titre` | Titre | `cboTitre` | R1 L1 C2 | libre | civilités présentes dans `TblClients` |
+| 3 | `Entreprise` | Entreprise | `cboEntreprise` | R1 L2 C1 ×2 col. | libre | liste filtrée au fil de la frappe sur `TblClients[Entreprise]` |
+| 4 | `Nom` | Nom | `cboNom` | R1 L3 C1 ×2 col. | libre | liste filtrée au fil de la frappe sur `TblClients[Nom]` |
+| 5 | `Prenom` | Prénom | `txtPrenom` | R1 L4 C1 ×2 col. | libre | — |
+| 6 | `NoInterv` | N° intervention | `txtNoInterv` | R2 L1 C3 | libre | verrouillé — `IN` + plus grand numéro + 1, à l'ajout |
+| 7 | `Date` | Date | `txtDate` | R2 L1 C4 | libre | date du jour par défaut ; le bouton ▾ ouvre le calendrier |
+| 8 | `No_Facture` | N° de facture | `txtNo_Facture` | R2 L2 C3 | libre | verrouillé — attribué par la facturation |
+| 9 | `Nb_Hres` | Heures | `txtNb_Hres` | R2 L2 C4 | hhh:mm | saisie en heures : `420:00`. Excel stocke une fraction de jour. |
+| 10 | `CA` | Chiffre d'affaires | `txtCA` | R2 L3 C3 | libre | **colonne calculée** — jamais écrite ; estimation affichée pendant la saisie |
+| 11 | `Nb_Pers` | Personnes | `txtNb_Pers` | R2 L3 C4 | chiffres | entier de 1 à 99 |
+| 12 | `TVA` | TVA | `chkTVA` | R2 L4 C3 | libre | repris du client |
+| 13 | `Forfait` | Forfait | `chkForfait` | R2 L4 C4 | libre | repris du client ; change le calcul du CA |
+| 14 | `Texte_Facture` | Texte de facture | `cboTexte_Facture` | R3 L1 C5 ×2 col. ×2 lig. | libre | haut de deux lignes ; textes standards de `TblTxtStd` |
+| 15 | `Commentaires` | Commentaires | `txtCommentaires` | R3 L3 C5 ×2 col. ×2 lig. | libre | haut de deux lignes, multi-ligne avec ascenseur ; repris de `Note_Interne` du client |
 
 > **Verrouillé n'est pas « non enregistré ».** Un champ verrouillé est hors de portée de la frappe, ce qui ne dit rien de son sort à l'écriture. Trois colonnes seulement échappent au formulaire — `NoInterv`, attribué à l'ajout, `CA`, qui porte une formule, et `No_Facture`, attribué par la facturation ; elles sont listées dans `IColonnesNonEcrites`. Tout le reste part dans le tableau, y compris le n° de client : il est verrouillé parce qu'on ne le tape pas, pas parce qu'il ne compte pas — et le chiffre d'affaires le cherche dans `TblClients`.
 
@@ -247,15 +257,16 @@ Trois états se distinguent d'un coup d'œil : le **jour choisi** (pastille bleu
 | `GR_BARRE_LARG` | 26 pt | largeur d'une barre |
 | `F2_TUILE_LARG` | 118 pt | largeur d'une tuile |
 | `F2_TUILE_HAUT` | 56 pt | hauteur d'une tuile |
-| `F2_TUILE_INSET` | 10 pt | retrait des libellés dans une tuile |
+| `F2_TUILE_INSET` | 17 pt | retrait des libellés dans une tuile |
 | `F2_TUILE_CAP_HAUT` | 11 pt | hauteur du cadre du libellé de tuile |
 | `F2_TUILE_VAL_HAUT` | 15 pt | hauteur du cadre du montant |
 | `F2_TUILE_ECART` | 3 pt | écart entre le libellé et le montant |
 | `F2_PADDING` | 14 pt | retrait intérieur de la carte des statistiques |
 | `F3_TOP` | 226 pt | haut de la fiche 3 |
 | `F3_HAUT` | 168 pt | hauteur de la fiche 3 |
-| `IG_BLOC` | 210 pt | largeur d'un bloc libellé + champ |
-| `IG_GOUTTIERE` | 20 pt | espace entre deux blocs |
+| `IG_BLOC` | 126 pt | largeur d'une colonne de saisie |
+| `IG_GOUTTIERE` | 20 pt | espace entre deux colonnes d'une même région |
+| `IG_ECART_REGION` | 42 pt | espace entre deux régions |
 | `IG_LIGNE` | 32 pt | pas vertical de la grille |
 | `IF_TOP` | 402 pt | haut de la barre de filtrage |
 | `IF_HAUT` | 38 pt | hauteur de la barre de filtrage |

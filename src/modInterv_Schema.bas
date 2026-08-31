@@ -66,9 +66,9 @@ Public Type ChampInterv
     TypeCtrl As String
     Verrouille As Boolean   ' True = géré par le programme, non saisissable
     Ligne As Long           ' ligne de grille, 1 à 4
-    Col As Long             ' colonne de grille, 1 à 4
-    Moitie As Long          ' 0 = bloc entier, 1 = moitié gauche, 2 = moitié droite
-    Blocs As Long           ' nombre de blocs occupés en largeur (1 par défaut)
+    Col As Long             ' colonne de grille, 1 à 6
+    Blocs As Long           ' nombre de colonnes occupées en largeur (1 par défaut)
+    NbLignes As Long        ' nombre de lignes occupées en hauteur (1 par défaut)
     Saisie As Long          ' ISAISIE_*
     Aide As String
 End Type
@@ -88,44 +88,65 @@ End Function
 ' Remplit le schéma. C'est LA table à modifier pour déplacer, renommer ou
 ' verrouiller un champ ; le générateur et le formulaire s'y adaptent seuls.
 '
-'   n°  colonne, libellé, type, verrouillé, ligne, colonne, moitié, blocs,
+'   n°  colonne, libellé, type, verrouillé, ligne, colonne, blocs, lignes,
 '       contrainte de saisie, info-bulle
+'
+' La grille compte quatre lignes et six colonnes, groupées en trois régions de
+' deux colonnes. Le schéma est en caractères ASCII : les traits fins d'Unicode
+' n'existent pas en Windows-1252, format dans lequel ces fichiers sont stockés.
+'
+'   +-- région 1 : le client --+-- région 2 : l'intervention -+- région 3 ---+
+'   | N° client   | Titre      | N° intervention | Date       | Texte de     |
+'   | Entreprise .............>| N° de facture   | Heures     | facture ....>|
+'   | Nom ....................>| Chiffre d'aff.  | Personnes  | Commentaires |
+'   | Prénom .................>| [ ] TVA         | [ ] Forfait| ............>|
+'   +--------------------------+------------------------------+--------------+
+'
+' Les pointillés marquent un champ qui s'étale sur les deux colonnes de sa
+' région ; dans la troisième, les deux champs occupent aussi deux lignes.
+'
+' L'identité du client d'abord, puis les chiffres de l'intervention, puis les
+' textes libres : c'est l'ordre dans lequel une fiche se remplit.
 '------------------------------------------------------------------------------
 Private Sub ConstruireSchemaInterv()
     ReDim mChamps(1 To NB_CHAMPS_INTERV)
 
-    DefInterv mChamps, 1, IC_NO, "N° intervention", ITYPE_TEXTE, True, 1, 1, 0, 1, ISAISIE_LIBRE, _
-        "Index du tableau, attribué automatiquement par le programme"
-    DefInterv mChamps, 2, IC_DATE, "Date", ITYPE_DATE, False, 1, 2, 0, 1, ISAISIE_LIBRE, _
-        "Date de l'intervention. Cliquez sur l'icône pour ouvrir le calendrier."
-    DefInterv mChamps, 3, IC_CLIENT, "N° client (Crésus)", ITYPE_TEXTE, True, 1, 3, 0, 1, ISAISIE_LIBRE, _
+    ' --- région 1 : le client, colonnes 1 et 2 -------------------------------
+    DefInterv mChamps, 1, IC_CLIENT, "N° client", ITYPE_TEXTE, True, 1, 1, 1, 1, ISAISIE_LIBRE, _
         "Renseigné automatiquement en choisissant une entreprise ou un nom"
-    DefInterv mChamps, 4, IC_ENTREPRISE, "Entreprise", ITYPE_AUTO, False, 1, 4, 0, 1, ISAISIE_LIBRE, _
-        "Tapez les premières lettres : la liste des entreprises de TblClients se filtre au fil de la frappe"
-
-    DefInterv mChamps, 5, IC_TITRE, "Titre", ITYPE_LISTE, False, 2, 1, 0, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 2, IC_TITRE, "Titre", ITYPE_LISTE, False, 1, 2, 1, 1, ISAISIE_LIBRE, _
         "Civilité du client"
-    DefInterv mChamps, 6, IC_NOM, "Nom", ITYPE_AUTO, False, 2, 2, 0, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 3, IC_ENTREPRISE, "Entreprise", ITYPE_AUTO, False, 2, 1, 2, 1, ISAISIE_LIBRE, _
+        "Tapez les premières lettres : la liste des entreprises de TblClients se filtre au fil de la frappe"
+    DefInterv mChamps, 4, IC_NOM, "Nom", ITYPE_AUTO, False, 3, 1, 2, 1, ISAISIE_LIBRE, _
         "Tapez les premières lettres : la liste des noms de TblClients se filtre au fil de la frappe"
-    DefInterv mChamps, 7, IC_PRENOM, "Prénom", ITYPE_TEXTE, False, 2, 3, 0, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 5, IC_PRENOM, "Prénom", ITYPE_TEXTE, False, 4, 1, 2, 1, ISAISIE_LIBRE, _
         "Prénom du client"
-    DefInterv mChamps, 8, IC_TEXTE, "Texte de facture", ITYPE_LISTE, False, 2, 4, 0, 1, ISAISIE_LIBRE, _
-        "Texte repris sur la facture, repris du client ou choisi dans la liste"
 
-    DefInterv mChamps, 9, IC_HEURES, "Heures", ITYPE_TEXTE, False, 3, 1, 0, 1, ISAISIE_HEURES, _
-        "Durée au format heures:minutes, par exemple 420:00"
-    DefInterv mChamps, 10, IC_PERS, "Personnes", ITYPE_TEXTE, False, 3, 2, 0, 1, ISAISIE_ENTIER, _
-        "Nombre de personnes intervenues, de 1 à 99"
-    DefInterv mChamps, 11, IC_TVA, "TVA", ITYPE_CASE, False, 3, 3, 1, 1, ISAISIE_LIBRE, _
-        "Le client est assujetti à la TVA"
-    DefInterv mChamps, 12, IC_FORFAIT, "Forfait", ITYPE_CASE, False, 3, 3, 2, 1, ISAISIE_LIBRE, _
-        "Facturation au forfait plutôt qu'à l'heure"
-    DefInterv mChamps, 13, IC_CA, "Chiffre d'affaires", ITYPE_TEXTE, True, 3, 4, 0, 1, ISAISIE_LIBRE, _
-        "Calculé par le tableau Excel. La valeur affichée ici est une estimation, mise à jour au fil de la saisie."
-
-    DefInterv mChamps, 14, IC_FACTURE, "N° de facture", ITYPE_TEXTE, True, 4, 1, 0, 1, ISAISIE_LIBRE, _
+    ' --- région 2 : l'intervention, colonnes 3 et 4 ---------------------------
+    DefInterv mChamps, 6, IC_NO, "N° intervention", ITYPE_TEXTE, True, 1, 3, 1, 1, ISAISIE_LIBRE, _
+        "Index du tableau, attribué automatiquement par le programme"
+    DefInterv mChamps, 7, IC_DATE, "Date", ITYPE_DATE, False, 1, 4, 1, 1, ISAISIE_LIBRE, _
+        "Date de l'intervention. Cliquez sur l'icône pour ouvrir le calendrier."
+    DefInterv mChamps, 8, IC_FACTURE, "N° de facture", ITYPE_TEXTE, True, 2, 3, 1, 1, ISAISIE_LIBRE, _
         "Attribué par la facturation, pas depuis ce formulaire"
-    DefInterv mChamps, 15, IC_COMMENT, "Commentaires", ITYPE_TEXTE, False, 4, 2, 0, 3, ISAISIE_LIBRE, _
+    DefInterv mChamps, 9, IC_HEURES, "Heures", ITYPE_TEXTE, False, 2, 4, 1, 1, ISAISIE_HEURES, _
+        "Durée au format heures:minutes, par exemple 420:00"
+    DefInterv mChamps, 10, IC_CA, "Chiffre d'affaires", ITYPE_TEXTE, True, 3, 3, 1, 1, ISAISIE_LIBRE, _
+        "Calculé par le tableau Excel. La valeur affichée ici est une estimation, mise à jour au fil de la saisie."
+    DefInterv mChamps, 11, IC_PERS, "Personnes", ITYPE_TEXTE, False, 3, 4, 1, 1, ISAISIE_ENTIER, _
+        "Nombre de personnes intervenues, de 1 à 99"
+    DefInterv mChamps, 12, IC_TVA, "TVA", ITYPE_CASE, False, 4, 3, 1, 1, ISAISIE_LIBRE, _
+        "Le client est assujetti à la TVA"
+    DefInterv mChamps, 13, IC_FORFAIT, "Forfait", ITYPE_CASE, False, 4, 4, 1, 1, ISAISIE_LIBRE, _
+        "Facturation au forfait plutôt qu'à l'heure"
+
+    ' --- région 3 : les textes libres, colonnes 5 et 6 ------------------------
+    ' Deux champs seulement, hauts de deux lignes chacun : ils remplissent la
+    ' région et laissent la place d'écrire.
+    DefInterv mChamps, 14, IC_TEXTE, "Texte de facture", ITYPE_LISTE, False, 1, 5, 2, 2, ISAISIE_LIBRE, _
+        "Texte repris sur la facture, repris du client ou choisi dans la liste"
+    DefInterv mChamps, 15, IC_COMMENT, "Commentaires", ITYPE_TEXTE, False, 3, 5, 2, 2, ISAISIE_LIBRE, _
         "Remarque libre sur l'intervention"
 
     mCharges = True
@@ -137,16 +158,16 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub DefInterv(ByRef tb() As ChampInterv, ByVal idx As Long, ByVal colonne As String, _
                       ByVal libelle As String, ByVal typeCtrl As String, ByVal verrouille As Boolean, _
-                      ByVal ligne As Long, ByVal col As Long, ByVal moitie As Long, _
-                      ByVal blocs As Long, ByVal saisie As Long, ByVal aide As String)
+                      ByVal ligne As Long, ByVal col As Long, ByVal blocs As Long, _
+                      ByVal nbLignes As Long, ByVal saisie As Long, ByVal aide As String)
     tb(idx).Colonne = colonne
     tb(idx).Libelle = libelle
     tb(idx).TypeCtrl = typeCtrl
     tb(idx).Verrouille = verrouille
     tb(idx).Ligne = ligne
     tb(idx).Col = col
-    tb(idx).Moitie = moitie
     tb(idx).Blocs = blocs
+    tb(idx).NbLignes = nbLignes
     tb(idx).Saisie = saisie
     tb(idx).Aide = aide
 End Sub
