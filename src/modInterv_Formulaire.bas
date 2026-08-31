@@ -492,8 +492,11 @@ End Function
 ' Contenu des zones de saisie, typé pour l'écriture dans la feuille.
 '   renvoie : un Dictionary nom de colonne -> valeur
 '
-' Les champs verrouillés et les colonnes calculées sont écartés : les premiers
-' sont gérés par le programme, la seconde catégorie garde ses formules.
+' Ce qui est écarté, ce ne sont PAS les champs verrouillés : un champ peut être
+' hors de portée de la frappe et devoir malgré tout être enregistré — c'est le
+' cas du n° de client, rempli par le choix du client. Seules les colonnes de
+' IColonnesNonEcrites et les colonnes calculées restent en dehors.
+'
 ' Un champ vide donne Empty, et non une chaîne vide, pour que la cellule Excel
 ' reste réellement vide.
 '------------------------------------------------------------------------------
@@ -506,7 +509,7 @@ Private Function LireChampsInterv(f As Object) As Object
     ch = ObtenirChampsInterv()
 
     For i = LBound(ch) To UBound(ch)
-        If Not ch(i).Verrouille And Not Interv_EstCalculee(ch(i).Colonne) Then
+        If Not IColonneNonEcrite(ch(i).Colonne) And Not Interv_EstCalculee(ch(i).Colonne) Then
             Set c = ICtl(f, INomControle(ch(i)))
             If Not c Is Nothing Then
                 Select Case ch(i).TypeCtrl

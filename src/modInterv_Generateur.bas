@@ -215,7 +215,7 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub ConstruireFiche2(dsg As Object)
     Dim c As Object, tuiles As Variant, i As Long, x As Single, y As Single
-    Dim col As Long, lig As Long
+    Dim col As Long, lig As Long, yCap As Single
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte2", I_MARGE, F2_TOP, I_CARTE_LARG, F2_HAUT)
     CarteI c
@@ -237,25 +237,45 @@ Private Sub ConstruireFiche2(dsg As Object)
         Set c = AjCtrl(dsg, "Forms.Image.1", "imgTuile_" & CStr(i + 1), x, y, _
                        F2_TUILE_LARG, F2_TUILE_HAUT)
         With c
-            .BorderStyle = MSF_BorderStyleNone
             .SpecialEffect = MSF_SpecialEffectFlat
+            .BorderStyle = MSF_BorderStyleNone
+            .BorderColor = COUL_CARTE   ' blanc : invisible même si un filet réapparaît
             .BackStyle = MSF_BackStyleOpaque
             .BackColor = COUL_CARTE
             .PictureSizeMode = 1        ' fmPictureSizeModeStretch : remplit la tuile
         End With
 
+        ' bloc « libellé + montant » centré verticalement dans la tuile
+        yCap = y + (F2_TUILE_HAUT - (F2_TUILE_CAP_HAUT + F2_TUILE_ECART + F2_TUILE_VAL_HAUT)) / 2
+
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatCap_" & CStr(i + 1), _
-                       x + F2_TUILE_INSET, y + 8, F2_TUILE_LARG - 2 * F2_TUILE_INSET, 11)
-        Texte c, UCase$(CStr(tuiles(i)(0))), TAILLE_TUILE_CAP, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
-        c.BackStyle = MSF_BackStyleOpaque
-        c.BackColor = COUL_CARTE
+                       x + F2_TUILE_INSET, yCap, _
+                       F2_TUILE_LARG - 2 * F2_TUILE_INSET, F2_TUILE_CAP_HAUT)
+        Texte c, UCase$(CStr(tuiles(i)(0))), TAILLE_TUILE_CAP, True, COUL_TEXTE_DOUX, _
+              MSF_TextAlignCenter
+        FondTuile c
 
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatVal_" & CStr(i + 1), _
-                       x + F2_TUILE_INSET, y + 22, F2_TUILE_LARG - 2 * F2_TUILE_INSET, 22)
-        Texte c, vbNullString, TAILLE_STAT, True, COUL_BANDEAU, MSF_TextAlignLeft
-        c.BackStyle = MSF_BackStyleOpaque
-        c.BackColor = COUL_CARTE
+                       x + F2_TUILE_INSET, yCap + F2_TUILE_CAP_HAUT + F2_TUILE_ECART, _
+                       F2_TUILE_LARG - 2 * F2_TUILE_INSET, F2_TUILE_VAL_HAUT)
+        Texte c, vbNullString, TAILLE_STAT, True, COUL_BANDEAU, MSF_TextAlignCenter
+        FondTuile c
     Next i
+End Sub
+
+'------------------------------------------------------------------------------
+' Fond d'un texte de tuile.
+'
+' Opaque et blanc : le texte doit se détacher de l'image de fond de la tuile.
+' Le filet est retiré ET peint en blanc — MSForms redessine parfois une bordure
+' quand un contrôle est déplacé dans le concepteur, et une bordure blanche sur
+' fond blanc ne se verra pas.
+'------------------------------------------------------------------------------
+Private Sub FondTuile(c As Object)
+    c.BackStyle = MSF_BackStyleOpaque
+    c.BackColor = COUL_CARTE
+    c.BorderStyle = MSF_BorderStyleNone
+    c.BorderColor = COUL_CARTE
 End Sub
 
 '------------------------------------------------------------------------------

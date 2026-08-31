@@ -80,6 +80,8 @@ Chaque tuile est un contrôle Image portant **`CartePremium.jpg`** (sous-dossier
 
 L'image est étirée aux dimensions de la tuile (118 × 56 pt). Une source dans ces proportions évite de déformer l'arrondi des coins.
 
+Libellé et montant sont centrés dans la tuile&nbsp;: horizontalement par `TextAlign`, verticalement en posant le bloc «&nbsp;libellé + écart + montant&nbsp;» à mi-hauteur, ce qui reste juste si l'on change `F2_TUILE_HAUT`. Un libellé MSForms dessinant son texte en HAUT de son cadre, chaque cadre est taillé au plus près de sa police (`F2_TUILE_CAP_HAUT`, `F2_TUILE_VAL_HAUT`). Les filets sont retirés **et** peints en blanc, de sorte qu'aucun liseré ne puisse apparaître sur l'image de fond.
+
 
 Le graphique et le bloc de tuiles se partagent la largeur de la carte&nbsp;: le graphique occupe **518 pt** à gauche, les 6 tuiles de **118 pt** sont calées sur le bord droit. Élargir les tuiles rétrécit d'autant le graphique&nbsp;; leur position se recalcule toute seule, seule `F2_GRAPH_LARG` est à ajuster en regard.
 
@@ -92,7 +94,7 @@ Le graphique et le bloc de tuiles se partagent la largeur de la carte&nbsp;: le 
 |---|---|---|---|---|---|---|
 | 1 | `NoInterv` | N° intervention | `txtNoInterv` | L1 C1 | libre | verrouillé — `IN` + plus grand numéro + 1, à l'ajout |
 | 2 | `Date` | Date | `txtDate` | L1 C2 | libre | date du jour par défaut ; le bouton ▾ ouvre le calendrier |
-| 3 | `Client_No` | N° client (Crésus) | `txtClient_No` | L1 C3 | libre | verrouillé — repris de `ID_Cresus` du client choisi |
+| 3 | `Client_No` | N° client (Crésus) | `txtClient_No` | L1 C3 | libre | verrouillé à la frappe, mais **enregistré** — repris de `ID_Cresus` du client choisi |
 | 4 | `Entreprise` | Entreprise | `cboEntreprise` | L1 C4 | libre | liste filtrée au fil de la frappe sur `TblClients[Entreprise]` |
 | 5 | `Titre` | Titre | `cboTitre` | L2 C1 | libre | civilités présentes dans `TblClients` |
 | 6 | `Nom` | Nom | `cboNom` | L2 C2 | libre | liste filtrée au fil de la frappe sur `TblClients[Nom]` |
@@ -105,6 +107,9 @@ Le graphique et le bloc de tuiles se partagent la largeur de la carte&nbsp;: le 
 | 13 | `CA` | Chiffre d'affaires | `txtCA` | L3 C4 | libre | **colonne calculée** — jamais écrite ; estimation affichée pendant la saisie |
 | 14 | `No_Facture` | N° de facture | `txtNo_Facture` | L4 C1 | libre | verrouillé — attribué par la facturation |
 | 15 | `Commentaires` | Commentaires | `txtCommentaires` | L4 C2 ×3 | libre | repris de `Note_Interne` du client |
+
+> **Verrouillé n'est pas « non enregistré ».** Un champ verrouillé est hors de portée de la frappe, ce qui ne dit rien de son sort à l'écriture. Trois colonnes seulement échappent au formulaire — `NoInterv`, attribué à l'ajout, `CA`, qui porte une formule, et `No_Facture`, attribué par la facturation ; elles sont listées dans `IColonnesNonEcrites`. Tout le reste part dans le tableau, y compris le n° de client : il est verrouillé parce qu'on ne le tape pas, pas parce qu'il ne compte pas — et le chiffre d'affaires le cherche dans `TblClients`.
+
 
 ### Report automatique depuis TblClients
 
@@ -243,6 +248,9 @@ Trois états se distinguent d'un coup d'œil : le **jour choisi** (pastille bleu
 | `F2_TUILE_LARG` | 118 pt | largeur d'une tuile |
 | `F2_TUILE_HAUT` | 56 pt | hauteur d'une tuile |
 | `F2_TUILE_INSET` | 10 pt | retrait des libellés dans une tuile |
+| `F2_TUILE_CAP_HAUT` | 11 pt | hauteur du cadre du libellé de tuile |
+| `F2_TUILE_VAL_HAUT` | 15 pt | hauteur du cadre du montant |
+| `F2_TUILE_ECART` | 3 pt | écart entre le libellé et le montant |
 | `F2_PADDING` | 14 pt | retrait intérieur de la carte des statistiques |
 | `F3_TOP` | 226 pt | haut de la fiche 3 |
 | `F3_HAUT` | 168 pt | hauteur de la fiche 3 |

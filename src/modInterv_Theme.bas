@@ -87,6 +87,16 @@ Public Const F2_TUILE_INSET As Single = 10
 Public Const TAILLE_STAT As Single = 11.5     ' montant affiché dans une tuile
 Public Const TAILLE_TUILE_CAP As Single = 7.5 ' libellé de tuile, le plus long étant « MOIS NON FACTURÉ »
 
+' Libellé et montant sont centrés dans la tuile, horizontalement par TextAlign
+' et verticalement par le calcul ci-dessous : le bloc « libellé + écart +
+' montant » est posé à mi-hauteur, de sorte qu'il reste centré même si l'on
+' change F2_TUILE_HAUT. Un libellé MSForms dessine son texte en HAUT de son
+' cadre, jamais au milieu : chaque cadre est donc taillé au plus près de sa
+' police, sans quoi le texte se décalerait vers le haut.
+Public Const F2_TUILE_CAP_HAUT As Single = 11
+Public Const F2_TUILE_VAL_HAUT As Single = 15
+Public Const F2_TUILE_ECART As Single = 3     ' entre le libellé et le montant
+
 '--- Fiche 3 : saisie ---------------------------------------------------------
 Public Const F3_TOP As Single = 226
 Public Const F3_HAUT As Single = 168

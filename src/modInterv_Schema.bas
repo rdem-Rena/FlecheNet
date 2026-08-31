@@ -189,6 +189,38 @@ Public Function INomControleColonne(ByVal nomColonne As String) As String
 End Function
 
 '==============================================================================
+' Colonnes que le formulaire n'écrit JAMAIS dans TblInterv.
+'------------------------------------------------------------------------------
+' « Verrouillé » et « non enregistré » sont deux choses différentes, et les
+' confondre a coûté un défaut : le n° de client est verrouillé — l'utilisateur
+' ne le tape pas, il vient du client choisi — mais il doit bel et bien partir
+' dans le tableau, sinon la colonne reste vide et le chiffre d'affaires, qui
+' cherche ce numéro dans TblClients, ne trouve rien.
+'
+' Trois colonnes seulement échappent au formulaire :
+'   NoInterv   attribué par IntervBD_Ajouter, jamais retouché ensuite
+'   CA         porte une formule ; l'écrire l'effacerait
+'   No_Facture attribué par la facturation, pas depuis cette fiche
+'==============================================================================
+Public Function IColonnesNonEcrites() As Variant
+    IColonnesNonEcrites = Array(IC_NO, IC_CA, IC_FACTURE)
+End Function
+
+'------------------------------------------------------------------------------
+' True si le formulaire ne doit pas écrire cette colonne.
+'------------------------------------------------------------------------------
+Public Function IColonneNonEcrite(ByVal colonne As String) As Boolean
+    Dim v As Variant, i As Long
+    v = IColonnesNonEcrites()
+    For i = LBound(v) To UBound(v)
+        If StrComp(colonne, CStr(v(i)), vbTextCompare) = 0 Then
+            IColonneNonEcrite = True
+            Exit Function
+        End If
+    Next i
+End Function
+
+'==============================================================================
 ' Colonnes du tableau des enregistrements
 '------------------------------------------------------------------------------
 ' Dix au maximum : c'est ce qu'accepte une ListBox MSForms. Titre a été laissé
