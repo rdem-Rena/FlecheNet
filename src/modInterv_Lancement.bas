@@ -89,12 +89,9 @@ Public Sub VerifierClasseurInterventions()
     Next i
 
     ' --- graphique et image ---------------------------------------------------
-    If Len(Interv_ExporterGraphique()) > 0 Then
-        msg = msg & "[OK] Graphique " & NOM_GRAPHIQUE & " : exportable" & vbCrLf
-    Else
-        msg = msg & "[X] Graphique " & NOM_GRAPHIQUE & " : introuvable sur la feuille " & _
-              NOM_FEUILLE_STATS & vbCrLf
-    End If
+    ' Le graphique est dessiné par le formulaire : ce ne sont plus les formes de
+    ' la feuille qui comptent, mais la table qui porte ses valeurs.
+    msg = msg & LigneTableI(NOM_TABLE_GRAPH, "valeurs du graphique du chiffre d'affaires")
 
     If Len(Interv_CheminImageTuile()) > 0 Then
         msg = msg & "[OK] Image " & IMAGE_TUILE & " : trouvée" & vbCrLf

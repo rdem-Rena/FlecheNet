@@ -786,6 +786,7 @@ Private Function CodeDuFormulaire() As String
 
     ' --- formulaire -----------------------------------------------------------
     Proc "UserForm_Initialize()", "Clients_Initialiser Me"
+    Proc "UserForm_Activate()", "Clients_Activer Me"
     Proc "UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)", "Clients_Fermeture Me"
     Proc "UserForm_MouseMove" & SIG_SOURIS, "Clients_Survol Me, " & Q("")
 

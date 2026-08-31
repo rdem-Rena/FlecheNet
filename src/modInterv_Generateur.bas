@@ -225,14 +225,7 @@ Private Sub ConstruireFiche2(dsg As Object)
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblSectionStats", 30, F2_TOP + 6, 700, 13)
     Texte c, "STATISTIQUES", TAILLE_SECTION, True, COUL_SECTION, MSF_TextAlignLeft
 
-    Set c = AjCtrl(dsg, "Forms.Image.1", "imgGraphique", 30, F2_TOP + 24, F2_GRAPH_LARG, 118)
-    With c
-        .BorderStyle = MSF_BorderStyleNone
-        .SpecialEffect = MSF_SpecialEffectFlat
-        .BackStyle = MSF_BackStyleTransparent
-        .PictureSizeMode = 3            ' fmPictureSizeModeZoom : garde les proportions
-        .PictureAlignment = 2           ' fmPictureAlignmentCenter
-    End With
+    ConstruireGraphique dsg, GR_ORIGINE_X, GR_ORIGINE_Y
 
     tuiles = TuilesStatistiques()
     For i = LBound(tuiles) To UBound(tuiles)
@@ -253,7 +246,7 @@ Private Sub ConstruireFiche2(dsg As Object)
 
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatCap_" & CStr(i + 1), _
                        x + F2_TUILE_INSET, y + 8, F2_TUILE_LARG - 2 * F2_TUILE_INSET, 11)
-        Texte c, UCase$(CStr(tuiles(i)(0))), TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+        Texte c, UCase$(CStr(tuiles(i)(0))), TAILLE_TUILE_CAP, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
         c.BackStyle = MSF_BackStyleOpaque
         c.BackColor = COUL_CARTE
 
@@ -262,6 +255,52 @@ Private Sub ConstruireFiche2(dsg As Object)
         Texte c, vbNullString, TAILLE_STAT, True, COUL_BANDEAU, MSF_TextAlignLeft
         c.BackStyle = MSF_BackStyleOpaque
         c.BackColor = COUL_CARTE
+    Next i
+End Sub
+
+'------------------------------------------------------------------------------
+' Contrôles du graphique du chiffre d'affaires.
+'   ox, oy : coin haut-gauche de la zone qui lui est réservée
+'
+' Rien n'est positionné définitivement ici sauf le décor : la légende, l'échelle
+' et les lignes de repère. Les douze barres et les noms de mois sont créés puis
+' placés à l'exécution par Graph_Tracer, qui seul connaît les valeurs.
+'
+' Une seule série, donc une seule teinte et aucune légende de couleurs : le
+' titre nomme ce qui est représenté. La grille reste volontairement discrète, et
+' seul le sommet de l'échelle est écrit — les autres montants se lisent au
+' survol, plutôt que d'imprimer un nombre sur chaque barre.
+'------------------------------------------------------------------------------
+Private Sub ConstruireGraphique(dsg As Object, ByVal ox As Single, ByVal oy As Single)
+    Dim c As Object, i As Long, y As Single, largeur As Single
+
+    largeur = F2_GRAPH_LARG - GR_MARGE_G
+
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrLegende", ox, oy, F2_GRAPH_LARG, GR_LEGENDE_HAUT)
+    Texte c, "Chiffre d'affaires par mois", TAILLE_FILTRE, False, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrMax", ox, oy + GR_TRACE_TOP - 5, GR_MARGE_G - 8, 11)
+    Texte c, vbNullString, TAILLE_LIBELLE, False, COUL_TEXTE_DOUX, MSF_TextAlignRight
+
+    ' trois repères : le sommet de l'échelle, la moitié, la ligne de base
+    For i = 1 To 3
+        y = oy + GR_TRACE_TOP + (i - 1) * (GR_TRACE_HAUT / 2)
+        Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrGrille_" & CStr(i), _
+                       ox + GR_MARGE_G, y, largeur, 1)
+        Fond c, IIf(i = 3, COUL_GR_BASE, COUL_GR_GRILLE), _
+                IIf(i = 3, COUL_GR_BASE, COUL_GR_GRILLE)
+    Next i
+
+    ' barres et noms de mois : créés ici, placés par Graph_Tracer
+    For i = 1 To GR_NB_MOIS
+        Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrBarre_" & CStr(i), _
+                       ox + GR_MARGE_G, oy + GR_TRACE_TOP, GR_BARRE_LARG, 1)
+        Fond c, COUL_GR_BARRE, COUL_GR_BARRE
+
+        Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrMois_" & CStr(i), _
+                       ox + GR_MARGE_G, oy + GR_TRACE_TOP + GR_TRACE_HAUT + 3, _
+                       GR_BARRE_LARG, GR_MOIS_HAUT)
+        Texte c, vbNullString, TAILLE_LIBELLE, False, COUL_TEXTE_DOUX, MSF_TextAlignCenter
     Next i
 End Sub
 
@@ -496,22 +535,30 @@ Private Function ConstruireCalendrier(vbProj As Object) As Long
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalBandeau", 0, 0, CAL_LARGEUR, CAL_BANDEAU)
     Fond c, COUL_BANDEAU, COUL_BANDEAU
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalPrec", 8, 7, 22, 20)
-    Texte c, ChrW(8249), 14, True, COUL_BANDEAU_SOUS, MSF_TextAlignCenter
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalPrec", 10, 10, 24, 22)
+    Texte c, ChrW(8249), 15, True, COUL_BANDEAU_SOUS, MSF_TextAlignCenter
     c.ControlTipText = "Mois précédent"
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalMois", 34, 9, 156, 17)
-    Texte c, vbNullString, 10, True, COUL_BANDEAU_TXT, MSF_TextAlignCenter
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalMois", 40, 11, 180, 19)
+    Texte c, vbNullString, 11, True, COUL_BANDEAU_TXT, MSF_TextAlignCenter
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalSuiv", 194, 7, 22, 20)
-    Texte c, ChrW(8250), 14, True, COUL_BANDEAU_SOUS, MSF_TextAlignCenter
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalSuiv", CAL_LARGEUR - 34, 10, 24, 22)
+    Texte c, ChrW(8250), 15, True, COUL_BANDEAU_SOUS, MSF_TextAlignCenter
     c.ControlTipText = "Mois suivant"
 
     ' --- en-têtes des jours ---------------------------------------------------
     For i = 0 To 6
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblJS_" & CStr(i + 1), _
-                       CAL_GRILLE_X + i * CAL_JOUR_LARG, 42, CAL_JOUR_LARG, 14)
+                       CAL_GRILLE_X + i * CAL_JOUR_LARG, CAL_ENTETES_Y, CAL_JOUR_LARG, 13)
         Texte c, vbNullString, TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignCenter
+    Next i
+
+    ' --- colonnes du week-end, teintées derrière la grille --------------------
+    For i = 1 To 2
+        Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalWE_" & CStr(i), _
+                       CAL_GRILLE_X + (4 + i) * CAL_JOUR_LARG, CAL_GRILLE_Y, _
+                       CAL_JOUR_LARG, 6 * CAL_JOUR_HAUT)
+        Fond c, COUL_CAL_WEEKEND, COUL_CAL_WEEKEND
     Next i
 
     ' --- grille des 42 cases --------------------------------------------------
@@ -524,14 +571,20 @@ Private Function ConstruireCalendrier(vbProj As Object) As Long
         Texte c, vbNullString, TAILLE_CHAMP, False, COUL_TEXTE, MSF_TextAlignCenter
     Next i
 
-    ' --- pied -----------------------------------------------------------------
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalAujourdhui", 10, 196, 100, 14)
+    ' --- raccourcis du bas ----------------------------------------------------
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalAujourdhui", CAL_GRILLE_X, CAL_PIED_Y, 92, 14)
     Texte c, "Aujourd'hui", TAILLE_FILTRE, False, COUL_LIEN, MSF_TextAlignLeft
+    c.ControlTipText = "Revenir au mois en cours"
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalAnnuler", 140, 196, 74, 14)
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalFinMois", CAL_GRILLE_X + 97, CAL_PIED_Y, 80, 14)
+    Texte c, "Fin de mois", TAILLE_FILTRE, False, COUL_LIEN, MSF_TextAlignLeft
+    c.ControlTipText = "Choisir le dernier jour du mois affiché"
+
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalAnnuler", CAL_LARGEUR - CAL_GRILLE_X - 57, _
+                   CAL_PIED_Y, 57, 14)
     Texte c, "Annuler", TAILLE_FILTRE, False, COUL_TEXTE_DOUX, MSF_TextAlignRight
 
-    ReculerFonds dsg, Array("lblCalBandeau")
+    ReculerFonds dsg, Array("lblCalWE_1", "lblCalWE_2", "lblCalBandeau")
 
     vbComp.CodeModule.AddFromString CodeCalendrier()
     ConstruireCalendrier = dsg.Controls.Count
@@ -707,7 +760,10 @@ Private Function CodeFormulairePrincipal() As String
     ProcI "UserForm_Initialize()", "Interv_Initialiser Me"
     ProcI "UserForm_Activate()", "Interv_Activer Me"
     ProcI "UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)", "Interv_Fermeture Me"
-    ProcI "UserForm_MouseMove" & SIG_SOURIS, "Interv_Survol Me, " & Guill("")
+    ' quitter tout contrôle actif ramène boutons et graphique au repos
+    ProcI "UserForm_MouseMove" & SIG_SOURIS, _
+         "Interv_Survol Me, " & Guill("") & vbNewLine & _
+         "    Graph_Survol Me, 0"
 
     ' --- boutons d'action -----------------------------------------------------
     boutons = Array("btnIAjouter", "btnIModifier", "btnISupprimer", "btnIEffacer", _
@@ -719,6 +775,20 @@ Private Function CodeFormulairePrincipal() As String
         ProcI n & "_Click()", CStr(actions(i)) & " Me"
         ProcI n & "_MouseMove" & SIG_SOURIS, "Interv_Survol Me, " & Guill(n)
     Next i
+
+    ' --- graphique ------------------------------------------------------------
+    ' survoler une barre écrit son mois et son montant dans la légende ; le fond
+    ' de la carte, lui, rend la main au titre (voir UserForm_MouseMove ci-dessus)
+    For i = 1 To GR_NB_MOIS
+        ProcI "lblGrBarre_" & CStr(i) & "_MouseMove" & SIG_SOURIS, _
+             "Graph_Survol Me, " & CStr(i)
+    Next i
+
+    ' La carte recouvre toute la zone du graphique : c'est elle, et non le fond
+    ' du formulaire, que la souris atteint en quittant une barre.
+    ProcI "lblCarte2_MouseMove" & SIG_SOURIS, _
+         "Interv_Survol Me, " & Guill("") & vbNewLine & _
+         "    Graph_Survol Me, 0"
 
     ' --- filtrage -------------------------------------------------------------
     ProcI "cboChampFiltreI_Change()", "Interv_AppliquerFiltre Me"
@@ -791,21 +861,41 @@ Private Function CodeCalendrier() As String
     EnteteGenere NOM_FORM_CALENDRIER, "modInterv_Calendrier"
 
     ProcI "UserForm_Initialize()", "Cal_Initialiser Me"
-    ProcI "UserForm_MouseMove" & SIG_SOURIS, _
-         "Cal_SurvolLien Me, " & Guill("lblCalPrec") & ", False" & vbNewLine & _
-         "    Cal_SurvolLien Me, " & Guill("lblCalSuiv") & ", False"
 
+    ' un seul point de remise au repos : la souris qui sort d'une case ou d'un
+    ' lien retombe forcément sur le fond du formulaire
+    ProcI "UserForm_MouseMove" & SIG_SOURIS, "Cal_SurvolRepos Me"
+
+    ' Le bandeau et les en-têtes de jours recouvrent le fond : sans eux, sortir
+    ' d'une flèche ou d'une case ne déclencherait aucun événement.
+    ProcI "lblCalBandeau_MouseMove" & SIG_SOURIS, "Cal_SurvolRepos Me"
+    ProcI "lblCalMois_MouseMove" & SIG_SOURIS, "Cal_SurvolRepos Me"
+    For i = 1 To 7
+        ProcI "lblJS_" & CStr(i) & "_MouseMove" & SIG_SOURIS, "Cal_SurvolRepos Me"
+    Next i
+
+    ' --- bandeau --------------------------------------------------------------
     ProcI "lblCalPrec_Click()", "Cal_MoisPrecedent Me"
     ProcI "lblCalPrec_MouseMove" & SIG_SOURIS, "Cal_SurvolLien Me, " & Guill("lblCalPrec") & ", True"
     ProcI "lblCalSuiv_Click()", "Cal_MoisSuivant Me"
     ProcI "lblCalSuiv_MouseMove" & SIG_SOURIS, "Cal_SurvolLien Me, " & Guill("lblCalSuiv") & ", True"
 
+    ' --- grille : un clic choisit, un survol éclaire --------------------------
     For i = 1 To 42
         ProcI "lblJ_" & CStr(i) & "_Click()", "Cal_ChoisirJour Me, " & CStr(i)
+        ProcI "lblJ_" & CStr(i) & "_MouseMove" & SIG_SOURIS, "Cal_SurvolJour Me, " & CStr(i)
     Next i
 
+    ' --- raccourcis du pied ---------------------------------------------------
     ProcI "lblCalAujourdhui_Click()", "Cal_Aujourdhui Me"
+    ProcI "lblCalAujourdhui_MouseMove" & SIG_SOURIS, _
+         "Cal_SurvolPied Me, " & Guill("lblCalAujourdhui") & ", True, False"
+    ProcI "lblCalFinMois_Click()", "Cal_FinMois Me"
+    ProcI "lblCalFinMois_MouseMove" & SIG_SOURIS, _
+         "Cal_SurvolPied Me, " & Guill("lblCalFinMois") & ", True, False"
     ProcI "lblCalAnnuler_Click()", "Cal_Annuler Me"
+    ProcI "lblCalAnnuler_MouseMove" & SIG_SOURIS, _
+         "Cal_SurvolPied Me, " & Guill("lblCalAnnuler") & ", True, True"
 
     CodeCalendrier = mCode
 End Function

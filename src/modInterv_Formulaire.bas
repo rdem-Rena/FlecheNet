@@ -142,18 +142,19 @@ End Sub
 ' FICHE 2 : STATISTIQUES
 '==============================================================================
 '------------------------------------------------------------------------------
- Rafraîchit le graphique et les six tuiles de chiffres.
+' Rafraîchit le graphique et les six tuiles de chiffres.
 '
 ' Chaque tuile reçoit son image de fond — celle qui lui donne ses coins
 ' arrondis — puis le montant lu dans sa cellule nommée. L'image n'est chargée
 ' qu'une fois et partagée par les six contrôles.
 '
-' Le graphique est réexporté à chaque ouverture pour refléter les données du
-' moment. S'il ne peut pas être affiché, la raison est écrite à la suite du
-' titre de la fiche plutôt que passée sous silence.
+' Le graphique, lui, n'est plus une image : modInterv_Graphique le dessine en
+' contrôles, à partir des données de la feuille Statistiques. Il reste donc net
+' quelle que soit sa taille et ne dépend plus ni d'un export ni d'un fichier
+' temporaire.
 '------------------------------------------------------------------------------
 Public Sub Interv_MajStatistiques(f As Object)
-    Dim chemin As String, motif As String, img As Object, lb As Object
+    Dim chemin As String, img As Object, lb As Object
     Dim tuiles As Variant, i As Long, fond As Object
 
     tuiles = TuilesStatistiques()
@@ -180,39 +181,9 @@ Public Sub Interv_MajStatistiques(f As Object)
     Next i
 
     ' --- graphique ------------------------------------------------------------
-    Set img = ICtl(f, "imgGraphique")
-    If img Is Nothing Then Exit Sub
-
-    chemin = Interv_ExporterGraphique(motif)
-    If Len(chemin) > 0 Then
-        On Error Resume Next
-        Err.Clear
-        Set img.Picture = LoadPicture(chemin)
-        If Err.Number <> 0 Then motif = "image illisible : " & Err.Description
-        On Error GoTo 0
-    End If
-
-    MajTitreStats f, motif
-End Sub
-
-'------------------------------------------------------------------------------
-' Titre de la fiche des statistiques, qui sert aussi à signaler un graphique
-' manquant.
-'   motif : cause de l'absence, ou chaîne vide si tout va bien
-'
-' Une boîte de dialogue serait pénible à chaque ouverture, et se taire laissait
-' l'utilisateur devant un cadre vide sans explication : le motif s'affiche donc
-' à la suite du titre.
-'------------------------------------------------------------------------------
-Private Sub MajTitreStats(f As Object, ByVal motif As String)
-    Dim lb As Object
-    Set lb = ICtl(f, "lblSectionStats")
-    If lb Is Nothing Then Exit Sub
-    If Len(motif) = 0 Then
-        lb.Caption = "STATISTIQUES"
-    Else
-        lb.Caption = "STATISTIQUES  -  graphique indisponible : " & motif
-    End If
+    ' Graph_Tracer se charge de tout, y compris de dire dans sa légende quand les
+    ' données manquent : rien à surveiller ici.
+    Graph_Tracer f
 End Sub
 
 '------------------------------------------------------------------------------

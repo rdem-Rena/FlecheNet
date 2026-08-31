@@ -22,6 +22,16 @@ Public Const COUL_FACTURER_H As Long = &H1E8FDE&   ' #DE8F1E
 Public Const COUL_INFO As Long = &H867C0E&         ' #0E7C86  bleu-vert
 Public Const COUL_INFO_H As Long = &HA49812&       ' #1298A4
 
+'--- Graphique et calendrier --------------------------------------------------
+' Une seule série : une seule teinte, celle qui sert déjà d'accent au formulaire.
+' Vérifiée sur la surface du graphique — bande de luminosité, chroma et contrast
+' au-dessus de 3:1 — donc lisible sans dépendre de la couleur seule.
+Public Const COUL_GR_BARRE As Long = &HB56917&     ' #1769B5  barres
+Public Const COUL_GR_GRILLE As Long = &HEEE6E0&    ' #E0E6EE  lignes de repère
+Public Const COUL_GR_BASE As Long = &HE9DED6&      ' #D6DEE9  ligne de base
+Public Const COUL_CAL_WEEKEND As Long = &HF8F3F0&  ' #F0F3F8  colonnes samedi et dimanche
+Public Const COUL_CAL_SURVOL As Long = &HF6EEE9&   ' #E9EEF6  case survolée
+
 '--- Fenêtre ------------------------------------------------------------------
 ' Dimensions de la SURFACE UTILE, barre de titre exclue. Le formulaire est
 ' agrandi à l'ouverture pour que son intérieur mesure exactement cela : Width et
@@ -43,7 +53,27 @@ Public Const F2_HAUT As Single = 152
 ' Le graphique et le bloc de tuiles se partagent la largeur de la carte : ce que
 ' l'un prend, l'autre le perd. Les tuiles sont calées sur le bord droit, le
 ' graphique occupe tout ce qui reste à gauche.
-Public Const F2_GRAPH_LARG As Single = 518    ' largeur de l'image du graphique
+Public Const F2_GRAPH_LARG As Single = 518    ' largeur de la zone du graphique
+
+'--- Graphique dessiné --------------------------------------------------------
+' Le graphique est tracé en contrôles MSForms plutôt qu'importé en image : net à
+' toute taille, aux couleurs du formulaire, et sans fichier temporaire.
+'
+' GR_ORIGINE_* donne son coin haut-gauche dans le repère du FORMULAIRE. Le
+' générateur y pose le décor et Graph_Tracer y place les barres : les deux
+' doivent partir du même point, d'où ces deux constantes plutôt qu'un nombre
+' écrit à un endroit et un calcul refait à l'autre. Les GR_ qui suivent se
+' comptent, elles, depuis ce coin.
+Public Const GR_ORIGINE_X As Single = 30
+Public Const GR_ORIGINE_Y As Single = F2_TOP + 24
+
+Public Const GR_LEGENDE_HAUT As Single = 12   ' bandeau du titre, et de la valeur survolée
+Public Const GR_MARGE_G As Single = 48        ' colonne réservée à l'échelle
+Public Const GR_TRACE_TOP As Single = 20      ' haut de l'aire de tracé
+Public Const GR_TRACE_HAUT As Single = 80     ' hauteur de l'aire de tracé
+Public Const GR_MOIS_HAUT As Single = 11      ' bandeau des noms de mois
+Public Const GR_BARRE_LARG As Single = 26
+Public Const GR_NB_MOIS As Long = 12
 Public Const F2_TUILE_LARG As Single = 118    ' une tuile de statistique
 Public Const F2_TUILE_HAUT As Single = 56
 Public Const F2_TUILE_GX As Single = 8        ' gouttière horizontale entre tuiles
@@ -55,6 +85,7 @@ Public Const F2_PADDING As Single = 14        ' retrait intérieur de la carte
 ' montants une fois les tuiles resserrées.
 Public Const F2_TUILE_INSET As Single = 10
 Public Const TAILLE_STAT As Single = 11.5     ' montant affiché dans une tuile
+Public Const TAILLE_TUILE_CAP As Single = 7.5 ' libellé de tuile, le plus long étant « MOIS NON FACTURÉ »
 
 '--- Fiche 3 : saisie ---------------------------------------------------------
 Public Const F3_TOP As Single = 226
@@ -84,13 +115,15 @@ Public Const IB_GOUTTIERE As Single = 6
 Public Const IB_ECART_GROUPE As Single = 24   ' entre le groupe CRUD et Facturer
 
 '--- Sélecteur de date --------------------------------------------------------
-Public Const CAL_LARGEUR As Single = 224
-Public Const CAL_HAUTEUR As Single = 216
-Public Const CAL_BANDEAU As Single = 34
-Public Const CAL_JOUR_LARG As Single = 30     ' une case du calendrier
-Public Const CAL_JOUR_HAUT As Single = 22
-Public Const CAL_GRILLE_X As Single = 7
-Public Const CAL_GRILLE_Y As Single = 62
+Public Const CAL_LARGEUR As Single = 260
+Public Const CAL_HAUTEUR As Single = 256
+Public Const CAL_BANDEAU As Single = 40
+Public Const CAL_JOUR_LARG As Single = 34     ' une case du calendrier
+Public Const CAL_JOUR_HAUT As Single = 26
+Public Const CAL_GRILLE_X As Single = 11      ' 7 x 34 + 2 x 11 = 260
+Public Const CAL_GRILLE_Y As Single = 66
+Public Const CAL_ENTETES_Y As Single = 48     ' ligne L M M J V S D
+Public Const CAL_PIED_Y As Single = 232       ' raccourcis du bas, 10 pt sous la grille
 
 '--- Ressources externes ------------------------------------------------------
 ' Image de fond des tuiles de statistiques, cherchée à côté du classeur.
@@ -135,7 +168,7 @@ Public Function ILargeurBlocs(ByVal nbBlocs As Long) As Single
 End Function
 
 '==============================================================================
- Couleur de fond d'un bouton d'action du formulaire des interventions.
+' Couleur de fond d'un bouton d'action du formulaire des interventions.
 '   nomBouton : nom EXACT du contrôle, tel que ConstruireBoutonsInterv le crée
 '   survol    : True pour la teinte claire du passage de souris
 '

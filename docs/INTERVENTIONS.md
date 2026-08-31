@@ -20,8 +20,8 @@ Fenêtre de **960 × 748 points** de surface utile (≈ 1280 × 997 pixels à 96
 ├──────────────────────────────────────────────────────────────────────┤
 │ STATISTIQUES                                                         │
 │ ┌─────────────────────┐  ┌────────┐ ┌────────┐ ┌────────┐            │  fiche 2
-│ │   CAGraphique       │  │CA total│ │Facturé │ │Non fact│            │  152 pt
-│ │   (image exportée)  │  ├────────┤ ├────────┤ ├────────┤            │
+│ │  ▁▄█▆█▃▂            │  │CA total│ │Facturé │ │Non fact│            │  152 pt
+│ │  J F M A M J J A S  │  ├────────┤ ├────────┤ ├────────┤            │
 │ └─────────────────────┘  │Mois -1 │ │Mois    │ │Mois nf │            │
 ├──────────────────────────────────────────────────────────────────────┤
 │ FICHE INTERVENTION                                                   │
@@ -57,9 +57,11 @@ La cellule `AnneeEnCours` contient une **date** (1ᵉʳ janvier de l'année) et 
 
 ## Fiche 2 — statistiques
 
-Le graphique **`CAGraphique`** de la feuille Statistiques est **exporté en GIF** dans le dossier temporaire de Windows à chaque ouverture, puis chargé dans un contrôle Image : MSForms ne sait pas afficher un graphique Excel autrement. L'export est refait après chaque ajout, modification ou suppression, pour que le graphique suive les données.
+Le graphique du chiffre d'affaires est **dessiné en contrôles MSForms** par [`modInterv_Graphique`](../src/modInterv_Graphique.bas) : douze libellés rectangulaires, un par mois, dont la hauteur est proportionnelle au montant. Les valeurs sont lues dans la table **`Tableau7`** de la feuille Statistiques — celle-là même qui alimente le graphique Excel. Le tracé est refait après chaque ajout, modification ou suppression.
 
-> **Pourquoi GIF et non PNG.** `LoadPicture` vient de la bibliothèque OLE, qui ne lit que bmp, ico, wmf, emf, gif et jpg. Un PNG s'exporte sans erreur mais reste ensuite illisible — le cadre du graphique restait vide, sans le moindre message. Le graphique est cherché d'abord par le nom de l'objet graphique, puis par celui de la forme, puis, s'il n'y en a qu'un sur la feuille, par défaut. Si rien n'aboutit, la raison s'affiche à la suite du titre « STATISTIQUES ».
+> **Pourquoi ne plus passer par une image.** Un graphique Excel exporté sort à la taille qu'il occupe sur la feuille : agrandi dans le formulaire, il devient flou. Et `LoadPicture`, qui vient de la bibliothèque OLE, ne lit que bmp, ico, wmf, emf, gif et jpg — un PNG s'exportait sans erreur puis restait illisible, le cadre demeurant vide sans le moindre message. Le tracé, lui, est net à toute taille, prend les couleurs du formulaire et ne laisse aucun fichier temporaire.
+
+Une seule série, donc **une seule teinte et aucune légende de couleurs** : le titre nomme ce qui est représenté. La grille reste discrète et seul le sommet de l'échelle est écrit ; les autres montants se lisent **au survol d'une barre**, qui affiche « Mai 2026 — 13'260 CHF » à la place du titre. Le sommet de l'échelle est arrondi vers le haut sur les échelons 1 – 1,5 – 2 – 2,5 – 5 – 10, pour que la plus grande barre occupe rarement moins des deux tiers de la hauteur disponible.
 
 Les six tuiles lisent des cellules nommées :
 
@@ -189,11 +191,15 @@ Un clic sur un en-tête trie sur cette colonne, un second inverse le sens. Dates
 
 ## Sélecteur de date
 
-`UF_Calendrier`, 224 × 216 pt, entièrement construit en contrôles standard : bandeau de navigation, sept en-têtes de jours et une grille de 42 cases.
+`UF_Calendrier`, 260 × 256 pt, entièrement construit en contrôles standard : bandeau de navigation, sept en-têtes de jours et une grille de 42 cases.
 
 MSForms ne fournit aucun calendrier, et le contrôle `MonthView` de Microsoft repose sur `MSCOMCT2.OCX`, absent de la plupart des postes : d'où ce calendrier maison, qui ne dépend de rien.
 
-La date choisie et le jour même sont mis en évidence ; les jours des mois voisins apparaissent en gris clair. Fermer la fenêtre ou cliquer *Annuler* laisse la date inchangée.
+La grille est aérée — 34 × 26 pt par case — pour qu'un jour se vise sans effort. Les colonnes du samedi et du dimanche sont teintées en fond, ce qui découpe la semaine sans ajouter le moindre trait, et la case sous la souris s'éclaire : on sait toujours ce qu'un clic choisirait.
+
+Trois états se distinguent d'un coup d'œil : le **jour choisi** (pastille bleue pleine), **aujourd'hui** (fond clair, chiffre bleu) et les **jours des mois voisins** (gris clair). Deux raccourcis en pied — *Aujourd'hui* et *Fin de mois* — donnent les deux dates les plus souvent saisies dans une facturation mensuelle. Fermer la fenêtre ou cliquer *Annuler* laisse la date inchangée.
+
+> La barre de titre Windows reste visible au-dessus du calendrier : la supprimer demanderait un appel à l'API Windows, écarté.
 
 
 ---
@@ -205,7 +211,8 @@ La date choisie et le jour même sont mis en évidence ; les jours des mois vois
 | [`modInterv_Schema`](../src/modInterv_Schema.bas) | Les 15 champs, les colonnes du tableau, les reports depuis TblClients. **Source de vérité.** |
 | [`modInterv_Theme`](../src/modInterv_Theme.bas) | Géométrie du formulaire et couleurs des boutons Facturer et Info. |
 | [`modInterv_Generateur`](../src/modInterv_Generateur.bas) | Construit UF_Interventions et UF_Calendrier, et leurs modules de code. |
-| [`modInterv_Donnees`](../src/modInterv_Donnees.bas) | TblInterv, recherches dans TblClients, cellules nommées, export du graphique. |
+| [`modInterv_Donnees`](../src/modInterv_Donnees.bas) | TblInterv, recherches dans TblClients, cellules nommées. |
+| [`modInterv_Graphique`](../src/modInterv_Graphique.bas) | Trace le graphique du chiffre d'affaires en contrôles MSForms. |
 | [`modInterv_Calendrier`](../src/modInterv_Calendrier.bas) | Logique du sélecteur de date. |
 | [`modInterv_Formulaire`](../src/modInterv_Formulaire.bas) | Comportement : filtrage, tri, saisie assistée, CRUD, habillage. |
 | [`modInterv_Lancement`](../src/modInterv_Lancement.bas) | `OuvrirGestionInterventions`, `VerifierClasseurInterventions`. |
@@ -227,7 +234,12 @@ La date choisie et le jour même sont mis en évidence ; les jours des mois vois
 | `F1_HAUT` | 46 pt | hauteur de la fiche 1 |
 | `F2_TOP` | 66 pt | haut de la fiche 2 |
 | `F2_HAUT` | 152 pt | hauteur de la fiche 2 |
-| `F2_GRAPH_LARG` | 518 pt | largeur de l'image du graphique |
+| `F2_GRAPH_LARG` | 518 pt | largeur de la zone du graphique |
+| `GR_ORIGINE_X` | 30 pt | abscisse du coin haut-gauche du graphique |
+| `GR_ORIGINE_Y` | 90 pt | ordonnée du coin haut-gauche du graphique |
+| `GR_MARGE_G` | 48 pt | colonne réservée à l'échelle, à gauche des barres |
+| `GR_TRACE_HAUT` | 80 pt | hauteur de l'aire de tracé |
+| `GR_BARRE_LARG` | 26 pt | largeur d'une barre |
 | `F2_TUILE_LARG` | 118 pt | largeur d'une tuile |
 | `F2_TUILE_HAUT` | 56 pt | hauteur d'une tuile |
 | `F2_TUILE_INSET` | 10 pt | retrait des libellés dans une tuile |
@@ -245,10 +257,12 @@ La date choisie et le jour même sont mis en évidence ; les jours des mois vois
 | `IB_TOP` | 704 pt | haut de la rangée de boutons |
 | `IB_LARG` | 118 pt | largeur des boutons |
 | `IB_ECART_GROUPE` | 24 pt | écart entre le groupe de saisie et Facturer |
-| `CAL_LARGEUR` | 224 pt | largeur du calendrier |
-| `CAL_HAUTEUR` | 216 pt | hauteur du calendrier |
-| `CAL_JOUR_LARG` | 30 pt | largeur d'une case de jour |
-| `CAL_JOUR_HAUT` | 22 pt | hauteur d'une case de jour |
+| `CAL_LARGEUR` | 260 pt | largeur du calendrier |
+| `CAL_HAUTEUR` | 256 pt | hauteur du calendrier |
+| `CAL_JOUR_LARG` | 34 pt | largeur d'une case de jour |
+| `CAL_JOUR_HAUT` | 26 pt | hauteur d'une case de jour |
+| `CAL_GRILLE_Y` | 66 pt | haut de la grille des jours |
+| `CAL_PIED_Y` | 232 pt | ligne des raccourcis du bas |
 
 Les zones ne doivent pas se chevaucher, et la dernière doit tenir sous `I_HAUTEUR` :
 

@@ -14,7 +14,7 @@ Option Explicit
 '--- Noms des objets du classeur ----------------------------------------------
 Public Const NOM_TABLE_INTERVENTIONS As String = "TblInterv"
 Public Const NOM_FEUILLE_STATS As String = "Statistiques"
-Public Const NOM_GRAPHIQUE As String = "CAGraphique"
+Public Const NOM_TABLE_GRAPH As String = "Tableau7"   ' valeurs mensuelles, feuille Statistiques
 Public Const NOM_FORM_INTERV As String = "UF_Interventions"
 Public Const NOM_FORM_CALENDRIER As String = "UF_Calendrier"
 

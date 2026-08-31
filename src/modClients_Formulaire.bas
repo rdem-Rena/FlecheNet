@@ -20,6 +20,7 @@ Private mNbVis As Long
 Private mTriColonne As Long         ' index (1 à 10) de la colonne de tri, 0 = aucun
 Private mTriDecroissant As Boolean
 Private mChargement As Boolean      ' True pendant un remplissage programme
+Private mAjuste As Boolean          ' True une fois la fenêtre mise à sa taille utile
 Private mDeplacement As Boolean
 Private mDepX As Single
 Private mDepY As Single
@@ -693,6 +694,23 @@ End Sub
 ' BOUTON "QUITTER"
 '==============================================================================
 '------------------------------------------------------------------------------
+' Ajuste la fenêtre à la première activation pour que sa surface utile mesure
+' exactement F_LARGEUR x F_HAUTEUR.
+'
+' Width et Height d'un UserForm désignent les dimensions EXTÉRIEURES, barre de
+' titre comprise : sans cette correction, le bas du formulaire — la rangée de
+' boutons — se retrouve rogné d'une vingtaine de points.
+'------------------------------------------------------------------------------
+Public Sub Clients_Activer(f As Object)
+    If mAjuste Then Exit Sub
+    mAjuste = True
+    On Error Resume Next
+    f.Width = f.Width + (F_LARGEUR - f.InsideWidth)
+    f.Height = f.Height + (F_HAUTEUR - f.InsideHeight)
+    On Error GoTo 0
+End Sub
+
+'------------------------------------------------------------------------------
 ' Bouton Quitter, croix du bandeau et touche Échap : ferme le formulaire.
 '------------------------------------------------------------------------------
 Public Sub Clients_Quitter(f As Object)
@@ -706,6 +724,7 @@ End Sub
 Public Sub Clients_Fermeture(f As Object)
     mClefCourante = vbNullString
     mNbVis = 0
+    mAjuste = False     ' la prochaine ouverture crée une AUTRE fenêtre, à remesurer
 End Sub
 
 '==============================================================================
