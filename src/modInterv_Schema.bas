@@ -59,6 +59,14 @@ Public Const ISAISIE_MONTANT As Long = 3      ' chiffres et un séparateur décima
 
 Public Const NB_CHAMPS_INTERV As Long = 16
 
+'--- Tableau du formulaire ----------------------------------------------------
+' Réunit dans une même case deux colonnes de TblInterv : « Nom+Prenom ». Chacune
+' garde sa propre colonne dans le tableau Excel, seul l'affichage les rassemble.
+Public Const ICL_SEPARATEUR As String = "+"
+
+' Premier choix du filtre de mois, celui qui ne filtre rien.
+Public Const TOUS_LES_MOIS As String = "Tous les mois"
+
 '==============================================================================
 ' Définition d'un champ du formulaire
 '==============================================================================
@@ -296,9 +304,6 @@ End Function
 ' sortir un autre — ou en fusionner deux de plus — ici même et dans les deux
 ' tableaux qui suivent : les trois listes doivent rester de même longueur.
 '==============================================================================
-Public Const ICL_SEPARATEUR As String = "+"
-Public Const TOUS_LES_MOIS As String = "Tous les mois"   ' premier choix du filtre de mois
-
 Public Function IColonnesListe() As Variant
     IColonnesListe = Array(IC_DATE, IC_CLIENT, IC_ENTREPRISE, _
                            IC_NOM & ICL_SEPARATEUR & IC_PRENOM, _
