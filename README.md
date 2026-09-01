@@ -28,9 +28,13 @@ zone de saisie dans le formulaire à la régénération suivante.
    → cocher **« Accès approuvé au modèle d'objet du projet VBA »**, puis fermer
    et rouvrir le classeur.
 2. **Alt + F11** pour ouvrir l'éditeur VBA, puis **Fichier ▸ Importer un
-   fichier…** pour importer les modules du dossier [`src/`](src) : les sept
-   `modClients_*` pour le formulaire des clients, les sept `modInterv_*` pour
-   celui des interventions — ces derniers ont besoin des premiers.
+   fichier…** pour importer le seul
+   [`src/modOutils_Import.bas`](src/modOutils_Import.bas) ; lancer ensuite
+   **`ImporterModulesFlecheNet`** (`Alt + F8`) et désigner le dossier
+   [`src/`](src), dont les quatorze autres modules sont chargés d'un coup : les
+   sept `modClients_*` pour le formulaire des clients, les sept `modInterv_*`
+   pour celui des interventions — ces derniers ont besoin des premiers.
+   Les importer un à un (`Ctrl + M`, quatorze fois) reste possible.
 3. Lancer **`GenererFormulaireClients`** et **`GenererFormulaireInterventions`**.
 4. Lancer **`OuvrirGestionClients`** ou **`OuvrirGestionInterventions`**.
 
@@ -112,6 +116,21 @@ Mapping colonnes ↔ contrôles et plan du formulaire :
 Pour ajuster l'aspect du formulaire — couleurs, tailles, position de chaque
 contrôle — la fiche de réglages [`docs/REGLAGES.md`](docs/REGLAGES.md) recense
 chaque valeur, dit ce qu'elle commande et où elle se trouve.
+
+### Outil d'installation
+
+| Module | Rôle |
+|---|---|
+| [`modOutils_Import`](src/modOutils_Import.bas) | `ImporterModulesFlecheNet` : importe en une fois tous les `.bas` d'un dossier. Indépendant des formulaires. |
+
+L'éditeur VBA n'importe qu'un fichier à la fois. Les commandes « importer
+plusieurs fichiers » qu'on voit parfois dans son menu **Fichier** viennent de
+compléments qui les reposent à chaque démarrage d'Excel — un plantage suffit à
+les faire désactiver, et l'entrée de menu disparaît (voir le dépannage de
+[`docs/INSTALLATION.md`](docs/INSTALLATION.md)). Ce module rend le classeur
+autonome : un seul `Ctrl + M` pour l'installer, puis `ImporterModulesFlecheNet`
+pour tous les autres. Un module déjà présent est rechargé sur place, jamais
+dupliqué.
 
 ---
 

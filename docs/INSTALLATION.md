@@ -17,10 +17,32 @@ Fermer puis rouvrir le classeur : le réglage n'est lu qu'au démarrage.
 
 ## 2. Importer les modules
 
-`Alt + F11` pour ouvrir l'éditeur VBA, puis pour chacun des six fichiers du
-dossier `src/` : **Fichier ▸ Importer un fichier…** (`Ctrl + M`).
+`Alt + F11` pour ouvrir l'éditeur VBA. Deux façons de faire ; la première évite
+quatorze passages dans la boîte de dialogue.
 
-Ordre indifférent :
+### En une fois
+
+1. **Fichier ▸ Importer un fichier…** (`Ctrl + M`) →
+   [`src/modOutils_Import.bas`](../src/modOutils_Import.bas). Ce seul module
+   sait charger tous les autres.
+2. `Alt + F8` → lancer **`ImporterModulesFlecheNet`**, puis désigner le dossier
+   `src/`.
+
+Un compte rendu liste les modules ajoutés, ceux qui ont été rechargés et les
+éventuels échecs. La procédure se relance à volonté : un module déjà présent est
+rechargé sur place, sans jamais créer de doublon.
+
+Elle a besoin de l'accès au projet VBA — l'option de l'étape 1. Sans boîte de
+dialogue, depuis la fenêtre **Exécution** (`Ctrl + G`) de l'éditeur :
+
+```vba
+ImporterModulesDepuis "D:\...\FlecheNet\src"
+```
+
+### Un fichier à la fois
+
+**Fichier ▸ Importer un fichier…** (`Ctrl + M`) pour chacun des quatorze
+modules ci-dessous. Ordre indifférent :
 
 ```
 modClients_Theme.bas        modInterv_Theme.bas
@@ -98,6 +120,40 @@ de construire le formulaire. Voir « Ajouter un champ » dans
 **Accents déformés dans les libellés**
 Les fichiers `.bas` ont été convertis en UTF-8. Les réimporter depuis le dépôt
 sans conversion (ils sont en Windows-1252).
+
+**La commande « Importer plusieurs fichiers » a disparu du menu Fichier**
+Elle ne vient pas de l'éditeur VBA : son menu **Fichier** ne propose en standard
+que « Importer un fichier… » (`Ctrl + M`) et « Exporter un fichier… ». Une
+entrée de plus y est posée par un complément — VBE_Extras, MZ-Tools, Rubberduck,
+un `.xlam` maison… — qui la recrée **à chaque démarrage d'Excel** : les menus
+ajoutés par code dans l'éditeur VBA ne sont pas enregistrés d'une session à
+l'autre. Il suffit donc que le complément ne se charge plus pour que la commande
+disparaisse, et un plantage d'Excel est la cause la plus fréquente : Excel
+inscrit le complément soupçonné dans ses éléments désactivés.
+
+À vérifier dans l'ordre, **Fichier ▸ Options ▸ Compléments**, liste **Gérer**
+tout en bas de la fenêtre :
+
+1. **Éléments désactivés ▸ Atteindre…** — si le complément y figure, le
+   sélectionner, **Activer**, puis redémarrer Excel ;
+2. **Compléments COM ▸ Atteindre…** et **Compléments Excel ▸ Atteindre…** — sa
+   case a pu être décochée ; la recocher ;
+3. le complément est peut-être encore chargé alors que son entrée de menu a été
+   perdue : fermer complètement Excel (tous les classeurs) et le rouvrir suffit
+   alors à la remettre ;
+4. s'il s'agissait d'un `.xlam` maison, vérifier qu'il est toujours dans
+   `%AppData%\Microsoft\Excel\XLSTART` ou dans `%AppData%\Microsoft\AddIns`.
+
+Si le menu de l'éditeur paraît abîmé — entrées en double, entrées mortes —
+clic droit sur la barre de menus ▸ **Personnaliser… ▸ Barres d'outils ▸ Menu Bar
+▸ Rétablir**, puis redémarrer Excel pour que le complément repose la sienne.
+
+Accessoirement : dans la boîte « Importer un fichier », essayer de sélectionner
+plusieurs fichiers d'un coup (`Ctrl` + clic). Selon la version d'Excel la
+sélection multiple passe ou non — l'essai coûte cinq secondes.
+
+Le plus sûr reste de ne plus dépendre d'un complément : `modOutils_Import`
+(étape 2) importe les quatorze modules en une fois et voyage avec le classeur.
 
 **La fenêtre ne se déplace pas**
 Le formulaire est sans barre de titre : il se déplace en faisant glisser le
