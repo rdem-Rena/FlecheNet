@@ -170,17 +170,17 @@ Le taux vient de la colonne `Taux/Forfait` de **l'intervention**, reprise de `Tb
 |---|---|---|---|---|
 | 1 | `Date` | Date | 64 pt | gauche |
 | 2 | `Client_No` | N° client | 50 pt | gauche |
-| 3 | `Entreprise` | Entreprise | 126 pt | gauche |
+| 3 | `Entreprise` | Entreprise | 132 pt | gauche |
 | 4 | `Nom` | Nom | 86 pt | gauche |
 | 5 | `Prenom` | Prénom | 76 pt | gauche |
 | 6 | `Nb_Hres` | Heures | 52 pt | droite |
 | 7 | `Nb_Pers` | Pers. | 34 pt | centre |
 | 8 | `Taux/Forfait` | Taux/Forf. | 58 pt | droite |
 | 9 | `CA` | Chiffre d'aff. | 68 pt | droite |
-| 10 | `Texte_Facture` | Texte de facture | 112 pt | gauche |
+| 10 | `Texte_Facture` | Texte de facture | 122 pt | gauche |
 | 11 | `Commentaires` | Commentaires | 124 pt | gauche |
-| 12 | `No_Facture` | Facture | 50 pt | gauche |
-| | | **total** | **900 pt** | |
+| 12 | `No_Facture` | Fact. | 40 pt | gauche |
+| | | **total** | **906 pt** | |
 
 ### Une grille de libellés, pas une ListBox
 
@@ -199,12 +199,16 @@ Chaque ligne porte une **bande de fond** sur toute la largeur, posée avant ses 
 
 Quatre aspects, par ordre de priorité : la **ligne choisie** en bleu plein, la **ligne survolée** en fond clair, une **ligne sur deux** très légèrement teintée, puis le fond ordinaire. Le zébrage suit le rang réel et non le rang à l'écran, sans quoi les bandes sauteraient d'une ligne à chaque cran de défilement.
 
+> **La hauteur de ligne doit valoir un nombre entier de pixels.** À 96 ppp, 1 pixel vaut 0,75 point. `12.75` pt en font exactement 17 — c'est d'ailleurs la hauteur de ligne d'une ListBox, et ce n'est pas un hasard. Avec 13 pt (17,33 px) Windows arrondissait les positions à 17, 18, 17, 17, 18… : une ligne sur trois se décalait d'un pixel et son texte paraissait plus gros et plus gras. `simulate_interv.py` refuse désormais toute hauteur qui ne soit pas un multiple de 0,75.
+
+La barre de défilement reste **active même quand tout tient à l'écran**. Désactivée, MSForms n'en dessine plus que les deux flèches, sans curseur : on croit la barre cassée alors qu'elle dit seulement qu'il n'y a rien à faire défiler. Active avec `Max = 0`, le curseur occupe toute la glissière — ce qui est exactement le message.
+
 > **Ce qu'on n'a pas.** La molette de la souris ne fait rien : MSForms ne la transmet pas aux contrôles, et l'écouter demanderait un appel à l'API Windows, écarté. On défile à la barre. Une colonne trop étroite tronque son texte, mais l'info-bulle de la case le rend en entier.
 
 
 Ne restent hors du tableau que `Titre`, `NoInterv`, `TVA` et `Forfait`, que la fiche montre dès qu'on sélectionne une ligne. Une case peut encore **réunir plusieurs colonnes**, séparées par `ICL_SEPARATEUR` dans `IColonnesListe` — « Nom+Prenom » donnerait « Aiello Rosalba » — si l'on veut resserrer un jour ; chacune garde de toute façon sa propre colonne dans `TblInterv`. Les quatre tableaux de `modInterv_Schema` se lisent position par position.
 
-La hauteur retenue affiche **17 lignes** de 13 pt à la fois. Pour en afficher davantage, augmenter `IGR_NB_LIGNES` et ajouter autant de fois `IGR_LIGNE_H` à `IT_HAUT`, `IB_TOP` et `I_HAUTEUR`.
+La hauteur retenue affiche **17 lignes** de 12.75 pt à la fois. Pour en afficher davantage, augmenter `IGR_NB_LIGNES` et ajouter autant de fois `IGR_LIGNE_H` à `IT_HAUT`, `IB_TOP` et `I_HAUTEUR`.
 
 Un clic sur un en-tête trie sur cette colonne, un second inverse le sens. Dates et nombres sont comparés pour ce qu'ils sont, pas alphabétiquement ; une case qui en réunit deux se trie sur le texte affiché, donc par nom puis par prénom.
 
@@ -311,9 +315,9 @@ Trois états se distinguent d'un coup d'œil : le **jour choisi** (pastille bleu
 | `IT_TOP` | 448 pt | haut du tableau |
 | `IT_HAUT` | 246 pt | hauteur du tableau |
 | `IT_ENTETE` | 22 pt | bande d'en-têtes |
-| `IGR_LIGNE_H` | 13 pt | hauteur d'une ligne de la grille |
+| `IGR_LIGNE_H` | 12.75 pt | hauteur d'une ligne de la grille |
 | `IGR_NB_LIGNES` | 17 pt | lignes affichées à la fois |
-| `IGR_BARRE_L` | 14 pt | largeur de la barre de défilement |
+| `IGR_BARRE_L` | 16 pt | largeur de la barre de défilement |
 | `IGR_PAD_X` | 4 pt | retrait du texte de chaque côté de sa colonne |
 | `IB_TOP` | 704 pt | haut de la rangée de boutons |
 | `IB_LARG` | 118 pt | largeur des boutons |

@@ -485,18 +485,15 @@ Private Sub PeindreLigneGrille(f As Object, ByVal r As Long)
         encre = COUL_TEXTE
     ElseIf (ligne Mod 2) = 0 Then
         fond = COUL_GRILLE_ZEBRE
-        encre = COUL_TEXTE
+        encre = COUL_GRILLE_TXT
     Else
         fond = COUL_CARTE
-        encre = COUL_TEXTE
+        encre = COUL_GRILLE_TXT
     End If
 
     ' la bande donne sa couleur à toute la ligne, filet compris
     Set lb = ICtl(f, "lblGL_" & CStr(r))
-    If Not lb Is Nothing Then
-        lb.BackColor = fond
-        lb.BorderColor = fond
-    End If
+    If Not lb Is Nothing Then lb.BackColor = fond
 
     For c = 1 To nbCol
         Set lb = ICtl(f, "lblG_" & CStr(r) & "_" & CStr(c))
@@ -593,8 +590,12 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Accorde la barre de défilement au nombre de lignes retenues par le filtre.
-' Elle est désactivée quand tout tient à l'écran, plutôt que laissée active et
-' sans effet.
+'
+' Elle reste ACTIVE même quand tout tient à l'écran. Désactivée, MSForms n'en
+' dessine plus que les deux flèches, sans curseur : on croit la barre cassée
+' alors qu'elle dit seulement qu'il n'y a rien à faire défiler. Active avec
+' Max = 0, le curseur occupe toute la glissière — ce qui est exactement le
+' message, et ce que fait Windows partout ailleurs.
 '------------------------------------------------------------------------------
 Private Sub MajBarreGrille(f As Object)
     Dim c As Object, garde As Boolean, maxi As Long
@@ -605,10 +606,12 @@ Private Sub MajBarreGrille(f As Object)
     maxi = MaxDefilement()
     garde = mChargement
     mChargement = True
+    ' Value est remise à zéro AVANT Max : MSForms refuse un Max inférieur à la
+    ' valeur courante, et l'affectation serait perdue sans bruit.
     On Error Resume Next
+    c.Value = 0
     c.Max = maxi
     c.Value = mPremiereLigne
-    c.Enabled = (maxi > 0)
     On Error GoTo 0
     mChargement = garde
 End Sub

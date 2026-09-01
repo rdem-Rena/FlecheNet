@@ -347,7 +347,7 @@ End Function
 Public Function ILibellesListe() As Variant
     ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom", "Prénom", _
                            "Heures", "Pers.", "Taux/Forf.", "Chiffre d'aff.", _
-                           "Texte de facture", "Commentaires", "Facture")
+                           "Texte de facture", "Commentaires", "Fact.")
 End Function
 
 '------------------------------------------------------------------------------
@@ -355,7 +355,9 @@ End Function
 ' la ListBox mesure 926 pt de large et la barre de défilement en prend 16.
 '------------------------------------------------------------------------------
 Public Function ILargeursListe() As Variant
-    ILargeursListe = Array(64, 50, 126, 86, 76, 52, 34, 58, 68, 112, 124, 50)
+    ' Facture ne porte jamais plus de six chiffres : 40 points lui suffisent, et
+    ' ce qu'elle rend va aux colonnes qui tronquaient.
+    ILargeursListe = Array(64, 50, 132, 86, 76, 52, 34, 58, 68, 122, 124, 40)
 End Function
 
 '==============================================================================

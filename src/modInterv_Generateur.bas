@@ -486,7 +486,7 @@ Private Sub ConstruireFiche4(dsg As Object)
     For i = 0 To nbCol - 1
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblEntI_" & CStr(i + 1), _
                        x, IT_TOP + 5, CSng(larg(i)) - 2 * IGR_PAD_X, 13)
-        Texte c, CStr(lib(i)), TAILLE_ENTETE, True, COUL_ENTETE_TXT, CLng(ali(i))
+        Texte c, CStr(lib(i)), TAILLE_GRILLE_ENTETE, True, COUL_GRILLE_ENTETE, CLng(ali(i))
         c.ControlTipText = "Cliquez pour trier sur cette colonne"
         x = x + CSng(larg(i))
     Next i
@@ -502,16 +502,24 @@ Private Sub ConstruireFiche4(dsg As Object)
     For r = 1 To IGR_NB_LIGNES
         y = IT_TOP + IT_ENTETE + 1 + (r - 1) * IGR_LIGNE_H
 
+        ' Fond plat, SANS filet : un libellé bordé dessine un cadre d'un pixel,
+        ' et deux bandes voisines feraient alors une ligne double entre elles.
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblGL_" & CStr(r), _
                        gauche, y, largeur - IGR_BARRE_L, IGR_LIGNE_H)
-        Fond c, COUL_CARTE, COUL_CARTE
+        With c
+            .Caption = vbNullString
+            .SpecialEffect = MSF_SpecialEffectFlat
+            .BorderStyle = MSF_BorderStyleNone
+            .BackStyle = MSF_BackStyleOpaque
+            .BackColor = COUL_CARTE
+        End With
 
         x = gauche + IGR_PAD_X
         For i = 0 To nbCol - 1
             Set c = AjCtrl(dsg, "Forms.Label.1", _
                            "lblG_" & CStr(r) & "_" & CStr(i + 1), _
                            x, y, CSng(larg(i)) - 2 * IGR_PAD_X, IGR_LIGNE_H)
-            Texte c, vbNullString, TAILLE_LISTE, False, COUL_TEXTE, CLng(ali(i))
+            Texte c, vbNullString, TAILLE_LISTE, False, COUL_GRILLE_TXT, CLng(ali(i))
             x = x + CSng(larg(i))
         Next i
     Next r
@@ -523,8 +531,10 @@ Private Sub ConstruireFiche4(dsg As Object)
     With c
         .Min = 0
         .Max = 0
+        .Value = 0
         .SmallChange = 1
-        .LargeChange = IGR_NB_LIGNES - 1
+        .LargeChange = IGR_NB_LIGNES     ' un clic dans le vide fait une page
+        .ProportionalThumb = True        ' curseur proportionnel à ce qui est vu
         .TabIndex = 90
     End With
 End Sub

@@ -140,10 +140,18 @@ Public Const IFB_RESET_X As Single = 652
 Public Const IFB_COMPTEUR_L As Single = 190
 
 '--- Fiche 4 : tableau des enregistrements ------------------------------------
-' Une ligne sur deux est très légèrement teintée : sur douze colonnes, l'oeil
-' suit une ligne bien mieux qu'avec un survol, qui n'éclaire que là où pointe la
-' souris.
-Public Const COUL_GRILLE_ZEBRE As Long = &HFDFBFA&   ' #FAFBFD
+' Une ligne sur deux est teintée : sur douze colonnes, l'oeil suit une ligne
+' bien mieux qu'avec un survol, qui n'éclaire que là où pointe la souris.
+Public Const COUL_GRILLE_ZEBRE As Long = &HFAF5F1&   ' #F1F5FA
+
+' Le texte des lignes est un cran plus clair que celui des fiches : dix-sept
+' lignes de noir plein pèsent lourd, alors qu'une fiche n'a que quelques mots.
+Public Const COUL_GRILLE_TXT As Long = &H5C4A3C&     ' #3C4A5C
+
+' L'en-tête, lui, est plus sombre et plus grand que le corps du tableau : c'est
+' ce qui le détache des lignes sans avoir à le souligner.
+Public Const COUL_GRILLE_ENTETE As Long = &H523E2C&  ' #2C3E52
+Public Const TAILLE_GRILLE_ENTETE As Single = 8.5
 
 Public Const IT_TOP As Single = 448
 Public Const IT_HAUT As Single = 246
@@ -159,11 +167,21 @@ Public Const IT_ENTETE As Single = 22
 ' sont repeints. Un tableau de plusieurs milliers de lignes tient donc dans
 ' deux cents contrôles.
 '
-'   IGR_NB_LIGNES x IGR_LIGNE_H = 17 x 13 = 221 = IT_HAUT - IT_ENTETE - 3
+' HAUTEUR DE LIGNE : elle doit valoir un nombre ENTIER de pixels, sinon les
+' lignes ne tombent pas toutes au même endroit. À 96 ppp, 1 pixel vaut 0,75
+' point ; 13 pt font 17,33 px, et Windows arrondit alors les positions à 17, 18,
+' 17, 17, 18... Une ligne sur trois se décalait d'un pixel et son texte paraissait
+' plus gros et plus gras. 12,75 pt font exactement 17 px — c'est d'ailleurs la
+' hauteur de ligne d'une ListBox, et ce n'est pas un hasard.
 '
-Public Const IGR_LIGNE_H As Single = 13       ' pas vertical d'une ligne
+'   IGR_NB_LIGNES x IGR_LIGNE_H = 17 x 12,75 = 216,75, pour 221 disponibles
+'
+Public Const IGR_LIGNE_H As Single = 12.75    ' pas vertical d'une ligne = 17 px
 Public Const IGR_NB_LIGNES As Long = 17       ' lignes affichées à la fois
-Public Const IGR_BARRE_L As Single = 14       ' largeur de la barre de défilement
+' Barre de défilement : 16 points font 21 pixels, de quoi attraper le curseur
+' sans viser. En dessous de 14, MSForms n'a plus la place de dessiner autre
+' chose que les deux flèches.
+Public Const IGR_BARRE_L As Single = 16
 ' Retrait du texte de CHAQUE CÔTÉ de sa colonne : une colonne alignée à droite
 ' viendrait sinon coller la colonne suivante, alignée à gauche.
 Public Const IGR_PAD_X As Single = 4
