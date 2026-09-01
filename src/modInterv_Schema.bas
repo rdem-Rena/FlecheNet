@@ -285,15 +285,15 @@ End Function
 ' DIX AU MAXIMUM : c'est ce qu'accepte une ListBox MSForms, et la limite est
 ' dure — une onzième colonne fait échouer l'affectation de ColumnCount.
 '
-' Deux colonnes du tableau sont donc restées dehors, et le choix s'est porté
-' sur les moins informatives dans une liste : Titre d'abord, puis Prénom quand
-' le taux est venu prendre sa place. L'entreprise et le nom suffisent à
-' reconnaître une ligne, et le prénom reste visible dans la fiche dès qu'on
+' Deux colonnes du tableau restent donc dehors : Titre et N° client. Ni l'une
+' ni l'autre ne sert à reconnaître une ligne — l'entreprise et le nom s'en
+' chargent — et toutes deux restent visibles dans la fiche dès qu'on
 ' sélectionne l'intervention. Pour en réintégrer une, il faut en sortir une
-' autre — ici même, dans les trois tableaux qui suivent.
+' autre, ici même et dans les deux tableaux qui suivent : les trois listes
+' doivent rester de même longueur.
 '==============================================================================
 Public Function IColonnesListe() As Variant
-    IColonnesListe = Array(IC_DATE, IC_CLIENT, IC_ENTREPRISE, IC_NOM, _
+    IColonnesListe = Array(IC_DATE, IC_ENTREPRISE, IC_NOM, IC_PRENOM, _
                            IC_HEURES, IC_PERS, IC_TAUX, IC_TEXTE, IC_COMMENT, IC_FACTURE)
 End Function
 
@@ -303,7 +303,7 @@ End Function
 ' réel de la colonne Excel restant dans IColonnesListe.
 '------------------------------------------------------------------------------
 Public Function ILibellesListe() As Variant
-    ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom", _
+    ILibellesListe = Array("Date", "Entreprise", "Nom", "Prénom", _
                            "Heures", "Pers.", "Taux/Forf.", "Texte de facture", _
                            "Commentaires", "Facture")
 End Function
@@ -313,7 +313,7 @@ End Function
 ' la ListBox mesure 926 pt de large et la barre de défilement en prend 16.
 '------------------------------------------------------------------------------
 Public Function ILargeursListe() As Variant
-    ILargeursListe = Array(66, 54, 140, 130, 56, 44, 62, 130, 156, 60)
+    ILargeursListe = Array(66, 140, 98, 86, 56, 44, 62, 130, 156, 60)
 End Function
 
 '==============================================================================

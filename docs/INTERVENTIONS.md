@@ -169,9 +169,9 @@ Le taux vient de la colonne `Taux/Forfait` de **l'intervention**, reprise de `Tb
 | # | Colonne | En-tête | Largeur |
 |---|---|---|---|
 | 1 | `Date` | Date | 66 pt |
-| 2 | `Client_No` | N° client | 54 pt |
-| 3 | `Entreprise` | Entreprise | 140 pt |
-| 4 | `Nom` | Nom | 130 pt |
+| 2 | `Entreprise` | Entreprise | 140 pt |
+| 3 | `Nom` | Nom | 98 pt |
+| 4 | `Prenom` | Prénom | 86 pt |
 | 5 | `Nb_Hres` | Heures | 56 pt |
 | 6 | `Nb_Pers` | Pers. | 44 pt |
 | 7 | `Taux/Forfait` | Taux/Forf. | 62 pt |
