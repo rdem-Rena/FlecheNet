@@ -540,6 +540,13 @@ Private Function LireChampsInterv(f As Object) As Object
                             Else
                                 d(ch(i).Colonne) = s
                             End If
+                        ElseIf ch(i).Saisie = ISAISIE_MONTANT Then
+                            ' « 13'260.00 » doit atterrir en NOMBRE dans la
+                            ' cellule ; écrit tel quel, ce serait du texte, et
+                            ' aucune somme ne le compterait
+                            ok = False
+                            d(ch(i).Colonne) = Interv_TexteVersMontant(s, ok)
+                            If Not ok Then d(ch(i).Colonne) = Empty
                         Else
                             d(ch(i).Colonne) = s
                         End If
@@ -667,6 +674,13 @@ Public Sub Interv_ClientChoisi(f As Object, ByVal nomColonne As String)
             If StrComp(cible, IC_TVA, vbTextCompare) = 0 _
                Or StrComp(cible, IC_FORFAIT, vbTextCompare) = 0 Then
                 c.Value = EnBooleenI(v)
+            ElseIf StrComp(cible, IC_TAUX, vbTextCompare) = 0 Then
+                ' le taux s'affiche comme un montant, ici comme dans le tableau
+                If IsNumeric(v) Then
+                    c.Value = Format$(CDbl(v), "#,##0.00")
+                Else
+                    c.Value = EnTexte(v)
+                End If
             Else
                 c.Value = EnTexte(v)
             End If
@@ -678,21 +692,25 @@ Public Sub Interv_ClientChoisi(f As Object, ByVal nomColonne As String)
 End Sub
 
 '==============================================================================
-' CHIFFRE D'AFFAIRES : ESTIMATION AFFICHÉE PENDANT LA SAISIE
+' CHIFFRE D'AFFAIRES
 '------------------------------------------------------------------------------
-' La colonne CA du tableau porte une formule ; elle n'est jamais écrite par le
-' formulaire. La valeur montrée ici reprend le même calcul, pour que l'effet
-' d'une modification soit visible avant l'enregistrement.
+' Le montant est calculé ici, au fil de la saisie, puis enregistré tel quel
+' dans la colonne CA : heures x personnes x taux, ou le taux seul au forfait.
+'
+' Il se recalcule dès qu'une des quatre valeurs change — heures, personnes,
+' taux, case Forfait — et aussi quand le choix d'un client rapporte son taux.
 '==============================================================================
 Public Sub Interv_MajCA(f As Object)
-    Dim c As Object, idClient As String, heures As Double, pers As Double
+    Dim c As Object, heures As Double, pers As Double, taux As Double
     Dim forfait As Boolean, ok As Boolean, montant As Double, garde As Boolean
 
     Set c = ICtl(f, INomControleColonne(IC_CA))
     If c Is Nothing Then Exit Sub
 
-    idClient = Trim$(EnTexte(ICtl(f, INomControleColonne(IC_CLIENT)).Value))
-    If Len(idClient) = 0 Then
+    taux = MontantSaisi(f, IC_TAUX)
+    If taux = 0 Then
+        ' sans taux il n'y a rien à calculer : mieux vaut une case vide qu'un
+        ' zéro, qui se lirait comme une prestation gratuite
         garde = mChargement
         mChargement = True
         c.Value = vbNullString
@@ -704,20 +722,31 @@ Public Sub Interv_MajCA(f As Object)
     heures = Interv_TexteVersHeures(EnTexte(ICtl(f, INomControleColonne(IC_HEURES)).Value), ok)
     If Not ok Then heures = 0
 
-    pers = 0
-    On Error Resume Next
-    pers = CDbl(Val(EnTexte(ICtl(f, INomControleColonne(IC_PERS)).Value)))
-    On Error GoTo 0
+    pers = MontantSaisi(f, IC_PERS)
     If pers < 1 Then pers = 1
 
     forfait = CBool(ICtl(f, INomControleColonne(IC_FORFAIT)).Value)
-    montant = Interv_EstimerCA(idClient, forfait, pers, heures)
+    montant = Interv_EstimerCA(taux, forfait, pers, heures)
 
     garde = mChargement
     mChargement = True
     c.Value = Format$(montant, "#,##0.00")
     mChargement = garde
 End Sub
+
+'------------------------------------------------------------------------------
+' Valeur numérique d'une zone de saisie, 0 si elle est vide ou illisible.
+'------------------------------------------------------------------------------
+Private Function MontantSaisi(f As Object, ByVal nomColonne As String) As Double
+    Dim c As Object, ok As Boolean, v As Double
+
+    Set c = ICtl(f, INomControleColonne(nomColonne))
+    If c Is Nothing Then Exit Function
+
+    ok = False
+    v = Interv_TexteVersMontant(EnTexte(c.Value), ok)
+    If ok Then MontantSaisi = v
+End Function
 
 '==============================================================================
 ' SÉLECTEUR DE DATE
@@ -762,6 +791,7 @@ Public Sub Interv_ToucheSaisie(ByVal KeyAscii As Object, ByVal contrainte As Lon
     c = Chr$(KeyAscii.Value)
     If c >= "0" And c <= "9" Then Exit Sub
     If contrainte = ISAISIE_HEURES And c = ":" Then Exit Sub
+    If contrainte = ISAISIE_MONTANT And (c = "." Or c = ",") Then Exit Sub
     KeyAscii.Value = 0
 End Sub
 

@@ -32,6 +32,7 @@ Public Const IC_NOM As String = "Nom"
 Public Const IC_PRENOM As String = "Prenom"
 Public Const IC_HEURES As String = "Nb_Hres"
 Public Const IC_CA As String = "CA"
+Public Const IC_TAUX As String = "Taux/Forfait"
 Public Const IC_PERS As String = "Nb_Pers"
 Public Const IC_TVA As String = "TVA"
 Public Const IC_FORFAIT As String = "Forfait"
@@ -54,8 +55,9 @@ Public Const ITYPE_AUTO As String = "A"       ' liste filtrée au fil de la frapp
 Public Const ISAISIE_LIBRE As Long = 0
 Public Const ISAISIE_ENTIER As Long = 1       ' chiffres seuls
 Public Const ISAISIE_HEURES As Long = 2       ' hhh:mm
+Public Const ISAISIE_MONTANT As Long = 3      ' chiffres et un séparateur décimal
 
-Public Const NB_CHAMPS_INTERV As Long = 15
+Public Const NB_CHAMPS_INTERV As Long = 16
 
 '==============================================================================
 ' Définition d'un champ du formulaire
@@ -69,6 +71,8 @@ Public Type ChampInterv
     Col As Long             ' colonne de grille, 1 à 6
     Blocs As Long           ' nombre de colonnes occupées en largeur (1 par défaut)
     NbLignes As Long        ' nombre de lignes occupées en hauteur (1 par défaut)
+    Moitie As Long          ' 0 = colonne entière, 1 = moitié gauche, 2 = moitié droite
+                            ' (deux cases à cocher tiennent dans une colonne)
     Saisie As Long          ' ISAISIE_*
     Aide As String
 End Type
@@ -89,7 +93,7 @@ End Function
 ' verrouiller un champ ; le générateur et le formulaire s'y adaptent seuls.
 '
 '   n°  colonne, libellé, type, verrouillé, ligne, colonne, blocs, lignes,
-'       contrainte de saisie, info-bulle
+'       moitié, contrainte de saisie, info-bulle
 '
 ' La grille compte quatre lignes et six colonnes, groupées en trois régions de
 ' deux colonnes. Le schéma est en caractères ASCII : les traits fins d'Unicode
@@ -112,41 +116,47 @@ Private Sub ConstruireSchemaInterv()
     ReDim mChamps(1 To NB_CHAMPS_INTERV)
 
     ' --- région 1 : le client, colonnes 1 et 2 -------------------------------
-    DefInterv mChamps, 1, IC_CLIENT, "N° client", ITYPE_TEXTE, True, 1, 1, 1, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 1, IC_CLIENT, "N° client", ITYPE_TEXTE, True, 1, 1, 1, 1, 0, ISAISIE_LIBRE, _
         "Renseigné automatiquement en choisissant une entreprise ou un nom"
-    DefInterv mChamps, 2, IC_TITRE, "Titre", ITYPE_LISTE, False, 1, 2, 1, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 2, IC_TITRE, "Titre", ITYPE_LISTE, False, 1, 2, 1, 1, 0, ISAISIE_LIBRE, _
         "Civilité du client"
-    DefInterv mChamps, 3, IC_ENTREPRISE, "Entreprise", ITYPE_AUTO, False, 2, 1, 2, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 3, IC_ENTREPRISE, "Entreprise", ITYPE_AUTO, False, 2, 1, 2, 1, 0, ISAISIE_LIBRE, _
         "Tapez les premières lettres : la liste des entreprises de TblClients se filtre au fil de la frappe"
-    DefInterv mChamps, 4, IC_NOM, "Nom", ITYPE_AUTO, False, 3, 1, 2, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 4, IC_NOM, "Nom", ITYPE_AUTO, False, 3, 1, 2, 1, 0, ISAISIE_LIBRE, _
         "Tapez les premières lettres : la liste des noms de TblClients se filtre au fil de la frappe"
-    DefInterv mChamps, 5, IC_PRENOM, "Prénom", ITYPE_TEXTE, False, 4, 1, 2, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 5, IC_PRENOM, "Prénom", ITYPE_TEXTE, False, 4, 1, 2, 1, 0, ISAISIE_LIBRE, _
         "Prénom du client"
 
     ' --- région 2 : l'intervention, colonnes 3 et 4 ---------------------------
-    DefInterv mChamps, 6, IC_NO, "N° intervention", ITYPE_TEXTE, True, 1, 3, 1, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 6, IC_NO, "N° intervention", ITYPE_TEXTE, True, 1, 3, 1, 1, 0, ISAISIE_LIBRE, _
         "Index du tableau, attribué automatiquement par le programme"
-    DefInterv mChamps, 7, IC_DATE, "Date", ITYPE_DATE, False, 1, 4, 1, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 7, IC_DATE, "Date", ITYPE_DATE, False, 1, 4, 1, 1, 0, ISAISIE_LIBRE, _
         "Date de l'intervention. Cliquez sur l'icône pour ouvrir le calendrier."
-    DefInterv mChamps, 8, IC_FACTURE, "N° de facture", ITYPE_TEXTE, True, 2, 3, 1, 1, ISAISIE_LIBRE, _
+    DefInterv mChamps, 8, IC_FACTURE, "N° de facture", ITYPE_TEXTE, True, 2, 3, 1, 1, 0, ISAISIE_LIBRE, _
         "Attribué par la facturation, pas depuis ce formulaire"
-    DefInterv mChamps, 9, IC_HEURES, "Heures", ITYPE_TEXTE, False, 2, 4, 1, 1, ISAISIE_HEURES, _
+    DefInterv mChamps, 9, IC_HEURES, "Heures", ITYPE_TEXTE, False, 2, 4, 1, 1, 0, ISAISIE_HEURES, _
         "Durée au format heures:minutes, par exemple 420:00"
-    DefInterv mChamps, 10, IC_CA, "Chiffre d'affaires", ITYPE_TEXTE, True, 3, 3, 1, 1, ISAISIE_LIBRE, _
-        "Calculé par le tableau Excel. La valeur affichée ici est une estimation, mise à jour au fil de la saisie."
-    DefInterv mChamps, 11, IC_PERS, "Personnes", ITYPE_TEXTE, False, 3, 4, 1, 1, ISAISIE_ENTIER, _
+    DefInterv mChamps, 10, IC_CA, "Chiffre d'affaires", ITYPE_TEXTE, True, 3, 3, 1, 1, 0, ISAISIE_MONTANT, _
+        "Calculé au fil de la saisie : heures x personnes x taux, ou le taux seul au forfait"
+    DefInterv mChamps, 11, IC_PERS, "Personnes", ITYPE_TEXTE, False, 3, 4, 1, 1, 0, ISAISIE_ENTIER, _
         "Nombre de personnes intervenues, de 1 à 99"
-    DefInterv mChamps, 12, IC_TVA, "TVA", ITYPE_CASE, False, 4, 3, 1, 1, ISAISIE_LIBRE, _
+
+    ' TVA et Forfait se partagent la colonne 3 : deux cases courtes n'ont pas
+    ' besoin d'une colonne chacune, et les garder côte à côte libère la
+    ' colonne 4 pour le taux, qu'elles commandent.
+    DefInterv mChamps, 12, IC_TVA, "TVA", ITYPE_CASE, False, 4, 3, 1, 1, 1, ISAISIE_LIBRE, _
         "Le client est assujetti à la TVA"
-    DefInterv mChamps, 13, IC_FORFAIT, "Forfait", ITYPE_CASE, False, 4, 4, 1, 1, ISAISIE_LIBRE, _
-        "Facturation au forfait plutôt qu'à l'heure"
+    DefInterv mChamps, 13, IC_FORFAIT, "Forfait", ITYPE_CASE, False, 4, 3, 1, 1, 2, ISAISIE_LIBRE, _
+        "Au forfait, le chiffre d'affaires vaut le taux seul, sans multiplier par les heures"
+    DefInterv mChamps, 14, IC_TAUX, "Taux / forfait", ITYPE_TEXTE, False, 4, 4, 1, 1, 0, ISAISIE_MONTANT, _
+        "Repris de Tx_hrs_Forf du client, modifiable pour cette intervention seule"
 
     ' --- région 3 : les textes libres, colonnes 5 et 6 ------------------------
     ' Deux champs seulement, hauts de deux lignes chacun : ils remplissent la
     ' région et laissent la place d'écrire.
-    DefInterv mChamps, 14, IC_TEXTE, "Texte de facture", ITYPE_LISTE, False, 1, 5, 2, 2, ISAISIE_LIBRE, _
+    DefInterv mChamps, 15, IC_TEXTE, "Texte de facture", ITYPE_LISTE, False, 1, 5, 2, 2, 0, ISAISIE_LIBRE, _
         "Texte repris sur la facture, repris du client ou choisi dans la liste"
-    DefInterv mChamps, 15, IC_COMMENT, "Commentaires", ITYPE_TEXTE, False, 3, 5, 2, 2, ISAISIE_LIBRE, _
+    DefInterv mChamps, 16, IC_COMMENT, "Commentaires", ITYPE_TEXTE, False, 3, 5, 2, 2, 0, ISAISIE_LIBRE, _
         "Remarque libre sur l'intervention"
 
     mCharges = True
@@ -159,7 +169,8 @@ End Sub
 Private Sub DefInterv(ByRef tb() As ChampInterv, ByVal idx As Long, ByVal colonne As String, _
                       ByVal libelle As String, ByVal typeCtrl As String, ByVal verrouille As Boolean, _
                       ByVal ligne As Long, ByVal col As Long, ByVal blocs As Long, _
-                      ByVal nbLignes As Long, ByVal saisie As Long, ByVal aide As String)
+                      ByVal nbLignes As Long, ByVal moitie As Long, ByVal saisie As Long, _
+                      ByVal aide As String)
     tb(idx).Colonne = colonne
     tb(idx).Libelle = libelle
     tb(idx).TypeCtrl = typeCtrl
@@ -168,6 +179,7 @@ Private Sub DefInterv(ByRef tb() As ChampInterv, ByVal idx As Long, ByVal colonn
     tb(idx).Col = col
     tb(idx).Blocs = blocs
     tb(idx).NbLignes = nbLignes
+    tb(idx).Moitie = moitie
     tb(idx).Saisie = saisie
     tb(idx).Aide = aide
 End Sub
@@ -180,10 +192,31 @@ End Sub
 '==============================================================================
 Public Function INomControle(ByRef ch As ChampInterv) As String
     Select Case ch.TypeCtrl
-        Case ITYPE_LISTE, ITYPE_AUTO: INomControle = "cbo" & ch.Colonne
-        Case ITYPE_CASE:              INomControle = "chk" & ch.Colonne
-        Case Else:                    INomControle = "txt" & ch.Colonne
+        Case ITYPE_LISTE, ITYPE_AUTO: INomControle = "cbo" & INomSur(ch.Colonne)
+        Case ITYPE_CASE:              INomControle = "chk" & INomSur(ch.Colonne)
+        Case Else:                    INomControle = "txt" & INomSur(ch.Colonne)
     End Select
+End Function
+
+'------------------------------------------------------------------------------
+' Nom de colonne réduit à ce qu'un identifiant VBA accepte.
+'
+' Une colonne Excel peut s'appeler « Taux/Forfait » ; un contrôle, non. Tout ce
+' qui n'est ni lettre, ni chiffre, ni soulignement est retiré, ce qui donne
+' txtTauxForfait. Deux colonnes ne doivent donc pas se réduire au même nom —
+' simulate_interv.py le vérifie.
+'------------------------------------------------------------------------------
+Public Function INomSur(ByVal nomColonne As String) As String
+    Dim i As Long, c As String, r As String
+
+    For i = 1 To Len(nomColonne)
+        c = Mid$(nomColonne, i, 1)
+        If (c >= "A" And c <= "Z") Or (c >= "a" And c <= "z") _
+           Or (c >= "0" And c <= "9") Or c = "_" Then
+            r = r & c
+        End If
+    Next i
+    INomSur = r
 End Function
 
 '------------------------------------------------------------------------------
@@ -192,7 +225,7 @@ End Function
 ' ceux du formulaire des clients.
 '------------------------------------------------------------------------------
 Public Function INomLibelle(ByRef ch As ChampInterv) As String
-    INomLibelle = "lblI_" & ch.Colonne
+    INomLibelle = "lblI_" & INomSur(ch.Colonne)
 End Function
 
 '------------------------------------------------------------------------------
@@ -218,13 +251,18 @@ End Function
 ' dans le tableau, sinon la colonne reste vide et le chiffre d'affaires, qui
 ' cherche ce numéro dans TblClients, ne trouve rien.
 '
-' Trois colonnes seulement échappent au formulaire :
+' Deux colonnes seulement échappent au formulaire :
 '   NoInterv   attribué par IntervBD_Ajouter, jamais retouché ensuite
-'   CA         porte une formule ; l'écrire l'effacerait
 '   No_Facture attribué par la facturation, pas depuis cette fiche
+'
+' Le CA en faisait partie tant qu'il était calculé par une formule Excel. Il
+' est maintenant calculé au fil de la saisie, à partir du taux enregistré sur
+' l'intervention, et écrit comme les autres colonnes. Si la colonne porte
+' encore une formule, EcrireCellules la laisse tranquille : la formule gagne,
+' et VerifierClasseurInterventions dit lequel des deux régimes s'applique.
 '==============================================================================
 Public Function IColonnesNonEcrites() As Variant
-    IColonnesNonEcrites = Array(IC_NO, IC_CA, IC_FACTURE)
+    IColonnesNonEcrites = Array(IC_NO, IC_FACTURE)
 End Function
 
 '------------------------------------------------------------------------------
@@ -244,14 +282,19 @@ End Function
 '==============================================================================
 ' Colonnes du tableau des enregistrements
 '------------------------------------------------------------------------------
-' Dix au maximum : c'est ce qu'accepte une ListBox MSForms. Titre a été laissé
-' de côté — c'est la colonne la moins informative dans une liste, et elle reste
-' visible dans la fiche dès qu'une ligne est sélectionnée. Pour la réintégrer,
-' remplacer ici une autre colonne.
+' DIX AU MAXIMUM : c'est ce qu'accepte une ListBox MSForms, et la limite est
+' dure — une onzième colonne fait échouer l'affectation de ColumnCount.
+'
+' Deux colonnes du tableau sont donc restées dehors, et le choix s'est porté
+' sur les moins informatives dans une liste : Titre d'abord, puis Prénom quand
+' le taux est venu prendre sa place. L'entreprise et le nom suffisent à
+' reconnaître une ligne, et le prénom reste visible dans la fiche dès qu'on
+' sélectionne l'intervention. Pour en réintégrer une, il faut en sortir une
+' autre — ici même, dans les trois tableaux qui suivent.
 '==============================================================================
 Public Function IColonnesListe() As Variant
-    IColonnesListe = Array(IC_DATE, IC_CLIENT, IC_ENTREPRISE, IC_NOM, IC_PRENOM, _
-                           IC_HEURES, IC_PERS, IC_TEXTE, IC_COMMENT, IC_FACTURE)
+    IColonnesListe = Array(IC_DATE, IC_CLIENT, IC_ENTREPRISE, IC_NOM, _
+                           IC_HEURES, IC_PERS, IC_TAUX, IC_TEXTE, IC_COMMENT, IC_FACTURE)
 End Function
 
 '------------------------------------------------------------------------------
@@ -260,8 +303,9 @@ End Function
 ' réel de la colonne Excel restant dans IColonnesListe.
 '------------------------------------------------------------------------------
 Public Function ILibellesListe() As Variant
-    ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom", "Prénom", _
-                           "Heures", "Pers.", "Texte de facture", "Commentaires", "Facture")
+    ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom", _
+                           "Heures", "Pers.", "Taux/Forf.", "Texte de facture", _
+                           "Commentaires", "Facture")
 End Function
 
 '------------------------------------------------------------------------------
@@ -269,7 +313,7 @@ End Function
 ' la ListBox mesure 926 pt de large et la barre de défilement en prend 16.
 '------------------------------------------------------------------------------
 Public Function ILargeursListe() As Variant
-    ILargeursListe = Array(66, 54, 140, 96, 84, 56, 44, 130, 156, 60)
+    ILargeursListe = Array(66, 54, 140, 130, 56, 44, 62, 130, 156, 60)
 End Function
 
 '==============================================================================
@@ -293,6 +337,7 @@ Public Function IReportsDepuisClients() As Variant
         Array("Prenom", IC_PRENOM), _
         Array("TVA", IC_TVA), _
         Array("Forfait", IC_FORFAIT), _
+        Array("Tx_hrs_Forf", IC_TAUX), _
         Array("Texte_Facture", IC_TEXTE), _
         Array("Note_Interne", IC_COMMENT))
 End Function

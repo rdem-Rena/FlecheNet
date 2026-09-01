@@ -71,10 +71,19 @@ Public Sub VerifierClasseurInterventions()
         Else
             msg = msg & "[OK] Les " & NB_CHAMPS_INTERV & " colonnes du schéma sont présentes" & vbCrLf
         End If
+        ' Le formulaire calcule le CA et l'enregistre. Si la colonne porte
+        ' encore la formule d'origine, c'est elle qui gagne et le montant écrit
+        ' est ignoré : les deux régimes donnent le même résultat, mais mieux
+        ' vaut savoir lequel s'applique.
         If Interv_EstCalculee(IC_CA) Then
-            msg = msg & "[OK] Colonne " & IC_CA & " : calculée, jamais écrite par le formulaire" & vbCrLf
+            msg = msg & "[ ] Colonne " & IC_CA & " : porte une formule — c'est elle qui" & _
+                  " calcule, le montant du formulaire n'est pas écrit" & vbCrLf
         Else
-            msg = msg & "[ ] Colonne " & IC_CA & " : sans formule — elle sera écrite comme les autres" & vbCrLf
+            msg = msg & "[OK] Colonne " & IC_CA & " : calculée par le formulaire et enregistrée" & vbCrLf
+        End If
+        If Interv_IndexColonne(IC_TAUX) = 0 Then
+            msg = msg & "[X] Colonne " & IC_TAUX & " : absente — le chiffre d'affaires" & _
+                  " restera vide" & vbCrLf
         End If
     End If
 

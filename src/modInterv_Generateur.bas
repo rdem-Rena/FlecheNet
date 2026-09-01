@@ -346,6 +346,14 @@ Private Sub ConstruireFiche3(dsg As Object)
         larg = ILargeurBlocs(ch(i).Blocs)
         haut = IHauteurLignes(ch(i).NbLignes)
 
+        ' deux champs peuvent se partager une colonne : les cases TVA et Forfait
+        If ch(i).Moitie = 1 Then
+            larg = (IG_BLOC - 8) / 2
+        ElseIf ch(i).Moitie = 2 Then
+            larg = (IG_BLOC - 8) / 2
+            x = x + larg + 8
+        End If
+
         If ch(i).TypeCtrl = ITYPE_CASE Then
             Set c = AjCtrl(dsg, "Forms.CheckBox.1", INomControle(ch(i)), _
                            x, y + ICH_LBL_HAUT + 1, larg, ICH_CTL_HAUT)
@@ -398,7 +406,7 @@ Private Sub ConstruireFiche3(dsg As Object)
     ' libellé commun aux deux cases à cocher, qui n'en ont pas d'individuel :
     ' il occupe la ligne de libellés que TVA et Forfait laissent vide
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblI_Facturation", IGrilleX(3), IGrilleY(4), _
-                   ILargeurBlocs(2), ICH_LBL_HAUT)
+                   IG_BLOC, ICH_LBL_HAUT)
     Texte c, "FACTURATION", TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
 End Sub
 
@@ -863,8 +871,10 @@ Private Function CodeFormulairePrincipal() As String
                      "Interv_ToucheSaisie KeyAscii, " & CStr(ch(i).Saisie)
             End If
 
-            ' le nombre de personnes entre dans le calcul du chiffre d'affaires
-            If StrComp(ch(i).Colonne, IC_PERS, vbTextCompare) = 0 Then
+            ' le nombre de personnes et le taux entrent dans le calcul du
+            ' chiffre d'affaires, qui se met à jour à chaque frappe
+            If StrComp(ch(i).Colonne, IC_PERS, vbTextCompare) = 0 _
+               Or StrComp(ch(i).Colonne, IC_TAUX, vbTextCompare) = 0 Then
                 ProcI n & "_Change()", "Interv_MajCA Me"
             End If
         End If

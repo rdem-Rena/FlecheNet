@@ -160,7 +160,8 @@ Public Function Interv_ValeurAffichee(ByVal ligne As Long, ByVal nomColonne As S
         Interv_ValeurAffichee = Interv_DateAffichee(v)
     ElseIf StrComp(nomColonne, IC_HEURES, vbTextCompare) = 0 Then
         Interv_ValeurAffichee = Interv_HeuresVersTexte(v)
-    ElseIf StrComp(nomColonne, IC_CA, vbTextCompare) = 0 Then
+    ElseIf StrComp(nomColonne, IC_CA, vbTextCompare) = 0 _
+           Or StrComp(nomColonne, IC_TAUX, vbTextCompare) = 0 Then
         If IsNumeric(v) Then Interv_ValeurAffichee = Format$(CDbl(v), "#,##0.00")
     Else
         Interv_ValeurAffichee = CStr(v)
@@ -252,6 +253,46 @@ End Function
 '------------------------------------------------------------------------------
 ' "420:00", "420" ou "420:30" -> fraction de jour.
 '   ok : passé à True si la saisie a pu être interprétée
+'------------------------------------------------------------------------------
+' Lit un montant saisi : « 39 », « 39.50 », « 39,50 », « 1'250.00 ».
+'   ok : passé à True si le texte a pu être lu
+'
+' La virgule vaut le point — on tape « 39,50 » sur un clavier suisse romand —
+' et l'apostrophe des milliers est retirée, puisque c'est ainsi que le montant
+' est réaffiché. CDbl dépendrait des paramètres régionaux de Windows : la
+' conversion est donc faite à la main, chiffre par chiffre.
+Public Function Interv_TexteVersMontant(ByVal s As String, ByRef ok As Boolean) As Double
+    Dim t As String, i As Long, c As String, ent As String, dec As String
+    Dim apres As Boolean
+
+    ok = False
+    t = Replace$(Trim$(s), " ", vbNullString)
+    t = Replace$(t, ChrW(39), vbNullString)      ' apostrophe des milliers
+    t = Replace$(t, ChrW(8217), vbNullString)    ' apostrophe typographique
+    t = Replace$(t, ",", ".")
+    If Len(t) = 0 Then Exit Function
+
+    For i = 1 To Len(t)
+        c = Mid$(t, i, 1)
+        If c >= "0" And c <= "9" Then
+            If apres Then dec = dec & c Else ent = ent & c
+        ElseIf c = "." And Not apres Then
+            apres = True
+        Else
+            Exit Function                        ' caractère inattendu
+        End If
+    Next i
+
+    If Len(ent) = 0 And Len(dec) = 0 Then Exit Function
+    If Len(ent) = 0 Then ent = "0"
+
+    ok = True
+    Interv_TexteVersMontant = CDbl(ent)
+    If Len(dec) > 0 Then
+        Interv_TexteVersMontant = Interv_TexteVersMontant + CDbl(dec) / (10 ^ Len(dec))
+    End If
+End Function
+
 '------------------------------------------------------------------------------
 Public Function Interv_TexteVersHeures(ByVal s As String, ByRef ok As Boolean) As Double
     Dim p As Long, h As String, m As String, t As String
@@ -465,40 +506,23 @@ Public Function Interv_ValeurClient(ByVal ligne As Long, ByVal nomColonne As Str
 End Function
 
 '------------------------------------------------------------------------------
-' Taux horaire ou montant forfaitaire d'un client, cherché par son ID Crésus.
-' C'est la valeur qu'utilise la formule de la colonne CA.
+' Chiffre d'affaires d'une intervention.
+'   taux    : taux horaire, ou montant forfaitaire si forfait vaut True
+'   nbPers  : nombre de personnes intervenues
+'   heures  : durée en FRACTION DE JOUR, comme Excel la stocke
+'
+'   au forfait -> le montant forfaitaire, tel quel
+'   à l'heure  -> taux x personnes x heures
+'
+' Le x 24 convertit la fraction de jour en heures : 0,125 jour vaut 3 heures.
+' Oublier ce facteur diviserait tous les montants par vingt-quatre.
+'
+' Le taux vient désormais de la colonne Taux/Forfait de l'intervention, et non
+' plus d'une recherche dans TblClients : le tarif est celui qui s'appliquait au
+' moment de la prestation, et changer celui d'un client ne réécrit pas le passé.
 '------------------------------------------------------------------------------
-Public Function Interv_TauxClient(ByVal idCresus As String) As Double
-    Dim i As Long, icId As Long, icTx As Long, cible As String, v As Variant
-
-    AssurerClients
-    cible = Trim$(idCresus)
-    If Len(cible) = 0 Then Exit Function
-    If Not mIdxClient.Exists("ID_Cresus") Or Not mIdxClient.Exists("Tx_hrs_Forf") Then Exit Function
-    If Not IsArray(mClients) Then Exit Function
-
-    icId = mIdxClient("ID_Cresus")
-    icTx = mIdxClient("Tx_hrs_Forf")
-    For i = 1 To mNbClients
-        If StrComp(Trim$(CStr(mClients(i, icId) & "")), cible, vbTextCompare) = 0 Then
-            v = mClients(i, icTx)
-            If IsNumeric(v) Then Interv_TauxClient = CDbl(v)
-            Exit Function
-        End If
-    Next i
-End Function
-
-'------------------------------------------------------------------------------
-' Estimation du chiffre d'affaires, reprise de la formule de la colonne CA :
-'   au forfait          -> le montant forfaitaire du client
-'   à l'heure           -> taux x personnes x heures
-' Elle sert à afficher une valeur pendant la saisie ; la valeur définitive est
-' celle que le tableau Excel calcule après écriture.
-'------------------------------------------------------------------------------
-Public Function Interv_EstimerCA(ByVal idCresus As String, ByVal forfait As Boolean, _
+Public Function Interv_EstimerCA(ByVal taux As Double, ByVal forfait As Boolean, _
                                  ByVal nbPers As Double, ByVal heures As Double) As Double
-    Dim taux As Double
-    taux = Interv_TauxClient(idCresus)
     If forfait Then
         Interv_EstimerCA = taux
     Else

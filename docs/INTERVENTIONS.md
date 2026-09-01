@@ -88,14 +88,14 @@ Le graphique et le bloc de tuiles se partagent la largeur de la carte&nbsp;: le 
 
 ---
 
-## Fiche 3 — les quinze champs
+## Fiche 3 — les 16 champs
 
 La grille compte quatre lignes et six colonnes de **126 pt**, groupées en **trois régions** de deux colonnes. L'écart entre régions (**42 pt**) est plus large que la gouttière intérieure (**20 pt**) : ce sont ces respirations, et non un trait, qui font lire trois groupes.
 
 | Région | Colonnes | Ce qu'elle porte |
 |---|---|---|
 | 1 | 1-2 | **Le client** — n° et titre, puis entreprise, nom, prénom sur toute la largeur |
-| 2 | 3-4 | **L'intervention** — n° et date, n° de facture et heures, CA et personnes, TVA et forfait |
+| 2 | 3-4 | **L'intervention** — n° et date, n° de facture et heures, CA et personnes, TVA et forfait, taux |
 | 3 | 5-6 | **Les textes libres** — texte de facture et commentaires, hauts de deux lignes |
 
 L'identité du client d'abord, les chiffres de l'intervention ensuite, les textes libres enfin : c'est l'ordre dans lequel une fiche se remplit. La colonne « Case » ci-dessous se lit *région, ligne, colonne*.
@@ -111,14 +111,15 @@ L'identité du client d'abord, les chiffres de l'intervention ensuite, les texte
 | 7 | `Date` | Date | `txtDate` | R2 L1 C4 | libre | date du jour par défaut ; le bouton ▾ ouvre le calendrier |
 | 8 | `No_Facture` | N° de facture | `txtNo_Facture` | R2 L2 C3 | libre | verrouillé — attribué par la facturation |
 | 9 | `Nb_Hres` | Heures | `txtNb_Hres` | R2 L2 C4 | hhh:mm | saisie en heures : `420:00`. Excel stocke une fraction de jour. |
-| 10 | `CA` | Chiffre d'affaires | `txtCA` | R2 L3 C3 | libre | **colonne calculée** — jamais écrite ; estimation affichée pendant la saisie |
+| 10 | `CA` | Chiffre d'affaires | `txtCA` | R2 L3 C3 | montant | calculé au fil de la saisie **et enregistré** — heures x personnes x taux |
 | 11 | `Nb_Pers` | Personnes | `txtNb_Pers` | R2 L3 C4 | chiffres | entier de 1 à 99 |
-| 12 | `TVA` | TVA | `chkTVA` | R2 L4 C3 | libre | repris du client |
-| 13 | `Forfait` | Forfait | `chkForfait` | R2 L4 C4 | libre | repris du client ; change le calcul du CA |
-| 14 | `Texte_Facture` | Texte de facture | `cboTexte_Facture` | R3 L1 C5 ×2 col. ×2 lig. | libre | haut de deux lignes ; textes standards de `TblTxtStd` |
-| 15 | `Commentaires` | Commentaires | `txtCommentaires` | R3 L3 C5 ×2 col. ×2 lig. | libre | haut de deux lignes, multi-ligne avec ascenseur ; repris de `Note_Interne` du client |
+| 12 | `TVA` | TVA | `chkTVA` | R2 L4 C3 ½g | libre | repris du client |
+| 13 | `Forfait` | Forfait | `chkForfait` | R2 L4 C3 ½d | libre | repris du client ; coché, le CA vaut le taux seul |
+| 14 | `Taux/Forfait` | Taux / forfait | `txtTauxForfait` | R2 L4 C4 | montant | repris de `Tx_hrs_Forf` du client, modifiable pour cette intervention seule |
+| 15 | `Texte_Facture` | Texte de facture | `cboTexte_Facture` | R3 L1 C5 ×2 col. ×2 lig. | libre | haut de deux lignes ; textes standards de `TblTxtStd` |
+| 16 | `Commentaires` | Commentaires | `txtCommentaires` | R3 L3 C5 ×2 col. ×2 lig. | libre | haut de deux lignes, multi-ligne avec ascenseur ; repris de `Note_Interne` du client |
 
-> **Verrouillé n'est pas « non enregistré ».** Un champ verrouillé est hors de portée de la frappe, ce qui ne dit rien de son sort à l'écriture. Trois colonnes seulement échappent au formulaire — `NoInterv`, attribué à l'ajout, `CA`, qui porte une formule, et `No_Facture`, attribué par la facturation ; elles sont listées dans `IColonnesNonEcrites`. Tout le reste part dans le tableau, y compris le n° de client : il est verrouillé parce qu'on ne le tape pas, pas parce qu'il ne compte pas — et le chiffre d'affaires le cherche dans `TblClients`.
+> **Verrouillé n'est pas « non enregistré ».** Un champ verrouillé est hors de portée de la frappe, ce qui ne dit rien de son sort à l'écriture. Deux colonnes seulement échappent au formulaire — `NoInterv`, attribué à l'ajout, et `No_Facture`, attribué par la facturation ; elles sont listées dans `IColonnesNonEcrites`. Tout le reste part dans le tableau, y compris le n° de client et le chiffre d'affaires : ils sont verrouillés parce qu'on ne les tape pas, pas parce qu'ils ne comptent pas.
 
 
 ### Report automatique depuis TblClients
@@ -134,6 +135,7 @@ Choisir une entreprise ou un nom dans sa liste remplit d'un coup :
 | `Prenom` | → | `Prenom` |
 | `TVA` | → | `TVA` |
 | `Forfait` | → | `Forfait` |
+| `Tx_hrs_Forf` | → | `Taux/Forfait` |
 | `Texte_Facture` | → | `Texte_Facture` |
 | `Note_Interne` | → | `Commentaires` |
 
@@ -147,15 +149,17 @@ Excel range `Nb_Hres` en **fraction de jour** et l'affiche au format `[h]:mm "h"
 
 ### Chiffre d'affaires
 
-La colonne `CA` porte une formule dans le tableau Excel :
+Le formulaire calcule le montant au fil de la saisie, puis l'**enregistre** dans `CA` :
 
 ```
-=SI([Forfait]=FAUX ; taux × [Nb_Pers] × [Nb_Hres] × 24 ; taux)
-   où taux = RECHERCHEX([Client_No] ; TblClients[ID_Cresus] ; TblClients[Tx_hrs_Forf])
+à l'heure  CA = [Taux/Forfait] × [Nb_Pers] × [Nb_Hres] × 24
+au forfait CA = [Taux/Forfait]
 ```
-Le formulaire **n'écrit jamais cette colonne** : une écriture globale de la ligne remplacerait la formule par une valeur figée. L'écriture se fait donc cellule par cellule, en sautant toute colonne portant une formule — la détection est automatique, une autre colonne calculée ajoutée plus tard serait épargnée de la même façon.
+Le `× 24` convertit la fraction de jour en heures — voir Durées ci-dessus. Le calcul est refait dès qu'une des quatre valeurs change : heures, personnes, taux, case Forfait ; et aussi quand le choix d'un client rapporte son taux.
 
-Le champ affiche une **estimation** reprenant le même calcul, remise à jour dès qu'on change les heures, le nombre de personnes, le forfait ou le client. La valeur définitive reste celle que le tableau calcule après enregistrement.
+Le taux vient de la colonne `Taux/Forfait` de **l'intervention**, reprise de `TblClients[Tx_hrs_Forf]` au moment où le client est choisi. C'est ce qui change tout par rapport à une recherche faite à la volée&nbsp;: le tarif enregistré est celui qui s'appliquait le jour de la prestation, et modifier celui d'un client ne réécrit pas le passé. Il reste modifiable pour une intervention isolée.
+
+> **Si la colonne `CA` porte encore une formule**, c'est elle qui gagne&nbsp;: l'écriture se fait cellule par cellule en sautant toute colonne calculée, et le montant du formulaire est ignoré. Les deux régimes donnent le même résultat tant que la formule est celle d'origine, mais `VerifierClasseurInterventions` dit lequel s'applique — retirer la formule laisse le formulaire enregistrer sa valeur.
 
 
 ---
@@ -167,14 +171,14 @@ Le champ affiche une **estimation** reprenant le même calcul, remise à jour d�
 | 1 | `Date` | Date | 66 pt |
 | 2 | `Client_No` | N° client | 54 pt |
 | 3 | `Entreprise` | Entreprise | 140 pt |
-| 4 | `Nom` | Nom | 96 pt |
-| 5 | `Prenom` | Prénom | 84 pt |
-| 6 | `Nb_Hres` | Heures | 56 pt |
-| 7 | `Nb_Pers` | Pers. | 44 pt |
+| 4 | `Nom` | Nom | 130 pt |
+| 5 | `Nb_Hres` | Heures | 56 pt |
+| 6 | `Nb_Pers` | Pers. | 44 pt |
+| 7 | `Taux/Forfait` | Taux/Forf. | 62 pt |
 | 8 | `Texte_Facture` | Texte de facture | 130 pt |
 | 9 | `Commentaires` | Commentaires | 156 pt |
 | 10 | `No_Facture` | Facture | 60 pt |
-| | | **total** | **886 pt** |
+| | | **total** | **898 pt** |
 
 > **Une colonne de moins que demandé.** Onze colonnes étaient souhaitées ; une `ListBox` MSForms n'en accepte que **dix**. `Titre` a été laissée de côté — c'est la moins informative dans une liste, et elle reste visible dans la fiche dès qu'une ligne est sélectionnée. Pour la réintroduire à la place d'une autre : `IColonnesListe`, `ILibellesListe` et `ILargeursListe` dans `modInterv_Schema`, lues position par position.
 
