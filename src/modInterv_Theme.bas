@@ -144,14 +144,17 @@ Public Const IFB_COMPTEUR_L As Single = 190
 ' bien mieux qu'avec un survol, qui n'éclaire que là où pointe la souris.
 Public Const COUL_GRILLE_ZEBRE As Long = &HFAF5F1&   ' #F1F5FA
 
-' Le texte des lignes est un cran plus clair que celui des fiches : dix-sept
-' lignes de noir plein pèsent lourd, alors qu'une fiche n'a que quelques mots.
-Public Const COUL_GRILLE_TXT As Long = &H5C4A3C&     ' #3C4A5C
+' Le texte des lignes est plus petit et plus clair que celui des fiches :
+' dix-sept lignes de noir plein pèsent lourd, alors qu'une fiche n'a que
+' quelques mots. MSForms ne propose pas de graisse fine — seulement gras ou
+' non — c'est donc la couleur qui allège le trait.
+Public Const COUL_GRILLE_TXT As Long = &H6E5A4A&     ' #4A5A6E
+Public Const TAILLE_GRILLE_TXT As Single = 8.5
 
-' L'en-tête, lui, est plus sombre et plus grand que le corps du tableau : c'est
+' L'en-tête, lui, est plus sombre et nettement plus grand que le corps : c'est
 ' ce qui le détache des lignes sans avoir à le souligner.
 Public Const COUL_GRILLE_ENTETE As Long = &H523E2C&  ' #2C3E52
-Public Const TAILLE_GRILLE_ENTETE As Single = 8.5
+Public Const TAILLE_GRILLE_ENTETE As Single = 9.5
 
 Public Const IT_TOP As Single = 448
 Public Const IT_HAUT As Single = 246

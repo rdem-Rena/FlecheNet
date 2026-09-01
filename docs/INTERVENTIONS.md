@@ -169,14 +169,14 @@ Le taux vient de la colonne `Taux/Forfait` de **l'intervention**, reprise de `Tb
 | # | Colonne | En-tête | Largeur | Aligné |
 |---|---|---|---|---|
 | 1 | `Date` | Date | 64 pt | gauche |
-| 2 | `Client_No` | N° client | 50 pt | gauche |
+| 2 | `Client_No` | N° client | 56 pt | gauche |
 | 3 | `Entreprise` | Entreprise | 132 pt | gauche |
 | 4 | `Nom` | Nom | 86 pt | gauche |
 | 5 | `Prenom` | Prénom | 76 pt | gauche |
 | 6 | `Nb_Hres` | Heures | 52 pt | droite |
-| 7 | `Nb_Pers` | Pers. | 34 pt | centre |
-| 8 | `Taux/Forfait` | Taux/Forf. | 58 pt | droite |
-| 9 | `CA` | Chiffre d'aff. | 68 pt | droite |
+| 7 | `Nb_Pers` | Pers. | 38 pt | centre |
+| 8 | `Taux/Forfait` | Taux/Forf. | 62 pt | droite |
+| 9 | `CA` | CA | 54 pt | droite |
 | 10 | `Texte_Facture` | Texte de facture | 122 pt | gauche |
 | 11 | `Commentaires` | Commentaires | 124 pt | gauche |
 | 12 | `No_Facture` | Fact. | 40 pt | gauche |

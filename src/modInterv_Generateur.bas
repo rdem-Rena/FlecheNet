@@ -519,7 +519,7 @@ Private Sub ConstruireFiche4(dsg As Object)
             Set c = AjCtrl(dsg, "Forms.Label.1", _
                            "lblG_" & CStr(r) & "_" & CStr(i + 1), _
                            x, y, CSng(larg(i)) - 2 * IGR_PAD_X, IGR_LIGNE_H)
-            Texte c, vbNullString, TAILLE_LISTE, False, COUL_GRILLE_TXT, CLng(ali(i))
+            Texte c, vbNullString, TAILLE_GRILLE_TXT, False, COUL_GRILLE_TXT, CLng(ali(i))
             x = x + CSng(larg(i))
         Next i
     Next r
@@ -534,7 +534,15 @@ Private Sub ConstruireFiche4(dsg As Object)
         .Value = 0
         .SmallChange = 1
         .LargeChange = IGR_NB_LIGNES     ' un clic dans le vide fait une page
-        .ProportionalThumb = True        ' curseur proportionnel à ce qui est vu
+
+        ' CURSEUR DE TAILLE FIXE. Avec ProportionalThumb, MSForms dimensionne le
+        ' curseur à LargeChange / (plage + LargeChange). Ici la plage vaut le
+        ' nombre de lignes en trop — douze pour vingt-neuf interventions — et
+        ' LargeChange une page entière : le curseur occupait alors presque toute
+        ' la glissière et ne se distinguait plus du fond. Les flèches marchaient,
+        ' mais il n'y avait plus rien à attraper. Taille fixe : un petit carré,
+        ' quelle que soit la plage.
+        .ProportionalThumb = False
         .TabIndex = 90
     End With
 End Sub

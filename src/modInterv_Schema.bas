@@ -346,7 +346,7 @@ End Function
 '------------------------------------------------------------------------------
 Public Function ILibellesListe() As Variant
     ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom", "Prénom", _
-                           "Heures", "Pers.", "Taux/Forf.", "Chiffre d'aff.", _
+                           "Heures", "Pers.", "Taux/Forf.", "CA", _
                            "Texte de facture", "Commentaires", "Fact.")
 End Function
 
@@ -357,7 +357,7 @@ End Function
 Public Function ILargeursListe() As Variant
     ' Facture ne porte jamais plus de six chiffres : 40 points lui suffisent, et
     ' ce qu'elle rend va aux colonnes qui tronquaient.
-    ILargeursListe = Array(64, 50, 132, 86, 76, 52, 34, 58, 68, 122, 124, 40)
+    ILargeursListe = Array(64, 56, 132, 86, 76, 52, 38, 62, 54, 122, 124, 40)
 End Function
 
 '==============================================================================
