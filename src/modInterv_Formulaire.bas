@@ -64,6 +64,17 @@ Public Sub Interv_Initialiser(f As Object)
         .ListIndex = 0
     End With
 
+    ' Douze mois précédés de « Tous les mois » : le premier élément ne filtre
+    ' rien, ce qui donne au menu un état de repos plutôt qu'une case vide.
+    With ICtl(f, "cboMoisI")
+        .Clear
+        .AddItem TOUS_LES_MOIS
+        For i = 1 To 12
+            .AddItem NomDuMois(i)
+        Next i
+        .ListIndex = 0
+    End With
+
     ' --- fiche 4 : en-têtes du tableau ----------------------------------------
     MajEntetesInterv f
     ICtl(f, "lstInterv").Clear
@@ -234,7 +245,7 @@ End Sub
 ' que les colonnes affichées peuvent changer sans rien casser.
 '------------------------------------------------------------------------------
 Public Sub Interv_RafraichirListe(f As Object)
-    Dim nb As Long, i As Long, champ As String, cible As String
+    Dim nb As Long, i As Long, champ As String, cible As String, mois As Long
     Dim cols As Variant, arr() As Variant, lst As Object, ic As Long, garde As Boolean
 
     On Error GoTo Erreur
@@ -245,6 +256,7 @@ Public Sub Interv_RafraichirListe(f As Object)
     champ = EnTexte(ICtl(f, "cboChampFiltreI").Value)
     If Len(champ) = 0 Then champ = IC_ENTREPRISE
     cible = Normaliser(Trim$(EnTexte(ICtl(f, "txtFiltreI").Text)))
+    mois = MoisFiltre(f)
 
     For i = 1 To nb
         If Len(cible) = 0 Then
@@ -252,6 +264,8 @@ Public Sub Interv_RafraichirListe(f As Object)
         Else
             garde = (InStr(1, Normaliser(Interv_ValeurAffichee(i, champ)), cible, vbBinaryCompare) > 0)
         End If
+        ' les deux filtres se cumulent : le texte ET le mois
+        If garde And mois > 0 Then garde = (MoisDeLaLigne(i) = mois)
         If garde Then
             mNbVis = mNbVis + 1
             mLignesVis(mNbVis) = i
@@ -269,7 +283,7 @@ Public Sub Interv_RafraichirListe(f As Object)
         ReDim arr(1 To mNbVis, 1 To UBound(cols) - LBound(cols) + 1)
         For i = 1 To mNbVis
             For ic = LBound(cols) To UBound(cols)
-                arr(i, ic + 1) = Interv_ValeurAffichee(mLignesVis(i), CStr(cols(ic)))
+                arr(i, ic + 1) = Interv_ValeurListe(mLignesVis(i), CStr(cols(ic)))
             Next ic
         Next i
         lst.List = arr
@@ -305,6 +319,7 @@ Public Sub Interv_ReinitialiserFiltre(f As Object)
     mChargement = True
     ICtl(f, "txtFiltreI").Text = vbNullString
     ICtl(f, "cboChampFiltreI").ListIndex = 0
+    ICtl(f, "cboMoisI").ListIndex = 0
     mChargement = garde
     Interv_RafraichirListe f
 End Sub
@@ -370,6 +385,25 @@ End Sub
 Private Function ComparerVis(ByVal a As Long, ByVal b As Long, ByVal nomCol As String) As Long
     Dim va As Variant, vb As Variant, r As Long, sa As String, sb As String
 
+    ' Une case qui réunit deux colonnes n'a pas de valeur brute : on la compare
+    ' sur le texte affiché, « Aiello Rosalba », donc par nom puis par prénom.
+    If IColonneComposee(nomCol) Then
+        sa = Normaliser(Interv_ValeurListe(a, nomCol))
+        sb = Normaliser(Interv_ValeurListe(b, nomCol))
+        If Len(sa) = 0 And Len(sb) > 0 Then
+            r = 1
+        ElseIf Len(sb) = 0 And Len(sa) > 0 Then
+            r = -1
+        ElseIf sa < sb Then
+            r = -1
+        ElseIf sa > sb Then
+            r = 1
+        End If
+        If mTriDecroissant Then r = -r
+        ComparerVis = r
+        Exit Function
+    End If
+
     va = Interv_Valeur(a, nomCol)
     vb = Interv_Valeur(b, nomCol)
 
@@ -417,6 +451,32 @@ Public Sub Interv_ChargerSelection(f As Object)
     MajBoutonsInterv f
     MajEtatInterv f
 End Sub
+
+'------------------------------------------------------------------------------
+' Mois retenu par le menu déroulant.
+'   renvoie : 1 à 12, ou 0 si aucun mois n'est demandé
+'
+' La position dans la liste suffit : l'élément 0 est « Tous les mois », donc
+' l'indice vaut directement le numéro du mois. Aucun besoin de retrouver le mois
+' à partir de son nom.
+'------------------------------------------------------------------------------
+Private Function MoisFiltre(f As Object) As Long
+    Dim c As Object
+    Set c = ICtl(f, "cboMoisI")
+    If c Is Nothing Then Exit Function
+    If c.ListIndex > 0 Then MoisFiltre = c.ListIndex
+End Function
+
+'------------------------------------------------------------------------------
+' Mois de la date d'une intervention, 0 si la date manque ou n'en est pas une.
+'------------------------------------------------------------------------------
+Private Function MoisDeLaLigne(ByVal ligne As Long) As Long
+    Dim v As Variant
+    v = Interv_Valeur(ligne, IC_DATE)
+    If IsEmpty(v) Or IsNull(v) Then Exit Function
+    If Not IsDate(v) Then Exit Function
+    MoisDeLaLigne = Month(CDate(v))
+End Function
 
 '------------------------------------------------------------------------------
 ' Sélectionne dans le tableau la ligne portant un numéro d'intervention donné.

@@ -148,6 +148,27 @@ End Function
 ' Valeur mise en forme pour l'affichage : dates en jj/mm/aaaa, durées en
 ' heures:minutes, montants à deux décimales, booléens en Oui / Non.
 '------------------------------------------------------------------------------
+' Valeur d'une CASE du tableau du formulaire.
+'   cle : nom de colonne, ou plusieurs réunis par ICL_SEPARATEUR
+'
+' Une case peut réunir deux colonnes — le nom et le prénom — pour tenir dans les
+' dix colonnes qu'accepte une ListBox. Les morceaux vides sont sautés, sans quoi
+' un prénom absent laisserait une espace en fin de case.
+Public Function Interv_ValeurListe(ByVal ligne As Long, ByVal cle As String) As String
+    Dim src As Variant, i As Long, bout As String, r As String
+
+    src = IColonnesSources(cle)
+    For i = LBound(src) To UBound(src)
+        bout = Trim$(Interv_ValeurAffichee(ligne, CStr(src(i))))
+        If Len(bout) > 0 Then
+            If Len(r) > 0 Then r = r & " "
+            r = r & bout
+        End If
+    Next i
+    Interv_ValeurListe = r
+End Function
+
+'------------------------------------------------------------------------------
 Public Function Interv_ValeurAffichee(ByVal ligne As Long, ByVal nomColonne As String) As String
     Dim v As Variant
     v = Interv_Valeur(ligne, nomColonne)

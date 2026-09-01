@@ -285,16 +285,43 @@ End Function
 ' DIX AU MAXIMUM : c'est ce qu'accepte une ListBox MSForms, et la limite est
 ' dure — une onzième colonne fait échouer l'affectation de ColumnCount.
 '
-' Deux colonnes du tableau restent donc dehors : Titre et N° client. Ni l'une
-' ni l'autre ne sert à reconnaître une ligne — l'entreprise et le nom s'en
-' chargent — et toutes deux restent visibles dans la fiche dès qu'on
-' sélectionne l'intervention. Pour en réintégrer une, il faut en sortir une
-' autre, ici même et dans les deux tableaux qui suivent : les trois listes
-' doivent rester de même longueur.
+' Une colonne AFFICHÉE n'est pas forcément une colonne du tableau Excel : deux
+' colonnes voisines peuvent se partager une case pour tenir dans les dix. Le nom
+' et le prénom sont dans ce cas, réunis par ICL_SEPARATEUR — chacun garde sa
+' propre colonne dans TblInterv, et c'est chacun dans la sienne qu'ils sont
+' enregistrés ; seul l'affichage les rassemble.
+'
+' Restent dehors : Titre, NoInterv, CA, TVA et Forfait, tous visibles dans la
+' fiche dès qu'on sélectionne une ligne. Pour en réintégrer un, il faut en
+' sortir un autre — ou en fusionner deux de plus — ici même et dans les deux
+' tableaux qui suivent : les trois listes doivent rester de même longueur.
 '==============================================================================
+Public Const ICL_SEPARATEUR As String = "+"
+Public Const TOUS_LES_MOIS As String = "Tous les mois"   ' premier choix du filtre de mois
+
 Public Function IColonnesListe() As Variant
-    IColonnesListe = Array(IC_DATE, IC_ENTREPRISE, IC_NOM, IC_PRENOM, _
+    IColonnesListe = Array(IC_DATE, IC_CLIENT, IC_ENTREPRISE, _
+                           IC_NOM & ICL_SEPARATEUR & IC_PRENOM, _
                            IC_HEURES, IC_PERS, IC_TAUX, IC_TEXTE, IC_COMMENT, IC_FACTURE)
+End Function
+
+'------------------------------------------------------------------------------
+' True si la colonne affichée réunit plusieurs colonnes du tableau.
+'------------------------------------------------------------------------------
+Public Function IColonneComposee(ByVal cle As String) As Boolean
+    IColonneComposee = (InStr(cle, ICL_SEPARATEUR) > 0)
+End Function
+
+'------------------------------------------------------------------------------
+' Colonnes de TblInterv derrière une colonne affichée.
+'   renvoie : un tableau d'un seul nom, ou de plusieurs si la case est partagée
+'------------------------------------------------------------------------------
+Public Function IColonnesSources(ByVal cle As String) As Variant
+    If IColonneComposee(cle) Then
+        IColonnesSources = Split(cle, ICL_SEPARATEUR)
+    Else
+        IColonnesSources = Array(cle)
+    End If
 End Function
 
 '------------------------------------------------------------------------------
@@ -303,7 +330,7 @@ End Function
 ' réel de la colonne Excel restant dans IColonnesListe.
 '------------------------------------------------------------------------------
 Public Function ILibellesListe() As Variant
-    ILibellesListe = Array("Date", "Entreprise", "Nom", "Prénom", _
+    ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom et prénom", _
                            "Heures", "Pers.", "Taux/Forf.", "Texte de facture", _
                            "Commentaires", "Facture")
 End Function
@@ -313,7 +340,7 @@ End Function
 ' la ListBox mesure 926 pt de large et la barre de défilement en prend 16.
 '------------------------------------------------------------------------------
 Public Function ILargeursListe() As Variant
-    ILargeursListe = Array(66, 140, 98, 86, 56, 44, 62, 130, 156, 60)
+    ILargeursListe = Array(66, 54, 136, 142, 56, 44, 62, 130, 150, 58)
 End Function
 
 '==============================================================================

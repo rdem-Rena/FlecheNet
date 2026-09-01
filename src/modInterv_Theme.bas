@@ -125,6 +125,20 @@ Public Const ICH_CTL_HAUT As Single = 18
 Public Const IF_TOP As Single = 402
 Public Const IF_HAUT As Single = 38
 
+' Abscisses de la barre de filtrage, de gauche à droite : le libellé, la colonne
+' sur laquelle porter le filtre, le texte cherché, le mois, puis le lien de
+' remise à zéro et le compteur calé à droite.
+Public Const IFB_TITRE_X As Single = 30
+Public Const IFB_CHAMP_X As Single = 100
+Public Const IFB_CHAMP_L As Single = 124
+Public Const IFB_TEXTE_X As Single = 232
+Public Const IFB_TEXTE_L As Single = 250
+Public Const IFB_MOIS_LBL_X As Single = 496
+Public Const IFB_MOIS_X As Single = 528
+Public Const IFB_MOIS_L As Single = 112
+Public Const IFB_RESET_X As Single = 652
+Public Const IFB_COMPTEUR_L As Single = 190
+
 '--- Fiche 4 : tableau des enregistrements ------------------------------------
 Public Const IT_TOP As Single = 448
 Public Const IT_HAUT As Single = 246

@@ -169,22 +169,34 @@ Le taux vient de la colonne `Taux/Forfait` de **l'intervention**, reprise de `Tb
 | # | Colonne | En-tête | Largeur |
 |---|---|---|---|
 | 1 | `Date` | Date | 66 pt |
-| 2 | `Entreprise` | Entreprise | 140 pt |
-| 3 | `Nom` | Nom | 98 pt |
-| 4 | `Prenom` | Prénom | 86 pt |
+| 2 | `Client_No` | N° client | 54 pt |
+| 3 | `Entreprise` | Entreprise | 136 pt |
+| 4 | `Nom` + `Prenom` | Nom et prénom | 142 pt |
 | 5 | `Nb_Hres` | Heures | 56 pt |
 | 6 | `Nb_Pers` | Pers. | 44 pt |
 | 7 | `Taux/Forfait` | Taux/Forf. | 62 pt |
 | 8 | `Texte_Facture` | Texte de facture | 130 pt |
-| 9 | `Commentaires` | Commentaires | 156 pt |
-| 10 | `No_Facture` | Facture | 60 pt |
+| 9 | `Commentaires` | Commentaires | 150 pt |
+| 10 | `No_Facture` | Facture | 58 pt |
 | | | **total** | **898 pt** |
 
-> **Une colonne de moins que demandé.** Onze colonnes étaient souhaitées ; une `ListBox` MSForms n'en accepte que **dix**. `Titre` a été laissée de côté — c'est la moins informative dans une liste, et elle reste visible dans la fiche dès qu'une ligne est sélectionnée. Pour la réintroduire à la place d'une autre : `IColonnesListe`, `ILibellesListe` et `ILargeursListe` dans `modInterv_Schema`, lues position par position.
+> **Dix cases pour seize colonnes.** Une `ListBox` MSForms n'accepte que **dix** colonnes, et la limite est dure : la onzième fait échouer l'affectation de `ColumnCount`. Deux moyens de s'en accommoder cohabitent ici. Le premier : **réunir deux colonnes dans une case**, comme le nom et le prénom, séparés par `ICL_SEPARATEUR` dans `IColonnesListe` et rassemblés à l'affichage par `Interv_ValeurListe` — chacun garde sa propre colonne dans `TblInterv` et y est enregistré séparément. Le second : **laisser de côté** ce que la fiche montre déjà — `Titre`, `NoInterv`, `CA`, `TVA` et `Forfait`. Pour changer la répartition : `IColonnesListe`, `ILibellesListe` et `ILargeursListe` dans `modInterv_Schema`, lues position par position.
 
 La hauteur retenue affiche **17 lignes** à la fois. Pour en afficher davantage, ajouter 12,75 pt par ligne à `IT_HAUT`, `IB_TOP` et `I_HAUTEUR`.
 
-Un clic sur un en-tête trie sur cette colonne, un second inverse le sens. Dates et nombres sont comparés pour ce qu'ils sont, pas alphabétiquement.
+Un clic sur un en-tête trie sur cette colonne, un second inverse le sens. Dates et nombres sont comparés pour ce qu'ils sont, pas alphabétiquement ; une case qui en réunit deux se trie sur le texte affiché, donc par nom puis par prénom.
+
+
+### Filtrage
+
+Deux filtres, qui **se cumulent**, sur la barre au-dessus du tableau :
+
+| Filtre | Porte sur |
+|---|---|
+| Texte | la colonne choisie dans le menu — `Entreprise` ou `Nom` — sans tenir compte des accents ni des majuscules |
+| Mois | le mois de la colonne `Date`, ou tous les mois |
+
+« Réinitialiser » éteint les deux à la fois. Le compteur à droite dit combien d'interventions restent affichées sur le total.
 
 
 ---

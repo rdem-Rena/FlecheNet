@@ -421,23 +421,37 @@ Private Sub ConstruireFiltre(dsg As Object)
 
     y = IF_TOP + 10
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblFiltreTitreI", 30, y + 2, 62, 14)
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblFiltreTitreI", IFB_TITRE_X, y + 2, 62, 14)
     Texte c, "Filtrer sur", TAILLE_FILTRE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
 
-    Set c = AjCtrl(dsg, "Forms.ComboBox.1", "cboChampFiltreI", 100, y, 124, ICH_CTL_HAUT)
+    Set c = AjCtrl(dsg, "Forms.ComboBox.1", "cboChampFiltreI", IFB_CHAMP_X, y, _
+                   IFB_CHAMP_L, ICH_CTL_HAUT)
     Liste c, False
     c.Style = MSF_StyleDropDownList
     c.ControlTipText = "Colonne du tableau sur laquelle porte le filtre"
 
-    Set c = AjCtrl(dsg, "Forms.TextBox.1", "txtFiltreI", 232, y, 300, ICH_CTL_HAUT)
+    Set c = AjCtrl(dsg, "Forms.TextBox.1", "txtFiltreI", IFB_TEXTE_X, y, _
+                   IFB_TEXTE_L, ICH_CTL_HAUT)
     Zone c, False
     c.ControlTipText = "Texte à rechercher (accents et majuscules sont ignorés)"
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblResetFiltreI", 544, y + 2, 80, 14)
-    Texte c, "Réinitialiser", TAILLE_FILTRE, False, COUL_LIEN, MSF_TextAlignLeft
-    c.ControlTipText = "Effacer le filtre et réafficher toutes les interventions"
+    ' --- second filtre, sur le mois de la date --------------------------------
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblMoisFiltreI", IFB_MOIS_LBL_X, y + 2, 28, 14)
+    Texte c, "Mois", TAILLE_FILTRE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCompteurI", 630, y + 2, 300, 14)
+    Set c = AjCtrl(dsg, "Forms.ComboBox.1", "cboMoisI", IFB_MOIS_X, y, _
+                   IFB_MOIS_L, ICH_CTL_HAUT)
+    Liste c, False
+    c.Style = MSF_StyleDropDownList
+    c.ControlTipText = "N'afficher que les interventions d'un mois"
+
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblResetFiltreI", IFB_RESET_X, y + 2, 80, 14)
+    Texte c, "Réinitialiser", TAILLE_FILTRE, False, COUL_LIEN, MSF_TextAlignLeft
+    c.ControlTipText = "Effacer les deux filtres et réafficher toutes les interventions"
+
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCompteurI", _
+                   I_MARGE + I_CARTE_LARG - F2_PADDING - IFB_COMPTEUR_L, y + 2, _
+                   IFB_COMPTEUR_L, 14)
     Texte c, vbNullString, TAILLE_FILTRE, False, COUL_TEXTE_DOUX, MSF_TextAlignRight
 End Sub
 
@@ -823,6 +837,7 @@ Private Function CodeFormulairePrincipal() As String
     ' --- filtrage -------------------------------------------------------------
     ProcI "cboChampFiltreI_Change()", "Interv_AppliquerFiltre Me"
     ProcI "txtFiltreI_Change()", "Interv_AppliquerFiltre Me"
+    ProcI "cboMoisI_Change()", "Interv_AppliquerFiltre Me"
     ProcI "lblResetFiltreI_Click()", "Interv_ReinitialiserFiltre Me"
     ProcI "lblResetFiltreI_MouseMove" & SIG_SOURIS, "Interv_Survol Me, " & Guill("lblResetFiltreI")
 
