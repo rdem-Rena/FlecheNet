@@ -463,8 +463,9 @@ End Sub
 ' sur les mêmes largeurs — ce qui permet en prime de les rendre cliquables.
 '------------------------------------------------------------------------------
 Private Sub ConstruireFiche4(dsg As Object)
-    Dim c As Object, larg As Variant, lib As Variant, i As Long
-    Dim x As Single, gauche As Single, largeur As Single, colw As String, haut As Single
+    Dim c As Object, larg As Variant, lib As Variant, ali As Variant
+    Dim i As Long, r As Long, nbCol As Long
+    Dim x As Single, y As Single, gauche As Single, largeur As Single
 
     gauche = I_MARGE + 1
     largeur = I_CARTE_LARG - 2
@@ -477,44 +478,57 @@ Private Sub ConstruireFiche4(dsg As Object)
 
     larg = ILargeursListe()
     lib = ILibellesListe()
-    x = gauche + 3
+    ali = IAlignementsListe()
+    nbCol = UBound(larg) - LBound(larg) + 1
 
-    For i = LBound(larg) To UBound(larg)
+    ' --- en-têtes -------------------------------------------------------------
+    x = gauche + IGR_PAD_X
+    For i = 0 To nbCol - 1
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblEntI_" & CStr(i + 1), _
-                       x, IT_TOP + 5, CSng(larg(i)) - 3, 13)
-        Texte c, CStr(lib(i)), TAILLE_ENTETE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
+                       x, IT_TOP + 5, CSng(larg(i)) - 2 * IGR_PAD_X, 13)
+        Texte c, CStr(lib(i)), TAILLE_ENTETE, True, COUL_ENTETE_TXT, CLng(ali(i))
         c.ControlTipText = "Cliquez pour trier sur cette colonne"
         x = x + CSng(larg(i))
-        colw = colw & IIf(Len(colw) > 0, ";", "") & CStr(larg(i)) & " pt"
     Next i
 
-    haut = IT_TOP + IT_HAUT - 2 - (IT_TOP + IT_ENTETE + 1)
-    Set c = AjCtrl(dsg, "Forms.ListBox.1", "lstInterv", _
-                   gauche, IT_TOP + IT_ENTETE + 1, largeur, haut)
+    ' --- les lignes et leurs cases --------------------------------------------
+    ' Chaque ligne reçoit d'abord une BANDE de fond sur toute la largeur, puis
+    ' ses cases, transparentes, posées dessus. C'est la bande qui porte la
+    ' couleur : sans elle, les quatre points qui séparent deux cases laisseraient
+    ' voir le blanc de la carte et la ligne choisie paraîtrait rayée.
+    '
+    ' Les contrôles s'ajoutent PAR-DEVANT : la bande créée en premier se retrouve
+    ' donc bien derrière ses cases.
+    For r = 1 To IGR_NB_LIGNES
+        y = IT_TOP + IT_ENTETE + 1 + (r - 1) * IGR_LIGNE_H
+
+        Set c = AjCtrl(dsg, "Forms.Label.1", "lblGL_" & CStr(r), _
+                       gauche, y, largeur - IGR_BARRE_L, IGR_LIGNE_H)
+        Fond c, COUL_CARTE, COUL_CARTE
+
+        x = gauche + IGR_PAD_X
+        For i = 0 To nbCol - 1
+            Set c = AjCtrl(dsg, "Forms.Label.1", _
+                           "lblG_" & CStr(r) & "_" & CStr(i + 1), _
+                           x, y, CSng(larg(i)) - 2 * IGR_PAD_X, IGR_LIGNE_H)
+            Texte c, vbNullString, TAILLE_LISTE, False, COUL_TEXTE, CLng(ali(i))
+            x = x + CSng(larg(i))
+        Next i
+    Next r
+
+    ' --- barre de défilement --------------------------------------------------
+    Set c = AjCtrl(dsg, "Forms.ScrollBar.1", "sbGrille", _
+                   gauche + largeur - IGR_BARRE_L, IT_TOP + IT_ENTETE + 1, _
+                   IGR_BARRE_L, IGR_NB_LIGNES * IGR_LIGNE_H)
     With c
-        .Font.Name = POLICE
-        .Font.Size = TAILLE_LISTE
-        .BackColor = COUL_CARTE
-        .ForeColor = COUL_TEXTE
-        .SpecialEffect = MSF_SpecialEffectFlat
-        .BorderStyle = MSF_BorderStyleNone
-        .ColumnCount = UBound(larg) - LBound(larg) + 1
-        .ColumnWidths = colw
-        .ColumnHeads = False
-        .MultiSelect = MSF_MultiSelectSingle
-        .ListStyle = MSF_ListStylePlain
-        .BoundColumn = 1
+        .Min = 0
+        .Max = 0
+        .SmallChange = 1
+        .LargeChange = IGR_NB_LIGNES - 1
         .TabIndex = 90
     End With
-    On Error Resume Next
-    c.IntegralHeight = False
-    On Error GoTo 0
 End Sub
 
-'------------------------------------------------------------------------------
-' Barre de boutons : les quatre commandes de saisie à gauche, Facturer et Info
-' détachés au milieu, Quitter renvoyé à droite pour ne pas être cliqué par
-' mégarde.
 '------------------------------------------------------------------------------
 Private Sub ConstruireBoutonsInterv(dsg As Object)
     Dim c As Object, x As Single
@@ -795,7 +809,7 @@ End Sub
 ' un champ crée automatiquement ses événements.
 '==============================================================================
 Private Function CodeFormulairePrincipal() As String
-    Dim ch() As ChampInterv, i As Long, n As String, sortie As String
+    Dim ch() As ChampInterv, i As Long, r As Long, n As String, sortie As String
     Dim boutons As Variant, actions As Variant, larg As Variant
 
     mCode = vbNullString
@@ -842,10 +856,33 @@ Private Function CodeFormulairePrincipal() As String
     ProcI "lblResetFiltreI_MouseMove" & SIG_SOURIS, "Interv_Survol Me, " & Guill("lblResetFiltreI")
 
     ' --- tableau --------------------------------------------------------------
-    ProcI "lstInterv_Click()", "Interv_ChargerSelection Me"
-    ProcI "lstInterv_DblClick(ByVal Cancel As MSForms.ReturnBoolean)", "Interv_ChargerSelection Me"
-
+    ' La grille est faite de libellés : c'est la case cliquée qui reçoit
+    ' l'événement, et elle ne sait dire que sa LIGNE — c'est tout ce qui compte,
+    ' une ligne entière se sélectionnant d'un bloc. Le survol suit le même
+    ' chemin ; Interv_GrilleSurvol ne repeint que la ligne quittée et la ligne
+    ' prise, jamais les dix-sept.
     larg = ILargeursListe()
+    For r = 1 To IGR_NB_LIGNES
+        For i = LBound(larg) To UBound(larg)
+            n = "lblG_" & CStr(r) & "_" & CStr(i + 1)
+            ProcI n & "_Click()", "Interv_GrilleClic Me, " & CStr(r)
+            ProcI n & "_MouseMove" & SIG_SOURIS, "Interv_GrilleSurvol Me, " & CStr(r)
+        Next i
+
+        ' la bande dépasse des cases entre deux colonnes : elle répond aussi
+        n = "lblGL_" & CStr(r)
+        ProcI n & "_Click()", "Interv_GrilleClic Me, " & CStr(r)
+        ProcI n & "_MouseMove" & SIG_SOURIS, "Interv_GrilleSurvol Me, " & CStr(r)
+    Next r
+
+    ' quitter la grille éteint le survol : la carte est le seul fond qu'on
+    ' atteigne en sortant d'une case
+    ProcI "lblCarte4_MouseMove" & SIG_SOURIS, "Interv_GrilleSurvol Me, 0"
+    ProcI "lblEnteteTableI_MouseMove" & SIG_SOURIS, "Interv_GrilleSurvol Me, 0"
+
+    ProcI "sbGrille_Change()", "Interv_Defiler Me"
+    ProcI "sbGrille_Scroll()", "Interv_Defiler Me"
+
     For i = LBound(larg) To UBound(larg)
         ProcI "lblEntI_" & CStr(i + 1) & "_Click()", "Interv_TrierColonne Me, " & CStr(i + 1)
     Next i

@@ -166,23 +166,45 @@ Le taux vient de la colonne `Taux/Forfait` de **l'intervention**, reprise de `Tb
 
 ## Fiche 4 — tableau des enregistrements
 
-| # | Colonne | En-tête | Largeur |
-|---|---|---|---|
-| 1 | `Date` | Date | 66 pt |
-| 2 | `Client_No` | N° client | 54 pt |
-| 3 | `Entreprise` | Entreprise | 136 pt |
-| 4 | `Nom` + `Prenom` | Nom et prénom | 142 pt |
-| 5 | `Nb_Hres` | Heures | 56 pt |
-| 6 | `Nb_Pers` | Pers. | 44 pt |
-| 7 | `Taux/Forfait` | Taux/Forf. | 62 pt |
-| 8 | `Texte_Facture` | Texte de facture | 130 pt |
-| 9 | `Commentaires` | Commentaires | 150 pt |
-| 10 | `No_Facture` | Facture | 58 pt |
-| | | **total** | **898 pt** |
+| # | Colonne | En-tête | Largeur | Aligné |
+|---|---|---|---|---|
+| 1 | `Date` | Date | 64 pt | gauche |
+| 2 | `Client_No` | N° client | 50 pt | gauche |
+| 3 | `Entreprise` | Entreprise | 126 pt | gauche |
+| 4 | `Nom` | Nom | 86 pt | gauche |
+| 5 | `Prenom` | Prénom | 76 pt | gauche |
+| 6 | `Nb_Hres` | Heures | 52 pt | droite |
+| 7 | `Nb_Pers` | Pers. | 34 pt | centre |
+| 8 | `Taux/Forfait` | Taux/Forf. | 58 pt | droite |
+| 9 | `CA` | Chiffre d'aff. | 68 pt | droite |
+| 10 | `Texte_Facture` | Texte de facture | 112 pt | gauche |
+| 11 | `Commentaires` | Commentaires | 124 pt | gauche |
+| 12 | `No_Facture` | Facture | 50 pt | gauche |
+| | | **total** | **900 pt** | |
 
-> **Dix cases pour seize colonnes.** Une `ListBox` MSForms n'accepte que **dix** colonnes, et la limite est dure : la onzième fait échouer l'affectation de `ColumnCount`. Deux moyens de s'en accommoder cohabitent ici. Le premier : **réunir deux colonnes dans une case**, comme le nom et le prénom, séparés par `ICL_SEPARATEUR` dans `IColonnesListe` et rassemblés à l'affichage par `Interv_ValeurListe` — chacun garde sa propre colonne dans `TblInterv` et y est enregistré séparément. Le second : **laisser de côté** ce que la fiche montre déjà — `Titre`, `NoInterv`, `CA`, `TVA` et `Forfait`. Pour changer la répartition : `IColonnesListe`, `ILibellesListe` et `ILargeursListe` dans `modInterv_Schema`, lues position par position.
+### Une grille de libellés, pas une ListBox
 
-La hauteur retenue affiche **17 lignes** à la fois. Pour en afficher davantage, ajouter 12,75 pt par ligne à `IT_HAUT`, `IB_TOP` et `I_HAUTEUR`.
+Le tableau est fait de **204 cases** — 17 lignes de 12 colonnes — plus une bande de fond par ligne et une barre de défilement. Chaque case est un libellé ordinaire.
+
+| | ListBox | Grille de libellés |
+|---|---|---|
+| Colonnes | **10 au maximum**, limite dure | autant qu'on veut |
+| Alignement | tout à gauche | par colonne |
+| Couleur | la ligne choisie, et c'est tout | par ligne, et par cellule si besoin |
+| Dépendance | aucune | aucune |
+
+Seules **17 lignes de libellés existent**. La barre de défilement ne déplace aucun contrôle : elle change la première ligne affichée et `Interv_PeindreGrille` repeint les mêmes cases. Un tableau de plusieurs milliers de lignes tient donc dans deux cents contrôles, et l'affichage coûte le même prix quelle que soit la taille du tableau.
+
+Chaque ligne porte une **bande de fond** sur toute la largeur, posée avant ses cases donc derrière elles. C'est elle qui donne sa couleur à la ligne : sans elle, les 4 points qui séparent deux cases laisseraient voir le blanc de la carte et la ligne choisie paraîtrait rayée. Les cases, transparentes, ne portent que l'encre.
+
+Quatre aspects, par ordre de priorité : la **ligne choisie** en bleu plein, la **ligne survolée** en fond clair, une **ligne sur deux** très légèrement teintée, puis le fond ordinaire. Le zébrage suit le rang réel et non le rang à l'écran, sans quoi les bandes sauteraient d'une ligne à chaque cran de défilement.
+
+> **Ce qu'on n'a pas.** La molette de la souris ne fait rien : MSForms ne la transmet pas aux contrôles, et l'écouter demanderait un appel à l'API Windows, écarté. On défile à la barre. Une colonne trop étroite tronque son texte, mais l'info-bulle de la case le rend en entier.
+
+
+Ne restent hors du tableau que `Titre`, `NoInterv`, `TVA` et `Forfait`, que la fiche montre dès qu'on sélectionne une ligne. Une case peut encore **réunir plusieurs colonnes**, séparées par `ICL_SEPARATEUR` dans `IColonnesListe` — « Nom+Prenom » donnerait « Aiello Rosalba » — si l'on veut resserrer un jour ; chacune garde de toute façon sa propre colonne dans `TblInterv`. Les quatre tableaux de `modInterv_Schema` se lisent position par position.
+
+La hauteur retenue affiche **17 lignes** de 13 pt à la fois. Pour en afficher davantage, augmenter `IGR_NB_LIGNES` et ajouter autant de fois `IGR_LIGNE_H` à `IT_HAUT`, `IB_TOP` et `I_HAUTEUR`.
 
 Un clic sur un en-tête trie sur cette colonne, un second inverse le sens. Dates et nombres sont comparés pour ce qu'ils sont, pas alphabétiquement ; une case qui en réunit deux se trie sur le texte affiché, donc par nom puis par prénom.
 
@@ -289,6 +311,10 @@ Trois états se distinguent d'un coup d'œil : le **jour choisi** (pastille bleu
 | `IT_TOP` | 448 pt | haut du tableau |
 | `IT_HAUT` | 246 pt | hauteur du tableau |
 | `IT_ENTETE` | 22 pt | bande d'en-têtes |
+| `IGR_LIGNE_H` | 13 pt | hauteur d'une ligne de la grille |
+| `IGR_NB_LIGNES` | 17 pt | lignes affichées à la fois |
+| `IGR_BARRE_L` | 14 pt | largeur de la barre de défilement |
+| `IGR_PAD_X` | 4 pt | retrait du texte de chaque côté de sa colonne |
 | `IB_TOP` | 704 pt | haut de la rangée de boutons |
 | `IB_LARG` | 118 pt | largeur des boutons |
 | `IB_ECART_GROUPE` | 24 pt | écart entre le groupe de saisie et Facturer |

@@ -140,9 +140,33 @@ Public Const IFB_RESET_X As Single = 652
 Public Const IFB_COMPTEUR_L As Single = 190
 
 '--- Fiche 4 : tableau des enregistrements ------------------------------------
+' Une ligne sur deux est très légèrement teintée : sur douze colonnes, l'oeil
+' suit une ligne bien mieux qu'avec un survol, qui n'éclaire que là où pointe la
+' souris.
+Public Const COUL_GRILLE_ZEBRE As Long = &HFDFBFA&   ' #FAFBFD
+
 Public Const IT_TOP As Single = 448
 Public Const IT_HAUT As Single = 246
 Public Const IT_ENTETE As Single = 22
+
+' Le tableau n'est plus une ListBox mais une GRILLE DE LIBELLÉS : une case par
+' cellule. Une ListBox MSForms plafonne à dix colonnes, aligne tout à gauche et
+' ne sait colorer ni une ligne ni une cellule. Ici, autant de colonnes qu'on
+' veut, un alignement par colonne, un zébrage et la ligne choisie en couleur.
+'
+' Seules IGR_NB_LIGNES lignes de libellés existent. La barre de défilement ne
+' déplace rien : elle change la première ligne affichée, et les mêmes libellés
+' sont repeints. Un tableau de plusieurs milliers de lignes tient donc dans
+' deux cents contrôles.
+'
+'   IGR_NB_LIGNES x IGR_LIGNE_H = 17 x 13 = 221 = IT_HAUT - IT_ENTETE - 3
+'
+Public Const IGR_LIGNE_H As Single = 13       ' pas vertical d'une ligne
+Public Const IGR_NB_LIGNES As Long = 17       ' lignes affichées à la fois
+Public Const IGR_BARRE_L As Single = 14       ' largeur de la barre de défilement
+' Retrait du texte de CHAQUE CÔTÉ de sa colonne : une colonne alignée à droite
+' viendrait sinon coller la colonne suivante, alignée à gauche.
+Public Const IGR_PAD_X As Single = 4
 
 '--- Barre de boutons ---------------------------------------------------------
 Public Const IB_TOP As Single = 704

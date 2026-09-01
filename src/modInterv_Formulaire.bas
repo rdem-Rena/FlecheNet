@@ -18,6 +18,13 @@ Option Explicit
 Private mNoCourant As String        ' NoInterv de la fiche affichée ("" = nouvelle)
 Private mLignesVis() As Long        ' lignes du cache visibles dans le tableau
 Private mNbVis As Long
+
+' État de la grille. mLigneSel et mSurvolGrille comptent dans mLignesVis, de 1 à
+' mNbVis, et valent 0 quand rien n'est choisi ni survolé ; mPremiereLigne est le
+' décalage du défilement, 0 quand la grille est en haut.
+Private mPremiereLigne As Long
+Private mLigneSel As Long
+Private mSurvolGrille As Long
 Private mTriColonne As Long
 Private mTriDecroissant As Boolean
 Private mChargement As Boolean      ' True pendant un remplissage programmé
@@ -77,7 +84,9 @@ Public Sub Interv_Initialiser(f As Object)
 
     ' --- fiche 4 : en-têtes du tableau ----------------------------------------
     MajEntetesInterv f
-    ICtl(f, "lstInterv").Clear
+    mPremiereLigne = 0
+    mLigneSel = 0
+    mSurvolGrille = 0
 
     mChargement = False
     ViderChampsInterv f
@@ -246,7 +255,7 @@ End Sub
 '------------------------------------------------------------------------------
 Public Sub Interv_RafraichirListe(f As Object)
     Dim nb As Long, i As Long, champ As String, cible As String, mois As Long
-    Dim cols As Variant, arr() As Variant, lst As Object, ic As Long, garde As Boolean
+    Dim garde As Boolean
 
     On Error GoTo Erreur
     nb = Interv_NbLignes()
@@ -274,20 +283,12 @@ Public Sub Interv_RafraichirListe(f As Object)
 
     If mTriColonne > 0 And mNbVis > 1 Then TrierVisibles
 
-    Set lst = ICtl(f, "lstInterv")
-    cols = IColonnesListe()
-
-    If mNbVis = 0 Then
-        lst.Clear
-    Else
-        ReDim arr(1 To mNbVis, 1 To UBound(cols) - LBound(cols) + 1)
-        For i = 1 To mNbVis
-            For ic = LBound(cols) To UBound(cols)
-                arr(i, ic + 1) = Interv_ValeurListe(mLignesVis(i), CStr(cols(ic)))
-            Next ic
-        Next i
-        lst.List = arr
-    End If
+    ' le filtre a changé : on repart du haut, et rien n'est plus sélectionné
+    If mPremiereLigne > MaxDefilement() Then mPremiereLigne = MaxDefilement()
+    mLigneSel = 0
+    mSurvolGrille = 0
+    MajBarreGrille f
+    Interv_PeindreGrille f
 
     MajCompteurInterv f
     If Len(mNoCourant) > 0 Then SelectionnerNo f, mNoCourant
@@ -438,16 +439,189 @@ Private Function ComparerVis(ByVal a As Long, ByVal b As Long, ByVal nomCol As S
 End Function
 
 '==============================================================================
+' GRILLE DES ENREGISTREMENTS
+'------------------------------------------------------------------------------
+' Le tableau est fait de libellés, un par cellule, et seules IGR_NB_LIGNES
+' lignes existent. Défiler ne déplace aucun contrôle : cela change la première
+' ligne affichée, puis repeint les mêmes cases. Un tableau de milliers de lignes
+' tient donc dans deux cents contrôles, et l'affichage coûte le même prix quelle
+' que soit la taille du tableau.
+'==============================================================================
+Public Sub Interv_PeindreGrille(f As Object)
+    Dim r As Long
+    For r = 1 To IGR_NB_LIGNES
+        PeindreLigneGrille f, r
+    Next r
+End Sub
+
+'------------------------------------------------------------------------------
+' Repeint une ligne de la grille.
+'   r : rang à l'écran, de 1 à IGR_NB_LIGNES
+'
+' Quatre aspects, dans cet ordre de priorité : la ligne choisie, la ligne
+' survolée, une ligne sur deux teintée, le fond ordinaire. Le zébrage suit le
+' rang RÉEL et non le rang à l'écran, sans quoi les bandes sauteraient d'une
+' ligne à chaque cran de défilement.
+'------------------------------------------------------------------------------
+Private Sub PeindreLigneGrille(f As Object, ByVal r As Long)
+    Dim cols As Variant, c As Long, nbCol As Long, ligne As Long
+    Dim lb As Object, fond As Long, encre As Long, vide As Boolean
+
+    If r < 1 Or r > IGR_NB_LIGNES Then Exit Sub
+
+    cols = IColonnesListe()
+    nbCol = UBound(cols) - LBound(cols) + 1
+    ligne = mPremiereLigne + r
+    vide = (ligne < 1 Or ligne > mNbVis)
+
+    If vide Then
+        fond = COUL_CARTE
+        encre = COUL_CARTE
+    ElseIf ligne = mLigneSel Then
+        fond = COUL_MODIFIER
+        encre = COUL_BOUTON_TXT
+    ElseIf ligne = mSurvolGrille Then
+        fond = COUL_ENTETE_TBL
+        encre = COUL_TEXTE
+    ElseIf (ligne Mod 2) = 0 Then
+        fond = COUL_GRILLE_ZEBRE
+        encre = COUL_TEXTE
+    Else
+        fond = COUL_CARTE
+        encre = COUL_TEXTE
+    End If
+
+    ' la bande donne sa couleur à toute la ligne, filet compris
+    Set lb = ICtl(f, "lblGL_" & CStr(r))
+    If Not lb Is Nothing Then
+        lb.BackColor = fond
+        lb.BorderColor = fond
+    End If
+
+    For c = 1 To nbCol
+        Set lb = ICtl(f, "lblG_" & CStr(r) & "_" & CStr(c))
+        If Not lb Is Nothing Then
+            lb.ForeColor = encre
+            If vide Then
+                lb.Caption = vbNullString
+                lb.ControlTipText = vbNullString
+            Else
+                lb.Caption = Interv_ValeurListe(mLignesVis(ligne), _
+                                                CStr(cols(LBound(cols) + c - 1)))
+                ' une colonne étroite tronque : l'info-bulle rend le texte entier
+                lb.ControlTipText = lb.Caption
+            End If
+        End If
+    Next c
+End Sub
+
+'==============================================================================
+' Clic sur une case : c'est toute la ligne qui est choisie.
+'   r : rang à l'écran de la case cliquée
+'==============================================================================
+Public Sub Interv_GrilleClic(f As Object, ByVal r As Long)
+    Dim ligne As Long, ancienne As Long
+
+    If mChargement Then Exit Sub
+    ligne = mPremiereLigne + r
+    If ligne < 1 Or ligne > mNbVis Then Exit Sub
+    If ligne = mLigneSel Then Exit Sub
+
+    ancienne = mLigneSel
+    mLigneSel = ligne
+
+    ' deux lignes repeintes au plus : celle qu'on quitte, celle qu'on prend
+    If ancienne > mPremiereLigne And ancienne <= mPremiereLigne + IGR_NB_LIGNES Then
+        PeindreLigneGrille f, ancienne - mPremiereLigne
+    End If
+    PeindreLigneGrille f, r
+
+    Interv_ChargerSelection f
+End Sub
+
+'==============================================================================
+' Survol d'une case.
+'   r : rang à l'écran, ou 0 pour n'en survoler aucun
+'==============================================================================
+Public Sub Interv_GrilleSurvol(f As Object, ByVal r As Long)
+    Dim ligne As Long, ancienne As Long
+
+    ligne = 0
+    If r >= 1 Then
+        ligne = mPremiereLigne + r
+        If ligne > mNbVis Then ligne = 0
+    End If
+    If ligne = mSurvolGrille Then Exit Sub
+
+    ancienne = mSurvolGrille
+    mSurvolGrille = ligne
+
+    If ancienne > mPremiereLigne And ancienne <= mPremiereLigne + IGR_NB_LIGNES Then
+        PeindreLigneGrille f, ancienne - mPremiereLigne
+    End If
+    If ligne > 0 Then PeindreLigneGrille f, r
+End Sub
+
+'==============================================================================
+' Défilement : la barre donne la première ligne à afficher.
+'==============================================================================
+Public Sub Interv_Defiler(f As Object)
+    Dim c As Object, v As Long
+
+    If mChargement Then Exit Sub
+    Set c = ICtl(f, "sbGrille")
+    If c Is Nothing Then Exit Sub
+
+    v = c.Value
+    If v < 0 Then v = 0
+    If v > MaxDefilement() Then v = MaxDefilement()
+    If v = mPremiereLigne Then Exit Sub
+
+    mPremiereLigne = v
+    mSurvolGrille = 0
+    Interv_PeindreGrille f
+End Sub
+
+'------------------------------------------------------------------------------
+' Plus grand décalage possible : au-delà, la grille montrerait du vide sous la
+' dernière ligne.
+'------------------------------------------------------------------------------
+Private Function MaxDefilement() As Long
+    MaxDefilement = mNbVis - IGR_NB_LIGNES
+    If MaxDefilement < 0 Then MaxDefilement = 0
+End Function
+
+'------------------------------------------------------------------------------
+' Accorde la barre de défilement au nombre de lignes retenues par le filtre.
+' Elle est désactivée quand tout tient à l'écran, plutôt que laissée active et
+' sans effet.
+'------------------------------------------------------------------------------
+Private Sub MajBarreGrille(f As Object)
+    Dim c As Object, garde As Boolean, maxi As Long
+
+    Set c = ICtl(f, "sbGrille")
+    If c Is Nothing Then Exit Sub
+
+    maxi = MaxDefilement()
+    garde = mChargement
+    mChargement = True
+    On Error Resume Next
+    c.Max = maxi
+    c.Value = mPremiereLigne
+    c.Enabled = (maxi > 0)
+    On Error GoTo 0
+    mChargement = garde
+End Sub
+
+'==============================================================================
 ' SÉLECTION
 '==============================================================================
 Public Sub Interv_ChargerSelection(f As Object)
-    Dim idx As Long
     If mChargement Then Exit Sub
-    idx = ICtl(f, "lstInterv").ListIndex
-    If idx < 0 Or idx + 1 > mNbVis Then Exit Sub
+    If mLigneSel < 1 Or mLigneSel > mNbVis Then Exit Sub
 
-    EcrireChampsInterv f, mLignesVis(idx + 1)
-    mNoCourant = Interv_ValeurAffichee(mLignesVis(idx + 1), IC_NO)
+    EcrireChampsInterv f, mLignesVis(mLigneSel)
+    mNoCourant = Interv_ValeurAffichee(mLignesVis(mLigneSel), IC_NO)
     MajBoutonsInterv f
     MajEtatInterv f
 End Sub
@@ -484,20 +658,30 @@ End Function
 ' déclencherait sinon l'événement Click, donc un rechargement inutile des champs.
 '------------------------------------------------------------------------------
 Private Sub SelectionnerNo(f As Object, ByVal noInterv As String)
-    Dim i As Long, lst As Object, garde As Boolean
+    Dim i As Long, garde As Boolean
 
-    Set lst = ICtl(f, "lstInterv")
     garde = mChargement
     mChargement = True
-    On Error Resume Next
-    lst.ListIndex = -1
+    mLigneSel = 0
     For i = 1 To mNbVis
         If StrComp(Interv_ValeurAffichee(mLignesVis(i), IC_NO), noInterv, vbTextCompare) = 0 Then
-            lst.ListIndex = i - 1
+            mLigneSel = i
             Exit For
         End If
     Next i
-    On Error GoTo 0
+
+    ' amener la ligne choisie dans la partie visible si elle n'y est pas
+    If mLigneSel > 0 Then
+        If mLigneSel <= mPremiereLigne Then
+            mPremiereLigne = mLigneSel - 1
+        ElseIf mLigneSel > mPremiereLigne + IGR_NB_LIGNES Then
+            mPremiereLigne = mLigneSel - IGR_NB_LIGNES
+        End If
+        If mPremiereLigne < 0 Then mPremiereLigne = 0
+    End If
+
+    MajBarreGrille f
+    Interv_PeindreGrille f
     mChargement = garde
 End Sub
 
@@ -1001,9 +1185,8 @@ Public Sub Interv_Effacer(f As Object)
 
     garde = mChargement
     mChargement = True
-    On Error Resume Next
-    ICtl(f, "lstInterv").ListIndex = -1
-    On Error GoTo 0
+    mLigneSel = 0
+    Interv_PeindreGrille f
     mChargement = garde
 
     MajBoutonsInterv f

@@ -290,24 +290,25 @@ End Function
 '==============================================================================
 ' Colonnes du tableau des enregistrements
 '------------------------------------------------------------------------------
-' DIX AU MAXIMUM : c'est ce qu'accepte une ListBox MSForms, et la limite est
-' dure — une onzième colonne fait échouer l'affectation de ColumnCount.
+' Le tableau est une GRILLE DE LIBELLÉS, plus une ListBox : le plafond de dix
+' colonnes est levé, et il n'y a plus rien à sacrifier ni à fusionner. Douze
+' colonnes tiennent dans la largeur, chiffre d'affaires compris.
 '
-' Une colonne AFFICHÉE n'est pas forcément une colonne du tableau Excel : deux
-' colonnes voisines peuvent se partager une case pour tenir dans les dix. Le nom
-' et le prénom sont dans ce cas, réunis par ICL_SEPARATEUR — chacun garde sa
-' propre colonne dans TblInterv, et c'est chacun dans la sienne qu'ils sont
-' enregistrés ; seul l'affichage les rassemble.
+' Une colonne affichée peut malgré tout en réunir plusieurs, séparées par
+' ICL_SEPARATEUR : « Nom+Prenom » donnerait « Aiello Rosalba » dans une seule
+' case. La possibilité reste ouverte si l'on veut resserrer un jour ; chacune
+' garde de toute façon sa propre colonne dans TblInterv.
 '
-' Restent dehors : Titre, NoInterv, CA, TVA et Forfait, tous visibles dans la
-' fiche dès qu'on sélectionne une ligne. Pour en réintégrer un, il faut en
-' sortir un autre — ou en fusionner deux de plus — ici même et dans les deux
-' tableaux qui suivent : les trois listes doivent rester de même longueur.
+' Ne restent dehors que Titre, NoInterv, TVA et Forfait, qui n'apprennent rien
+' dans une liste et que la fiche montre dès qu'on sélectionne une ligne.
+'
+' Les quatre tableaux ci-dessous se lisent position par position et doivent
+' rester de même longueur.
 '==============================================================================
 Public Function IColonnesListe() As Variant
-    IColonnesListe = Array(IC_DATE, IC_CLIENT, IC_ENTREPRISE, _
-                           IC_NOM & ICL_SEPARATEUR & IC_PRENOM, _
-                           IC_HEURES, IC_PERS, IC_TAUX, IC_TEXTE, IC_COMMENT, IC_FACTURE)
+    IColonnesListe = Array(IC_DATE, IC_CLIENT, IC_ENTREPRISE, IC_NOM, IC_PRENOM, _
+                           IC_HEURES, IC_PERS, IC_TAUX, IC_CA, _
+                           IC_TEXTE, IC_COMMENT, IC_FACTURE)
 End Function
 
 '------------------------------------------------------------------------------
@@ -330,14 +331,23 @@ Public Function IColonnesSources(ByVal cle As String) As Variant
 End Function
 
 '------------------------------------------------------------------------------
-' En-têtes affichés au-dessus du tableau, un par colonne de IColonnesListe et
-' dans le même ordre. C'est ici que se mettent accents et abréviations, le nom
-' réel de la colonne Excel restant dans IColonnesListe.
+' Alignement de chaque colonne — ce qu'une ListBox ne savait pas faire. Durées
+' et montants se lisent alignés à droite, les ordres de grandeur se comparant
+' alors d'un coup d'oeil ; le nombre de personnes, à un ou deux chiffres, est
+' centré.
+'------------------------------------------------------------------------------
+Public Function IAlignementsListe() As Variant
+    IAlignementsListe = Array(MSF_TextAlignLeft, MSF_TextAlignLeft, MSF_TextAlignLeft, _
+                              MSF_TextAlignLeft, MSF_TextAlignLeft, MSF_TextAlignRight, _
+                              MSF_TextAlignCenter, MSF_TextAlignRight, MSF_TextAlignRight, _
+                              MSF_TextAlignLeft, MSF_TextAlignLeft, MSF_TextAlignLeft)
+End Function
+
 '------------------------------------------------------------------------------
 Public Function ILibellesListe() As Variant
-    ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom et prénom", _
-                           "Heures", "Pers.", "Taux/Forf.", "Texte de facture", _
-                           "Commentaires", "Facture")
+    ILibellesListe = Array("Date", "N° client", "Entreprise", "Nom", "Prénom", _
+                           "Heures", "Pers.", "Taux/Forf.", "Chiffre d'aff.", _
+                           "Texte de facture", "Commentaires", "Facture")
 End Function
 
 '------------------------------------------------------------------------------
@@ -345,7 +355,7 @@ End Function
 ' la ListBox mesure 926 pt de large et la barre de défilement en prend 16.
 '------------------------------------------------------------------------------
 Public Function ILargeursListe() As Variant
-    ILargeursListe = Array(66, 54, 136, 142, 56, 44, 62, 130, 150, 58)
+    ILargeursListe = Array(64, 50, 126, 86, 76, 52, 34, 58, 68, 112, 124, 50)
 End Function
 
 '==============================================================================
