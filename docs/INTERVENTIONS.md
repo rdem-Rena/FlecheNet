@@ -4,6 +4,8 @@
 
 Les deux formulaires sont générés par **`GenererFormulaireInterventions`** (module `modInterv_Generateur`), et affichés par **`OuvrirGestionInterventions`**.
 
+> **Ne supprimez pas le formulaire avant de régénérer.** C'est inutile — la génération le vide et le reconstruit sur place — et VBA ne rend le nom d'un composant supprimé qu'au prochain chargement du classeur : la génération échouerait tant que la session dure. Si c'est déjà fait, enregistrez, fermez puis rouvrez le classeur, puis relancez.
+
 > Ce fichier est produit à partir des sources : les valeurs sont celles réellement en vigueur dans `src/`.
 
 
