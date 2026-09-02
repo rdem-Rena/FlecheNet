@@ -67,6 +67,8 @@ Public Const I_CARTE_LARG As Single = 928     ' I_LARGEUR - 2 * I_MARGE
 ' du cadre n'a pas été vu dans Excel.
 Public Const F1_EN_CADRE As Boolean = True
 Public Const F2_EN_CADRE As Boolean = True
+Public Const F3_EN_CADRE As Boolean = True
+Public Const F4_EN_CADRE As Boolean = True
 
 Public Const F1_TOP As Single = 12
 Public Const F1_HAUT As Single = 46
@@ -524,6 +526,14 @@ End Function
 
 Public Function NomCarte2() As String
     NomCarte2 = IIf(F2_EN_CADRE, "fraCarte2", "lblCarte2")
+End Function
+
+Public Function NomCarte3() As String
+    NomCarte3 = IIf(F3_EN_CADRE, "fraCarte3", "lblCarte3")
+End Function
+
+Public Function NomCarteFiltre() As String
+    NomCarteFiltre = IIf(F4_EN_CADRE, "fraCarteFiltreI", "lblCarteFiltreI")
 End Function
 
 '==============================================================================

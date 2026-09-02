@@ -242,8 +242,8 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     ' construction. Les deux premières cartes y figurent tout de même, sous le
     ' nom que leur donne le thème — inoffensif pour un cadre, indispensable
     ' pour un libellé de fond si l'essai est désactivé.
-    ReculerFonds dsg, Array("lblEnteteTableI", "lblCarte4", "lblCarteFiltreI", _
-                            "lblCarte3", NomCarte2(), NomCarte1())
+    ReculerFonds dsg, Array("lblEnteteTableI", "lblCarte4", NomCarteFiltre(), _
+                            NomCarte3(), NomCarte2(), NomCarte1())
 
     vbComp.CodeModule.AddFromString CodeFormulairePrincipal()
     ConstruireFormulairePrincipal = dsg.Controls.Count
@@ -428,19 +428,31 @@ End Sub
 Private Sub ConstruireFiche3(dsg As Object)
     Dim c As Object, ch() As ChampInterv, i As Long
     Dim x As Single, y As Single, larg As Single, haut As Single, ordre As Long
+    Dim zone As Object, ox As Single, oy As Single
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte3", I_MARGE, F3_TOP, I_CARTE_LARG, F3_HAUT)
-    CarteI c
+    If F3_EN_CADRE Then
+        Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte3(), _
+                          I_MARGE, F3_TOP, I_CARTE_LARG, F3_HAUT)
+        CadreI zone
+        ox = I_MARGE
+        oy = F3_TOP
+    Else
+        Set c = AjCtrl(dsg, "Forms.Label.1", NomCarte3(), _
+                       I_MARGE, F3_TOP, I_CARTE_LARG, F3_HAUT)
+        CarteI c
+        Set zone = dsg
+    End If
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblSectionSaisieI", 30, F3_TOP + 6, 300, 13)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblSectionSaisieI", _
+                   30 - ox, F3_TOP + 6 - oy, 300, 13)
     Texte c, "FICHE INTERVENTION", Z3Section(), MSF_TextAlignLeft
 
     ch = ObtenirChampsInterv()
     ordre = 1
 
     For i = LBound(ch) To UBound(ch)
-        x = IGrilleX(ch(i).Col)
-        y = IGrilleY(ch(i).Ligne)
+        x = IGrilleX(ch(i).Col) - ox
+        y = IGrilleY(ch(i).Ligne) - oy
         larg = ILargeurBlocs(ch(i).Blocs)
         haut = IHauteurLignes(ch(i).NbLignes)
 
@@ -453,34 +465,34 @@ Private Sub ConstruireFiche3(dsg As Object)
         End If
 
         If ch(i).TypeCtrl = ITYPE_CASE Then
-            Set c = AjCtrl(dsg, "Forms.CheckBox.1", INomControle(ch(i)), _
+            Set c = AjCtrl(zone, "Forms.CheckBox.1", INomControle(ch(i)), _
                            x, y + ICH_LBL_HAUT + 1, larg, ICH_CTL_HAUT)
             Case_ c, ch(i).Libelle
         Else
-            Set c = AjCtrl(dsg, "Forms.Label.1", INomLibelle(ch(i)), x, y, larg, ICH_LBL_HAUT)
+            Set c = AjCtrl(zone, "Forms.Label.1", INomLibelle(ch(i)), x, y, larg, ICH_LBL_HAUT)
             Texte c, UCase$(ch(i).Libelle), Z3Libelle(), MSF_TextAlignLeft
 
             Select Case ch(i).TypeCtrl
                 Case ITYPE_LISTE, ITYPE_AUTO
-                    Set c = AjCtrl(dsg, "Forms.ComboBox.1", INomControle(ch(i)), _
+                    Set c = AjCtrl(zone, "Forms.ComboBox.1", INomControle(ch(i)), _
                                    x, y + ICH_LBL_HAUT + 1, larg, haut)
                     Liste c, (ch(i).TypeCtrl = ITYPE_AUTO)
 
                 Case ITYPE_DATE
                     ' la zone de date laisse la place au bouton du calendrier
-                    Set c = AjCtrl(dsg, "Forms.TextBox.1", INomControle(ch(i)), _
+                    Set c = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
                                    x, y + ICH_LBL_HAUT + 1, larg - 20, haut)
                     Zone c, False
-                    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalendrier", _
+                    Set c = AjCtrl(zone, "Forms.Label.1", "lblCalendrier", _
                                    x + larg - 18, y + ICH_LBL_HAUT + 1, 18, haut)
                     Texte c, ChrW(9662), Z3Chevron(), MSF_TextAlignCenter
                     c.BackStyle = MSF_BackStyleOpaque
                     c.BackColor = COUL_MODIFIER
                     c.ControlTipText = "Ouvrir le calendrier"
-                    Set c = dsg.Controls(INomControle(ch(i)))
+                    Set c = zone.Controls(INomControle(ch(i)))
 
                 Case Else
-                    Set c = AjCtrl(dsg, "Forms.TextBox.1", INomControle(ch(i)), _
+                    Set c = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
                                    x, y + ICH_LBL_HAUT + 1, larg, haut)
                     Zone c, ch(i).Verrouille
                     ' une zone haute de plusieurs lignes accueille du texte long :
@@ -503,8 +515,8 @@ Private Sub ConstruireFiche3(dsg As Object)
 
     ' libellé commun aux deux cases à cocher, qui n'en ont pas d'individuel :
     ' il occupe la ligne de libellés que TVA et Forfait laissent vide
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblI_Facturation", IGrilleX(3), IGrilleY(4), _
-                   IG_BLOC, ICH_LBL_HAUT)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblI_Facturation", _
+                   IGrilleX(3) - ox, IGrilleY(4) - oy, IG_BLOC, ICH_LBL_HAUT)
     Texte c, "FACTURATION", Z3Libelle(), MSF_TextAlignLeft
 End Sub
 
@@ -513,42 +525,54 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub ConstruireFiltre(dsg As Object)
     Dim c As Object, y As Single
+    Dim zone As Object, ox As Single, oy As Single
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarteFiltreI", I_MARGE, IF_TOP, I_CARTE_LARG, IF_HAUT)
-    CarteI c
+    If F4_EN_CADRE Then
+        Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarteFiltre(), _
+                          I_MARGE, IF_TOP, I_CARTE_LARG, IF_HAUT)
+        CadreI zone
+        ox = I_MARGE
+        oy = IF_TOP
+    Else
+        Set c = AjCtrl(dsg, "Forms.Label.1", NomCarteFiltre(), _
+                       I_MARGE, IF_TOP, I_CARTE_LARG, IF_HAUT)
+        CarteI c
+        Set zone = dsg
+    End If
 
-    y = IF_TOP + 10
+    ' toutes les abscisses de la barre passent par ici : une seule soustraction
+    y = IF_TOP + 10 - oy
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblFiltreTitreI", IFB_TITRE_X, y + 2, 62, 14)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblFiltreTitreI", IFB_TITRE_X - ox, y + 2, 62, 14)
     Texte c, "Filtrer sur", Z4Libelle(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(dsg, "Forms.ComboBox.1", "cboChampFiltreI", IFB_CHAMP_X, y, _
+    Set c = AjCtrl(zone, "Forms.ComboBox.1", "cboChampFiltreI", IFB_CHAMP_X - ox, y, _
                    IFB_CHAMP_L, ICH_CTL_HAUT)
     Liste c, False
     c.Style = MSF_StyleDropDownList
     c.ControlTipText = "Colonne du tableau sur laquelle porte le filtre"
 
-    Set c = AjCtrl(dsg, "Forms.TextBox.1", "txtFiltreI", IFB_TEXTE_X, y, _
+    Set c = AjCtrl(zone, "Forms.TextBox.1", "txtFiltreI", IFB_TEXTE_X - ox, y, _
                    IFB_TEXTE_L, ICH_CTL_HAUT)
     Zone c, False
     c.ControlTipText = "Texte à rechercher (accents et majuscules sont ignorés)"
 
     ' --- second filtre, sur le mois de la date --------------------------------
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblMoisFiltreI", IFB_MOIS_LBL_X, y + 2, 28, 14)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblMoisFiltreI", IFB_MOIS_LBL_X - ox, y + 2, 28, 14)
     Texte c, "Mois", Z4Libelle(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(dsg, "Forms.ComboBox.1", "cboMoisI", IFB_MOIS_X, y, _
+    Set c = AjCtrl(zone, "Forms.ComboBox.1", "cboMoisI", IFB_MOIS_X - ox, y, _
                    IFB_MOIS_L, ICH_CTL_HAUT)
     Liste c, False
     c.Style = MSF_StyleDropDownList
     c.ControlTipText = "N'afficher que les interventions d'un mois"
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblResetFiltreI", IFB_RESET_X, y + 2, 80, 14)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblResetFiltreI", IFB_RESET_X - ox, y + 2, 80, 14)
     Texte c, "Réinitialiser", Z4Lien(), MSF_TextAlignLeft
     c.ControlTipText = "Effacer les deux filtres et réafficher toutes les interventions"
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCompteurI", _
-                   I_MARGE + I_CARTE_LARG - F2_PADDING - IFB_COMPTEUR_L, y + 2, _
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblCompteurI", _
+                   I_MARGE + I_CARTE_LARG - F2_PADDING - IFB_COMPTEUR_L - ox, y + 2, _
                    IFB_COMPTEUR_L, 14)
     Texte c, vbNullString, Z4Compteur(), MSF_TextAlignRight
 End Sub

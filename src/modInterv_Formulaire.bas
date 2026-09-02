@@ -1011,9 +1011,14 @@ Public Sub Interv_OuvrirCalendrier(f As Object)
     depart = Date
     If IsDate(EnTexte(c.Value)) Then depart = CDate(EnTexte(c.Value))
 
-    ' le calendrier s'ouvre juste sous la zone de date
-    gauche = f.Left + c.Left
-    haut = f.Top + c.Top + c.Height + 24
+    ' Le calendrier s'ouvre juste sous la zone de date.
+    '
+    ' Left et Top se comptent depuis le CONTENEUR, pas depuis le formulaire :
+    ' la fiche est portée par un cadre, et lire c.Left directement ouvrirait le
+    ' calendrier décalé du coin de ce cadre — seize points à gauche et toute la
+    ' hauteur des fiches précédentes trop haut.
+    gauche = f.Left + DansFormX(f, c)
+    haut = f.Top + DansFormY(f, c) + c.Height + 24
     choisie = Calendrier_Choisir(depart, gauche, haut, ok)
     If Not ok Then Exit Sub
 
@@ -1390,6 +1395,51 @@ End Sub
 ' permet à ce module de compiler avant que le formulaire ait été généré, et de
 ' survivre à sa régénération.
 '==============================================================================
+'------------------------------------------------------------------------------
+' Abscisse et ordonnée d'un contrôle DANS LE FORMULAIRE, cadres traversés.
+'
+' Left et Top d'un contrôle se comptent depuis son conteneur. Tant que tout
+' était posé à plat sur le formulaire, les deux coïncidaient ; depuis que les
+' fiches sont portées par des cadres, il faut remonter la chaîne des parents
+' en cumulant leurs décalages.
+'
+' La remontée s'arrête sur le formulaire, et de toute façon au bout de huit
+' niveaux : un parent qui se désignerait lui-même ferait tourner sans fin.
+'------------------------------------------------------------------------------
+Private Function DansFormX(f As Object, c As Object) As Single
+    Dim v As Single, p As Object, garde As Long
+
+    v = c.Left
+    On Error Resume Next
+    Set p = c.Parent
+    Do Until p Is Nothing
+        If p Is f Then Exit Do
+        garde = garde + 1
+        If garde > 8 Then Exit Do
+        v = v + p.Left
+        Set p = p.Parent
+    Loop
+    On Error GoTo 0
+    DansFormX = v
+End Function
+
+Private Function DansFormY(f As Object, c As Object) As Single
+    Dim v As Single, p As Object, garde As Long
+
+    v = c.Top
+    On Error Resume Next
+    Set p = c.Parent
+    Do Until p Is Nothing
+        If p Is f Then Exit Do
+        garde = garde + 1
+        If garde > 8 Then Exit Do
+        v = v + p.Top
+        Set p = p.Parent
+    Loop
+    On Error GoTo 0
+    DansFormY = v
+End Function
+
 Private Function ICtl(f As Object, ByVal nom As String) As Object
     On Error Resume Next
     Set ICtl = f.Controls(nom)
