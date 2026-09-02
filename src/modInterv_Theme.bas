@@ -144,16 +144,18 @@ Public Const IFB_COMPTEUR_L As Single = 190
 ' bien mieux qu'avec un survol, qui n'éclaire que là où pointe la souris.
 Public Const COUL_GRILLE_ZEBRE As Long = &HFAF5F1&   ' #F1F5FA
 
-' Le texte des lignes est plus clair que celui des fiches : dix-sept lignes de
-' noir plein pèsent lourd, alors qu'une fiche n'a que quelques mots. MSForms ne
-' propose pas de graisse fine — seulement gras ou non — c'est donc la couleur
-' qui allège le trait.
+' L'INTÉRIEUR DU TABLEAU FAIT EXCEPTION AU DÉFAUT DU FORMULAIRE : neuf points
+' et MAIGRE, là où le reste du formulaire est en huit points gras. Dix-sept
+' lignes de gras pèseraient lourd, alors qu'un libellé n'a que quelques mots.
+' C'est la couleur, plus claire que celle des fiches, qui allège encore le
+' trait — MSForms ne proposant pas de graisse intermédiaire.
 '
 ' Neuf points, et pas huit et demi : un point vaut 0,75 pixel, donc 9 pt font
 ' exactement 12 pixels de corps là où 8,5 pt en font 11,33. Windows arrondit un
 ' corps bancal, et le texte se dessine alors un peu plus épais que demandé.
 Public Const COUL_GRILLE_TXT As Long = &H6E5A4A&     ' #4A5A6E
 Public Const TAILLE_GRILLE_TXT As Single = 9
+Public Const GRAS_GRILLE_TXT As Boolean = False
 
 ' L'en-tête, lui, est plus sombre et nettement plus grand que le corps : c'est
 ' ce qui le détache des lignes sans avoir à le souligner.
@@ -167,6 +169,17 @@ Public Const TAILLE_GRILLE_ENTETE As Single = 9.5
 ' Pour un en-tête franchement gras : mettre POLICE ici et passer les libellés
 ' en gras dans ConstruireFiche4.
 Public Const POLICE_ENTETE As String = "Segoe UI Semibold"
+
+'--- Police par défaut du formulaire ------------------------------------------
+' Celle que reçoit tout contrôle auquel on ne pose rien d'autre. Sans elle,
+' MSForms donne aux contrôles MS Sans Serif 8 gras, sa valeur d'usine.
+'
+' Les contrôles qui posent leur propre police — libellés, zones de saisie,
+' listes, cases à cocher, boutons — ne sont pas concernés : ils partent de ce
+' défaut et s'en écartent. L'intérieur du tableau, lui, est explicitement en
+' TAILLE_GRILLE_TXT et MAIGRE : voir GRAS_GRILLE_TXT, plus haut.
+Public Const TAILLE_DEFAUT As Single = 8
+Public Const GRAS_DEFAUT As Boolean = True
 
 Public Const IT_TOP As Single = 448
 Public Const IT_HAUT As Single = 246

@@ -173,6 +173,7 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     PropForm vbComp, "SpecialEffect", MSF_SpecialEffectFlat
     PropForm vbComp, "StartUpPosition", 1
     PropForm vbComp, "ShowModal", True
+    PoliceParDefaut dsg
 
     ConstruireFiche1 dsg
     ConstruireFiche2 dsg
@@ -525,6 +526,11 @@ Private Sub ConstruireFiche4(dsg As Object)
             .BorderStyle = MSF_BorderStyleNone
             .BackStyle = MSF_BackStyleOpaque
             .BackColor = COUL_CARTE
+            ' La bande ne montre aucun texte, mais elle fait partie du tableau :
+            ' elle en porte donc la police, et non le gras du formulaire.
+            .Font.Name = POLICE
+            .Font.Size = TAILLE_GRILLE_TXT
+            .Font.Bold = GRAS_GRILLE_TXT
         End With
 
         x = gauche + IGR_PAD_X
@@ -533,7 +539,8 @@ Private Sub ConstruireFiche4(dsg As Object)
                            "lblG_" & CStr(r) & "_" & CStr(i + 1), _
                            AuPixel(x), AuPixel(y), _
                            AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
-            Texte c, vbNullString, TAILLE_GRILLE_TXT, False, COUL_GRILLE_TXT, CLng(ali(i))
+            Texte c, vbNullString, TAILLE_GRILLE_TXT, GRAS_GRILLE_TXT, COUL_GRILLE_TXT, _
+                  CLng(ali(i))
             x = x + CSng(larg(i))
         Next i
     Next r
@@ -681,6 +688,28 @@ End Function
 '==============================================================================
 ' MISE EN FORME
 '==============================================================================
+'------------------------------------------------------------------------------
+' Police par défaut du FORMULAIRE — à poser avant le premier contrôle.
+'
+' Un contrôle MSForms recopie la police du formulaire au moment où il est créé.
+' Tant que le formulaire n'en a pas, cette police est MS Sans Serif 8 gras, la
+' valeur d'usine. Posée ici une fois pour toutes, elle devient Segoe UI 8 gras :
+' c'est le défaut du formulaire, dont chaque contrôle s'écarte ensuite s'il le
+' veut — l'intérieur du tableau, notamment, qui est en neuf points maigres.
+'
+' L'ORDRE COMPTE DEUX FOIS. Le nom de famille avant la taille et la graisse,
+' sans quoi changer de police les remet aux valeurs par défaut de la nouvelle.
+' Et l'appel avant le premier contrôle : après coup il ne servirait à rien, les
+' contrôles déjà nés ayant chacun leur propre copie de la police.
+'------------------------------------------------------------------------------
+Private Sub PoliceParDefaut(dsg As Object)
+    On Error Resume Next
+    dsg.Font.Name = POLICE
+    dsg.Font.Size = TAILLE_DEFAUT
+    dsg.Font.Bold = GRAS_DEFAUT
+    On Error GoTo 0
+End Sub
+
 Private Function AjCtrl(dsg As Object, ByVal progId As String, ByVal nom As String, _
                         ByVal gauche As Single, ByVal haut As Single, _
                         ByVal largeur As Single, ByVal hauteur As Single) As Object
