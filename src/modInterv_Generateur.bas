@@ -933,9 +933,6 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub Zone(c As Object, ByVal verrouille As Boolean)
     PoserPolice c, POLICE, TAILLE_CHAMP, False
-    ' GRAISSE POSÉE EXPLICITEMENT, jamais héritée du formulaire. Elle ne suffit
-    ' pourtant pas à elle seule : MSForms ne reprend pas toujours une graisse
-    ' remise à False sur un contrôle créé par le concepteur, et c'est pour cela
     c.SpecialEffect = MSF_SpecialEffectFlat
     c.BorderStyle = MSF_BorderStyleSingle
     c.BorderColor = COUL_CHAMP_BORD
@@ -989,8 +986,8 @@ End Sub
 ' soulignée et rang de tabulation.
 '------------------------------------------------------------------------------
 Private Sub Bouton_(c As Object, ByVal libelle As String, ByVal raccourci As String, _
-    PoserPolice c, POLICE, TAILLE_BOUTON, True
                     ByVal couleur As Long, ByVal ordre As Long)
+    PoserPolice c, POLICE, TAILLE_BOUTON, True
     c.Caption = libelle
     c.Accelerator = raccourci
     c.BackColor = couleur
