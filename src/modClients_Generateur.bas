@@ -17,9 +17,20 @@ Option Explicit
 ' Ce module n'est nécessaire qu'au moment de la génération : une fois le
 ' formulaire créé, il peut rester en place (il permet de le régénérer après
 ' toute modification du schéma ou de la charte graphique).
+'
+' IL NE FAUT PAS SUPPRIMER LE FORMULAIRE avant de régénérer : c'est inutile,
+' la génération le vide et le reconstruit sur place. VBA ne rend le nom d'un
+' composant supprimé qu'au prochain chargement du classeur, si bien que le nom
+' resterait pris jusqu'à la fin de la session. Si c'est déjà fait, enregistrez,
+' fermez puis rouvrez le classeur avant de relancer la génération.
 '==============================================================================
 
 Private Const CT_MSFORM As Long = 3         ' vbext_ct_MSForm
+
+' Levée quand le nom du formulaire est encore retenu par un composant supprimé
+' à la main pendant la session : ce n'est pas une panne, c'est une manoeuvre à
+' faire, et le message doit le dire au lieu d'afficher une erreur VBA brute.
+Private Const ERR_NOM_OCCUPE As Long = vbObjectError + 513
 Private Const SIG_SOURIS As String = "(ByVal Button As Integer, ByVal Shift As Integer, " & _
                                      "ByVal X As Single, ByVal Y As Single)"
 
@@ -46,6 +57,7 @@ Public Sub GenererFormulaireClients()
     Dim vbProj As Object, vbComp As Object, dsg As Object
     Dim lo As ListObject, manquantes As String
     Dim cree As Boolean          ' True si le composant vient d'être créé ici
+    Dim numErr As Long, msgErr As String
 
     ' --- le tableau source doit exister ---------------------------------------
     Set lo = TableClients()
@@ -125,18 +137,34 @@ Public Sub GenererFormulaireClients()
     Exit Sub
 
 Erreur:
+    ' L'ERREUR SE RELÈVE EN PREMIER. Toute instruction On Error remet l'objet
+    ' Err à zéro, et le nettoyage ci-dessous en exécute deux : lues après, le
+    ' numéro et le message vaudraient 0 et chaîne vide, et le diagnostic
+    ' s'afficherait « 0 -  » chaque fois que la génération échoue sur un
+    ' formulaire tout juste créé, c'est-à-dire précisément quand on en a besoin.
+    numErr = Err.Number
+    msgErr = Err.Description
+
     ' Un composant tout juste créé mais inachevé est retiré : sans cela, chaque
     ' tentative laisserait un UserForm1, UserForm2 … orphelin dans le projet.
+    ' NommerComposant a déjà retiré le sien et vidé vbComp : rien à faire ici.
     If cree And Not vbComp Is Nothing Then
         On Error Resume Next
         vbProj.VBComponents.Remove vbComp
         On Error GoTo 0
     End If
-    MsgBox "La génération a échoué :" & vbCrLf & vbCrLf & _
-           Err.Number & " - " & Err.Description & vbCrLf & vbCrLf & _
-           "Si le problème persiste : fermez puis rouvrez le classeur, lancez " & _
-           "NettoyerFormulairesOrphelins, et relancez la génération.", _
-           vbCritical, "Génération du formulaire"
+
+    ' Le nom retenu par un formulaire supprimé à la main n'est pas une panne :
+    ' la marche à suivre est dans le message, inutile de l'habiller en erreur.
+    If numErr = ERR_NOM_OCCUPE Then
+        MsgBox msgErr, vbExclamation, "Génération du formulaire"
+    Else
+        MsgBox "La génération a échoué :" & vbCrLf & vbCrLf & _
+               numErr & " - " & msgErr & vbCrLf & vbCrLf & _
+               "Si le problème persiste : fermez puis rouvrez le classeur, lancez " & _
+               "NettoyerFormulairesOrphelins, et relancez la génération.", _
+               vbCritical, "Génération du formulaire"
+    End If
 End Sub
 
 '------------------------------------------------------------------------------
@@ -177,7 +205,7 @@ Private Sub PreparerComposant(vbProj As Object, ByRef vbComp As Object, ByRef cr
     If vbComp Is Nothing Then
         Set vbComp = vbProj.VBComponents.Add(CT_MSFORM)
         cree = True
-        vbComp.Name = NOM_FORMULAIRE
+        NommerComposant vbProj, vbComp, NOM_FORMULAIRE
         Exit Sub
     End If
 
@@ -196,7 +224,53 @@ Repli:
     Set vbComp = Nothing
     Set vbComp = vbProj.VBComponents.Add(CT_MSFORM)
     cree = True
-    vbComp.Name = NOM_FORMULAIRE
+    ' Le renommage ci-dessus a rendu le nom tout de suite : celui-ci passe.
+    ' Il passe par le même utilitaire pour que, si jamais Excel s'y opposait,
+    ' le message reste celui qu'on sait lire.
+    NommerComposant vbProj, vbComp, NOM_FORMULAIRE
+End Sub
+
+'------------------------------------------------------------------------------
+' Donne son nom à un composant tout juste créé.
+'
+' LE NOM PEUT ÊTRE ENCORE PRIS. VBA ne rend le nom d'un composant supprimé
+' qu'au prochain chargement du classeur : un formulaire effacé à la main dans
+' le VBE retient donc le sien jusque-là, et l'affectation échoue — c'est ce qui
+' produisait une erreur 75 incompréhensible.
+'
+' Le formulaire vide qu'on vient d'ajouter est alors retiré, sans quoi chaque
+' tentative laisserait un UserForm1, UserForm2… derrière elle, et vbComp est
+' vidé pour que l'appelant ne cherche pas à le retirer une seconde fois.
+'
+' Le nom est relu après l'affectation, car selon les versions d'Excel elle
+' échoue tantôt bruyamment, tantôt en silence.
+'------------------------------------------------------------------------------
+Private Sub NommerComposant(vbProj As Object, ByRef vbComp As Object, ByVal nom As String)
+    Dim occupe As Boolean
+
+    On Error Resume Next
+    vbComp.Name = nom
+    occupe = (Err.Number <> 0)
+    Err.Clear
+    If Not occupe Then occupe = (StrComp(vbComp.Name, nom, vbTextCompare) <> 0)
+    If occupe Then
+        vbProj.VBComponents.Remove vbComp
+        Set vbComp = Nothing
+    End If
+    Err.Clear
+    On Error GoTo 0
+
+    If occupe Then
+        Err.Raise ERR_NOM_OCCUPE, "NommerComposant", _
+            "Le nom " & nom & " n'est pas encore libre." & vbCrLf & vbCrLf & _
+            "Un formulaire portant ce nom a été supprimé pendant cette " & _
+            "session. VBA ne rend son nom au projet qu'au prochain " & _
+            "chargement du classeur." & vbCrLf & vbCrLf & _
+            "À FAIRE : enregistrez, fermez puis rouvrez le classeur, et " & _
+            "relancez la génération." & vbCrLf & vbCrLf & _
+            "Il n'est jamais utile de supprimer le formulaire au " & _
+            "préalable : la génération le vide et le reconstruit sur place."
+    End If
 End Sub
 
 '------------------------------------------------------------------------------
