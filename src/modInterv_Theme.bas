@@ -203,7 +203,21 @@ Public Const POLICE_ENTETE As String = "Segoe UI Semibold"
 ' défaut et s'en écartent. L'intérieur du tableau, lui, est explicitement en
 ' TAILLE_GRILLE_TXT et MAIGRE : voir GRAS_GRILLE_TXT, plus haut.
 Public Const TAILLE_DEFAUT As Single = 8
-Public Const GRAS_DEFAUT As Boolean = True
+
+' LE DÉFAUT N'EST PAS EN GRAS, ET C'EST VOULU.
+'
+' Les libellés sont bel et bien en gras : les vingt-deux styles de zone posent
+' tous leur graisse eux-mêmes, aucun ne s'en remet à ce défaut. La valeur
+' ci-dessous ne décide donc de l'aspect d'aucun texte affiché — elle ne fait
+' que se répandre dans les contrôles qui ne demandent rien, zones de saisie et
+' menus déroulants compris, où elle mettait le texte tapé en gras.
+'
+' L'override posé dans Zone ne suffisait pas : MSForms ne reprend pas toujours
+' une graisse remise à False sur un contrôle créé par le concepteur. Plutôt que
+' de lutter contre le défaut, on ne lui donne plus rien à imposer.
+'
+' Repasser à True remettrait le gras dans les zones de saisie.
+Public Const GRAS_DEFAUT As Boolean = False
 
 Public Const IT_TOP As Single = 448
 Public Const IT_HAUT As Single = 246

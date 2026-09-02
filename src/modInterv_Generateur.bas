@@ -904,10 +904,10 @@ End Sub
 Private Sub Zone(c As Object, ByVal verrouille As Boolean)
     c.Font.Name = POLICE
     c.Font.Size = TAILLE_CHAMP
-    ' GRAISSE POSÉE EXPLICITEMENT. Sans cette ligne la zone de texte héritait
-    ' de la police par défaut du formulaire, qui est en gras : nommer la même
-    ' famille que le défaut ne remet pas la graisse à zéro, et les champs
-    ' s'affichaient donc en gras. Ne jamais compter sur cet effet de bord.
+    ' GRAISSE POSÉE EXPLICITEMENT, jamais héritée du formulaire. Elle ne suffit
+    ' pourtant pas à elle seule : MSForms ne reprend pas toujours une graisse
+    ' remise à False sur un contrôle créé par le concepteur, et c'est pour cela
+    ' que GRAS_DEFAUT vaut désormais False — voir modInterv_Theme.
     c.Font.Bold = False
     c.SpecialEffect = MSF_SpecialEffectFlat
     c.BorderStyle = MSF_BorderStyleSingle
@@ -934,6 +934,8 @@ End Sub
 Private Sub Liste(c As Object, ByVal filtree As Boolean)
     c.Font.Name = POLICE
     c.Font.Size = TAILLE_CHAMP
+    ' Comme pour Zone : la graisse est posée, jamais héritée du formulaire.
+    c.Font.Bold = False
     c.SpecialEffect = MSF_SpecialEffectFlat
     c.BorderStyle = MSF_BorderStyleSingle
     c.BorderColor = COUL_CHAMP_BORD
