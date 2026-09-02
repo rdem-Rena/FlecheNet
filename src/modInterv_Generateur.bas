@@ -178,10 +178,20 @@ Private Function PreparerForm(vbProj As Object, ByVal nom As String) As Object
     Next i
     On Error GoTo 0
 
+    ' VIDAGE. Un parcours par index à l'envers ne convient plus depuis qu'une
+    ' zone peut être un CADRE : ses enfants partent avec lui, la collection
+    ' rétrécit de plusieurs éléments d'un coup, et les index suivants ne
+    ' désignent plus ce qu'on croit. On retire donc toujours le PREMIER, tant
+    ' qu'il en reste, et on s'arrête dès qu'un tour ne retire plus rien —
+    ' sinon un contrôle impossible à supprimer ferait tourner sans fin.
     Set dsg = vbComp.Designer
-    For i = dsg.Controls.Count - 1 To 0 Step -1
-        dsg.Controls.Remove dsg.Controls(i).Name
-    Next i
+    On Error Resume Next
+    Do While dsg.Controls.Count > 0
+        i = dsg.Controls.Count
+        dsg.Controls.Remove dsg.Controls(0).Name
+        If dsg.Controls.Count >= i Then Exit Do
+    Loop
+    On Error GoTo 0
     With vbComp.CodeModule
         If .CountOfLines > 0 Then .DeleteLines 1, .CountOfLines
     End With
@@ -228,6 +238,9 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     ConstruireFiltre dsg
     ConstruireFiche4 dsg
     ConstruireBoutonsInterv dsg
+    ' lblCarte1 n'existe que si la fiche 1 est en libellé de fond : en cadre,
+    ' ses enfants sont devant lui par construction et il n'y a rien à
+    ' repousser. ReculerFonds ignore les noms absents, la liste sert aux deux.
     ReculerFonds dsg, Array("lblEnteteTableI", "lblCarte4", "lblCarteFiltreI", _
                             "lblCarte3", "lblCarte2", "lblCarte1")
 
@@ -237,20 +250,43 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Fiche 1 : intitulé global — titre à gauche, année à droite, ligne d'état.
+'
+' ESSAI DU CADRE, commandé par F1_EN_CADRE (modInterv_Theme).
+'
+' Avec un cadre, les trois libellés sont DANS la carte au lieu d'être posés
+' dessus. Leurs coordonnées comptent alors depuis le coin du cadre, d'où les
+' deux décalages ox et oy retranchés plus bas : les positions écrites restent
+' celles du formulaire, lisibles à côté du reste de la mise en page.
+'
+' Sans cadre, zone vaut le formulaire lui-même et les décalages sont nuls :
+' une seule série de lignes sert aux deux chemins.
 '------------------------------------------------------------------------------
 Private Sub ConstruireFiche1(dsg As Object)
-    Dim c As Object
+    Dim c As Object, zone As Object, ox As Single, oy As Single
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte1", I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
-    CarteI c
+    If F1_EN_CADRE Then
+        Set zone = AjCtrl(dsg, "Forms.Frame.1", "fraCarte1", _
+                          I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
+        CadreI zone
+        ox = I_MARGE
+        oy = F1_TOP
+    Else
+        Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte1", _
+                       I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
+        CarteI c
+        Set zone = dsg
+    End If
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblTitreGlobal", 30, F1_TOP + 7, 560, 21)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblTitreGlobal", _
+                   30 - ox, F1_TOP + 7 - oy, 560, 21)
     Texte c, vbNullString, Z1Titre(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblEtatI", 30, F1_TOP + 28, 620, 13)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblEtatI", _
+                   30 - ox, F1_TOP + 28 - oy, 620, 13)
     Texte c, vbNullString, Z1Etat(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblAnnee", 700, F1_TOP + 8, 230, 30)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblAnnee", _
+                   700 - ox, F1_TOP + 8 - oy, 230, 30)
     Texte c, vbNullString, Z1Annee(), MSF_TextAlignRight
 End Sub
 
@@ -752,11 +788,14 @@ Private Sub PoliceParDefaut(dsg As Object)
     On Error GoTo 0
 End Sub
 
-Private Function AjCtrl(dsg As Object, ByVal progId As String, ByVal nom As String, _
+' Le premier argument est un CONTENEUR, pas forcément le formulaire : un cadre
+' expose la même collection Controls, et y ajouter un contrôle l'y place. Les
+' coordonnées comptent alors depuis le coin du conteneur.
+Private Function AjCtrl(conteneur As Object, ByVal progId As String, ByVal nom As String, _
                         ByVal gauche As Single, ByVal haut As Single, _
                         ByVal largeur As Single, ByVal hauteur As Single) As Object
     Dim c As Object
-    Set c = dsg.Controls.Add(progId, nom, True)
+    Set c = conteneur.Controls.Add(progId, nom, True)
     c.Left = gauche
     c.Top = haut
     c.Width = largeur
@@ -781,6 +820,27 @@ End Sub
 '------------------------------------------------------------------------------
 ' Rectangle de couleur unie : bandeau du calendrier, bande d'en-tête du tableau.
 '------------------------------------------------------------------------------
+'------------------------------------------------------------------------------
+' Fond de zone en CADRE : même aspect que CarteI — rectangle blanc à filet fin
+' — mais c'est un conteneur, pas un libellé.
+'
+' SpecialEffect AVANT BorderStyle, comme partout ailleurs : MSForms refuse une
+' bordure simple tant que le contrôle est en relief, et un cadre est en relief
+' gravé par défaut.
+'
+' Caption vidée : MSForms réserve sinon une bande en haut du cadre pour le
+' titre. ScrollBars éteintes explicitement : un cadre est un conteneur
+' défilable, et on ne veut ici qu'un fond.
+'------------------------------------------------------------------------------
+Private Sub CadreI(c As Object)
+    c.Caption = vbNullString
+    c.BackColor = COUL_CARTE
+    c.SpecialEffect = MSF_SpecialEffectFlat
+    c.BorderStyle = MSF_BorderStyleSingle
+    c.BorderColor = COUL_BORDURE
+    c.ScrollBars = MSF_ScrollBarsNone
+End Sub
+
 Private Sub Fond(c As Object, ByVal fond As Long, ByVal bordure As Long)
     c.Caption = vbNullString
     c.BackStyle = MSF_BackStyleOpaque

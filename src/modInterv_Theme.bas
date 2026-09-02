@@ -54,6 +54,19 @@ Public Const I_MARGE As Single = 16
 Public Const I_CARTE_LARG As Single = 928     ' I_LARGEUR - 2 * I_MARGE
 
 '--- Fiche 1 : intitulé -------------------------------------------------------
+' ESSAI : la fiche 1 portée par un vrai CADRE au lieu d'un libellé de fond.
+'
+' Un cadre est le conteneur natif de MSForms. Ses enfants sont toujours devant
+' lui, sans qu'on ait à les repousser après coup, et la zone entière se
+' déplace, se masque ou se désactive d'un seul contrôle. En contrepartie les
+' coordonnées des enfants deviennent RELATIVES au cadre.
+'
+' L'essai ne porte que sur cette fiche, la plus simple : trois libellés, aucun
+' événement. Mettre False rend exactement la version en libellé de fond, sans
+' rien d'autre à toucher — c'est le filet de sécurité tant que le comportement
+' du cadre n'a pas été vu dans Excel.
+Public Const F1_EN_CADRE As Boolean = True
+
 Public Const F1_TOP As Single = 12
 Public Const F1_HAUT As Single = 46
 
@@ -442,8 +455,12 @@ End Function
 ' Les 204 cases partagent ce seul style, et les bandes de fond des lignes le
 ' portent aussi. C'est l'exception au défaut du formulaire : neuf points
 ' maigres là où le reste est en huit points gras.
+' La famille est écrite en clair, et non POLICE_ENTETE qui vaut pourtant la
+' même chose : l'en-tête et les enregistrements doivent pouvoir changer
+' séparément. GRAS_GRILLE_TXT reste False — épaissir une police déjà
+' demi-grasse la ferait simuler par Windows, plus lourde et plus sale.
 Public Function Z6Case() As StyleTexte
-    Z6Case = Style(POLICE, TAILLE_GRILLE_TXT, GRAS_GRILLE_TXT, COUL_GRILLE_TXT)
+    Z6Case = Style("Segoe UI Semibold", TAILLE_GRILLE_TXT, GRAS_GRILLE_TXT, COUL_GRILLE_TXT)
 End Function
 
 '--- Zone 7 : UF_Calendrier ---------------------------------------------------

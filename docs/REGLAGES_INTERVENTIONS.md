@@ -117,7 +117,7 @@ Chaque rôle de libellé a ses quatre caractéristiques dans `modInterv_Theme`, 
 |  |  | `Z4Lien` | `POLICE` | `TAILLE_FILTRE` | maigre | `COUL_LIEN` |
 |  |  | `Z4Compteur` | `POLICE` | `TAILLE_FILTRE` | maigre | `COUL_TEXTE_DOUX` |
 | 5 | `lblEnteteTableI` | `Z5Entete` | `POLICE_ENTETE` | `TAILLE_GRILLE_ENTETE` | maigre | `COUL_GRILLE_ENTETE` |
-| 6 | `lblG_1_1` … `lblG_17_12` | `Z6Case` | `POLICE` | `TAILLE_GRILLE_TXT` | `GRAS_GRILLE_TXT` | `COUL_GRILLE_TXT` |
+| 6 | `lblG_1_1` … `lblG_17_12` | `Z6Case` | `"Segoe UI Semibold"` | `TAILLE_GRILLE_TXT` | `GRAS_GRILLE_TXT` | `COUL_GRILLE_TXT` |
 | 7 | `UF_Calendrier` | `Z7Fleche` | `POLICE` | `15` | gras | `COUL_BANDEAU_SOUS` |
 |  |  | `Z7Mois` | `POLICE` | `11` | gras | `COUL_BANDEAU_TXT` |
 |  |  | `Z7JourSem` | `POLICE` | `TAILLE_LIBELLE` | gras | `COUL_TEXTE_DOUX` |
