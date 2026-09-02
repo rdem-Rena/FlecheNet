@@ -465,28 +465,34 @@ End Sub
 Private Sub ConstruireFiche4(dsg As Object)
     Dim c As Object, larg As Variant, lib As Variant, ali As Variant
     Dim i As Long, r As Long, nbCol As Long
-    Dim x As Single, y As Single, gauche As Single, largeur As Single
+    Dim x As Single, y As Single, gauche As Single, largeur As Single, base As Single
 
-    gauche = I_MARGE + 1
+    gauche = AuPixel(I_MARGE + 1)
     largeur = I_CARTE_LARG - 2
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte4", I_MARGE, IT_TOP, I_CARTE_LARG, IT_HAUT)
     CarteI c
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblEnteteTableI", gauche, IT_TOP + 1, largeur, IT_ENTETE - 1)
+    Set c = AjCtrl(dsg, "Forms.Label.1", "lblEnteteTableI", gauche, AuPixel(IT_TOP + 1), _
+                   largeur, AuPixel(IT_ENTETE - 1))
     Fond c, COUL_ENTETE_TBL, COUL_ENTETE_TBL
 
     larg = ILargeursListe()
     lib = ILibellesListe()
     ali = IAlignementsListe()
     nbCol = UBound(larg) - LBound(larg) + 1
+    base = IT_TOP + IT_ENTETE + 1
 
     ' --- en-têtes -------------------------------------------------------------
+    ' Demi-gras SANS Bold : c'est la famille Segoe UI Semibold qui porte la
+    ' graisse, MSForms ne connaissant que gras ou pas gras.
     x = gauche + IGR_PAD_X
     For i = 0 To nbCol - 1
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblEntI_" & CStr(i + 1), _
-                       x, IT_TOP + 5, CSng(larg(i)) - 2 * IGR_PAD_X, 13)
-        Texte c, CStr(lib(i)), TAILLE_GRILLE_ENTETE, True, COUL_GRILLE_ENTETE, CLng(ali(i))
+                       AuPixel(x), AuPixel(IT_TOP + 5), _
+                       AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
+        Texte c, CStr(lib(i)), TAILLE_GRILLE_ENTETE, False, COUL_GRILLE_ENTETE, _
+              CLng(ali(i)), POLICE_ENTETE
         c.ControlTipText = "Cliquez pour trier sur cette colonne"
         x = x + CSng(larg(i))
     Next i
@@ -494,18 +500,25 @@ Private Sub ConstruireFiche4(dsg As Object)
     ' --- les lignes et leurs cases --------------------------------------------
     ' Chaque ligne reçoit d'abord une BANDE de fond sur toute la largeur, puis
     ' ses cases, transparentes, posées dessus. C'est la bande qui porte la
-    ' couleur : sans elle, les quatre points qui séparent deux cases laisseraient
-    ' voir le blanc de la carte et la ligne choisie paraîtrait rayée.
+    ' couleur : sans elle, les points qui séparent deux cases laisseraient voir
+    ' le blanc de la carte et la ligne choisie paraîtrait rayée.
     '
     ' Les contrôles s'ajoutent PAR-DEVANT : la bande créée en premier se retrouve
     ' donc bien derrière ses cases.
+    '
+    ' TOUTE coordonnée passe par AuPixel. L'abscisse d'une colonne est la somme
+    ' des largeurs qui la précèdent, et rien ne garantit qu'elle tombe sur un
+    ' pixel : une case posée à cheval rend son texte décalé et plus épais, d'une
+    ' colonne à l'autre sans régularité. Les largeurs, elles, restent exactes —
+    ' seul l'affichage est calé.
     For r = 1 To IGR_NB_LIGNES
-        y = IT_TOP + IT_ENTETE + 1 + (r - 1) * IGR_LIGNE_H
+        y = base + (r - 1) * IGR_LIGNE_H
 
         ' Fond plat, SANS filet : un libellé bordé dessine un cadre d'un pixel,
-        ' et deux bandes voisines feraient alors une ligne double entre elles.
+        ' et deux bandes voisines feraient une ligne double entre elles.
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblGL_" & CStr(r), _
-                       gauche, y, largeur - IGR_BARRE_L, IGR_LIGNE_H)
+                       gauche, AuPixel(y), AuPixel(largeur - IGR_BARRE_L), _
+                       AuPixel(IGR_LIGNE_H))
         With c
             .Caption = vbNullString
             .SpecialEffect = MSF_SpecialEffectFlat
@@ -518,7 +531,8 @@ Private Sub ConstruireFiche4(dsg As Object)
         For i = 0 To nbCol - 1
             Set c = AjCtrl(dsg, "Forms.Label.1", _
                            "lblG_" & CStr(r) & "_" & CStr(i + 1), _
-                           x, y, CSng(larg(i)) - 2 * IGR_PAD_X, IGR_LIGNE_H)
+                           AuPixel(x), AuPixel(y), _
+                           AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
             Texte c, vbNullString, TAILLE_GRILLE_TXT, False, COUL_GRILLE_TXT, CLng(ali(i))
             x = x + CSng(larg(i))
         Next i
@@ -526,8 +540,8 @@ Private Sub ConstruireFiche4(dsg As Object)
 
     ' --- barre de défilement --------------------------------------------------
     Set c = AjCtrl(dsg, "Forms.ScrollBar.1", "sbGrille", _
-                   gauche + largeur - IGR_BARRE_L, IT_TOP + IT_ENTETE + 1, _
-                   IGR_BARRE_L, IGR_NB_LIGNES * IGR_LIGNE_H)
+                   AuPixel(gauche + largeur - IGR_BARRE_L), AuPixel(base), _
+                   AuPixel(IGR_BARRE_L), AuPixel(IGR_NB_LIGNES * IGR_LIGNE_H))
     With c
         .Min = 0
         .Max = 0
@@ -538,10 +552,8 @@ Private Sub ConstruireFiche4(dsg As Object)
         ' CURSEUR DE TAILLE FIXE. Avec ProportionalThumb, MSForms dimensionne le
         ' curseur à LargeChange / (plage + LargeChange). Ici la plage vaut le
         ' nombre de lignes en trop — douze pour vingt-neuf interventions — et
-        ' LargeChange une page entière : le curseur occupait alors presque toute
-        ' la glissière et ne se distinguait plus du fond. Les flèches marchaient,
-        ' mais il n'y avait plus rien à attraper. Taille fixe : un petit carré,
-        ' quelle que soit la plage.
+        ' LargeChange une page entière : le curseur occupait presque toute la
+        ' glissière et ne se distinguait plus du fond.
         .ProportionalThumb = False
         .TabIndex = 90
     End With
@@ -712,7 +724,8 @@ End Sub
 ' Le fond est transparent pour laisser voir la carte au-dessous.
 '------------------------------------------------------------------------------
 Private Sub Texte(c As Object, ByVal texte As String, ByVal taille As Single, _
-                  ByVal gras As Boolean, ByVal couleur As Long, ByVal alignement As Long)
+                  ByVal gras As Boolean, ByVal couleur As Long, ByVal alignement As Long, _
+                  Optional ByVal police As String = vbNullString)
     c.Caption = texte
     c.BackStyle = MSF_BackStyleTransparent
     c.SpecialEffect = MSF_SpecialEffectFlat
@@ -721,7 +734,9 @@ Private Sub Texte(c As Object, ByVal texte As String, ByVal taille As Single, _
     c.TextAlign = alignement
     c.WordWrap = False
     c.AutoSize = False
-    c.Font.Name = POLICE
+    ' Le nom de FAMILLE en premier : la changer après coup remet la taille et la
+    ' graisse aux valeurs par défaut de la nouvelle police.
+    c.Font.Name = IIf(Len(police) > 0, police, POLICE)
     c.Font.Size = taille
     c.Font.Bold = gras
 End Sub
@@ -898,8 +913,13 @@ Private Function CodeFormulairePrincipal() As String
     ProcI "lblCarte4_MouseMove" & SIG_SOURIS, "Interv_GrilleSurvol Me, 0"
     ProcI "lblEnteteTableI_MouseMove" & SIG_SOURIS, "Interv_GrilleSurvol Me, 0"
 
+    ' Change SEULEMENT, jamais Scroll. Scroll se déclenche à chaque pixel de
+    ' déplacement du curseur ; repeindre dix-sept lignes à cette cadence entrait
+    ' en conflit avec le dessin de la barre, qui clignotait entre gris et noir
+    ' dès qu'on l'avait saisie. Change se déclenche aux flèches, aux clics dans
+    ' la glissière et au relâchement du curseur : le tableau suit donc le
+    ' glissement à la fin plutôt qu'en continu, et rien ne scintille.
     ProcI "sbGrille_Change()", "Interv_Defiler Me"
-    ProcI "sbGrille_Scroll()", "Interv_Defiler Me"
 
     For i = LBound(larg) To UBound(larg)
         ProcI "lblEntI_" & CStr(i + 1) & "_Click()", "Interv_TrierColonne Me, " & CStr(i + 1)

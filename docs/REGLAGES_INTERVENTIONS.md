@@ -17,6 +17,7 @@ Toutes les dimensions sont en **points** (1 pt = 1/72 de pouce ; à 96 ppp, 1 pt
 | **La taille du texte des en-têtes** | `modInterv_Theme` | `TAILLE_GRILLE_ENTETE` |
 | **La couleur du texte du tableau** | `modInterv_Theme` | `COUL_GRILLE_TXT` |
 | **La couleur des en-têtes** | `modInterv_Theme` | `COUL_GRILLE_ENTETE` |
+| **La graisse des en-têtes** | `modInterv_Theme` | `POLICE_ENTETE` |
 | **La teinte d'une ligne sur deux** | `modInterv_Theme` | `COUL_GRILLE_ZEBRE` |
 | La hauteur d'une ligne du tableau | `modInterv_Theme` | `IGR_LIGNE_H` — **multiple de 0,75 obligatoire** |
 | Le nombre de lignes affichées | `modInterv_Theme` | `IGR_NB_LIGNES`, plus `IT_HAUT`, `IB_TOP` et `I_HAUTEUR` |
@@ -51,18 +52,21 @@ C'est une **grille de libellés** : une case par cellule. Tout s'y règle par co
 |---|---|---|---|
 | `TAILLE_GRILLE_ENTETE` | `modInterv_Theme` | 9,5 | taille du texte des en-têtes |
 | `COUL_GRILLE_ENTETE` | `modInterv_Theme` | #2C3E52 | couleur du texte des en-têtes |
+| `POLICE_ENTETE` | `modInterv_Theme` | Segoe UI Semibold | famille des en-têtes — c'est elle qui porte la demi-graisse |
 | `TAILLE_GRILLE_TXT` | `modInterv_Theme` | 8,5 | taille du texte des lignes |
 | `COUL_GRILLE_TXT` | `modInterv_Theme` | #4A5A6E | couleur du texte des lignes |
 | `COUL_GRILLE_ZEBRE` | `modInterv_Theme` | #F1F5FA | fond d'une ligne sur deux |
 | `IGR_LIGNE_H` | `modInterv_Theme` | 12,75 | hauteur d'une ligne |
 | `IGR_NB_LIGNES` | `modInterv_Theme` | 17 | lignes affichées à la fois |
 | `IGR_BARRE_L` | `modInterv_Theme` | 16 | largeur de la barre de défilement |
-| `IGR_PAD_X` | `modInterv_Theme` | 4 | retrait du texte de chaque côté de sa colonne |
+| `IGR_PAD_X` | `modInterv_Theme` | 4,5 | retrait du texte de chaque côté de sa colonne |
 | `IT_TOP` | `modInterv_Theme` | 448 | haut du tableau |
 | `IT_HAUT` | `modInterv_Theme` | 246 | hauteur totale du tableau |
 | `IT_ENTETE` | `modInterv_Theme` | 22 | hauteur de la bande d'en-têtes |
 
 Deux couleurs viennent de la palette commune, dans `modClients_Theme` : `COUL_MODIFIER` pour la ligne choisie et `COUL_ENTETE_TBL` pour la ligne survolée.
+
+> **Les largeurs de colonnes sont libres.** Chaque coordonnée de la grille passe par `AuPixel`, qui l'arrondit au pixel : une case posée à cheval rendrait son texte décalé et plus épais. Seule la hauteur de ligne doit être choisie juste, parce qu'elle se répète dix-sept fois et que l'erreur s'accumulerait.
 
 > **La hauteur de ligne doit valoir un nombre entier de pixels.** À 96 ppp, 1 pixel vaut 0,75 point : `IGR_LIGNE_H` doit donc être un multiple de 0,75 — 12 ; 12,75 ; 13,5 ; 14,25… Une valeur intermédiaire fait arrondir les positions différemment d'une ligne à l'autre et une ligne sur trois se décale d'un pixel. `simulate_interv.py` le vérifie.
 
@@ -109,6 +113,11 @@ Deux colonnes peuvent partager une case : `IC_NOM & ICL_SEPARATEUR & IC_PRENOM` 
 ### Afficher plus de lignes
 
 Augmenter `IGR_NB_LIGNES`, puis ajouter autant de fois `IGR_LIGNE_H` à `IT_HAUT`, `IB_TOP` et `I_HAUTEUR` — sans quoi la grille passerait sous les boutons.
+
+
+### Changer la graisse des en-têtes
+
+MSForms ne connaît que **gras ou pas gras** : la demi-graisse se nomme, elle ne se règle pas. `POLICE_ENTETE` vaut `Segoe UI Semibold`. Pour un en-tête franchement gras, y mettre `Segoe UI` et passer les libellés en gras dans `ConstruireFiche4` ; pour un en-tête maigre, `Segoe UI Light`.
 
 
 ### Changer une couleur

@@ -156,6 +156,14 @@ Public Const TAILLE_GRILLE_TXT As Single = 8.5
 Public Const COUL_GRILLE_ENTETE As Long = &H523E2C&  ' #2C3E52
 Public Const TAILLE_GRILLE_ENTETE As Single = 9.5
 
+' Demi-gras pour l'en-tête. MSForms ne connaît que gras ou pas gras : la demi-
+' graisse s'obtient en nommant la FAMILLE qui la porte. Segoe UI Semibold est
+' livrée avec Windows depuis Vista ; si elle manquait, Windows retomberait sur
+' Segoe UI ordinaire — l'en-tête serait maigre, jamais illisible.
+' Pour un en-tête franchement gras : mettre POLICE ici et passer les libellés
+' en gras dans ConstruireFiche4.
+Public Const POLICE_ENTETE As String = "Segoe UI Semibold"
+
 Public Const IT_TOP As Single = 448
 Public Const IT_HAUT As Single = 246
 Public Const IT_ENTETE As Single = 22
@@ -187,7 +195,11 @@ Public Const IGR_NB_LIGNES As Long = 17       ' lignes affichées à la fois
 Public Const IGR_BARRE_L As Single = 16
 ' Retrait du texte de CHAQUE CÔTÉ de sa colonne : une colonne alignée à droite
 ' viendrait sinon coller la colonne suivante, alignée à gauche.
-Public Const IGR_PAD_X As Single = 4
+Public Const IGR_PAD_X As Single = 4.5
+
+'--- Calage sur le pixel ------------------------------------------------------
+' À 96 ppp, un pixel vaut 0,75 point : voir AuPixel, plus bas.
+Public Const PT_PAR_PIXEL As Single = 0.75
 
 '--- Barre de boutons ---------------------------------------------------------
 Public Const IB_TOP As Single = 704
@@ -224,6 +236,25 @@ Public Const IMAGE_TUILE As String = "CartePremium.jpg"
 Public Function F2TuilesX() As Single
     F2TuilesX = I_MARGE + I_CARTE_LARG - F2_PADDING _
                 - (F2_TUILES_COL * F2_TUILE_LARG + (F2_TUILES_COL - 1) * F2_TUILE_GX)
+End Function
+
+'==============================================================================
+' CALAGE SUR LE PIXEL
+'------------------------------------------------------------------------------
+' Un point ne vaut pas un nombre entier de pixels : à 96 ppp, 1 px = 0,75 pt.
+' Une coordonnée qui tombe entre deux pixels fait rendre le texte à cheval, et
+' Windows le dessine alors plus épais et légèrement décalé — d'une colonne à
+' l'autre, sans régularité apparente.
+'
+' Toutes les coordonnées de la grille passent donc par AuPixel. C'est ce qui
+' permet de choisir les largeurs de colonnes librement, sans avoir à vérifier
+' à la main que chacune tombe juste.
+'
+' Sur un écran à 120 ou 144 ppp, Windows met le formulaire entier à l'échelle :
+' le calage reste bon, puisqu'il porte sur la grille logique.
+'==============================================================================
+Public Function AuPixel(ByVal v As Single) As Single
+    AuPixel = Int(v / PT_PAR_PIXEL + 0.5) * PT_PAR_PIXEL
 End Function
 
 '==============================================================================
