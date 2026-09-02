@@ -126,7 +126,10 @@ End Function
 ' Prépare un composant UserForm : créé s'il manque, vidé s'il existe déjà.
 '   renvoie : le composant, prêt à être garni
 '==============================================================================
-Private Function PreparerForm(vbProj As Object, ByVal nom As String) As Object
+' PUBLIQUE : le générateur de la facturation s'en sert aussi. Elle porte la
+' détection du nom encore retenu par un formulaire supprimé à la main, qu'on ne
+' veut pas voir réécrite ailleurs.
+Public Function PreparerForm(vbProj As Object, ByVal nom As String) As Object
     Dim vbComp As Object, dsg As Object, i As Long, occupe As Boolean
 
     On Error Resume Next
@@ -941,8 +944,10 @@ End Sub
 ' n'exposent pas Weight, et son absence ne doit pas faire échouer la
 ' génération — la graisse aura déjà été posée à la ligne précédente.
 '------------------------------------------------------------------------------
-Private Sub PoserPolice(c As Object, ByVal police As String, _
-                        ByVal taille As Single, ByVal gras As Boolean)
+' PUBLIQUE : tout générateur doit poser ses polices par ici, l'ordre des
+' assignations étant la seule chose qui empêche la taille d'emporter la graisse.
+Public Sub PoserPolice(c As Object, ByVal police As String, _
+                       ByVal taille As Single, ByVal gras As Boolean)
     c.Font.Name = police
     c.Font.Bold = gras
     On Error Resume Next

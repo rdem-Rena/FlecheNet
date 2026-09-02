@@ -1222,15 +1222,15 @@ Public Sub Interv_Fermeture(f As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Boutons Facturer et Info : les formulaires qu'ils ouvriront restent à définir.
-' Le point d'entrée est en place, il n'y aura qu'à remplacer le message par
-' l'appel voulu.
+' Facturer ouvre UF_Facture ; le formulaire d'information reste à définir.
+'
+' La facturation se fait par CLIENT et non par intervention : le formulaire
+' ouvert dresse lui-même la liste de ce qui reste à facturer, sans rien
+' recevoir d'ici — l'intervention sélectionnée dans le tableau n'entre pas en
+' ligne de compte.
 '------------------------------------------------------------------------------
 Public Sub Interv_Facturer(f As Object)
-    MsgBox "Le formulaire de facturation reste à définir." & vbCrLf & vbCrLf & _
-           "Point de branchement : modInterv_Formulaire.Interv_Facturer." & _
-           IIf(Len(mNoCourant) > 0, vbCrLf & vbCrLf & "Intervention sélectionnée : " & mNoCourant, ""), _
-           vbInformation, "Facturer"
+    OuvrirFacturation
 End Sub
 
 '------------------------------------------------------------------------------
