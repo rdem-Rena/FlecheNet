@@ -53,7 +53,7 @@ C'est une **grille de libellés** : une case par cellule. Tout s'y règle par co
 | `TAILLE_GRILLE_ENTETE` | `modInterv_Theme` | 9,5 | taille du texte des en-têtes |
 | `COUL_GRILLE_ENTETE` | `modInterv_Theme` | #2C3E52 | couleur du texte des en-têtes |
 | `POLICE_ENTETE` | `modInterv_Theme` | Segoe UI Semibold | famille des en-têtes — c'est elle qui porte la demi-graisse |
-| `TAILLE_GRILLE_TXT` | `modInterv_Theme` | 8,5 | taille du texte des lignes |
+| `TAILLE_GRILLE_TXT` | `modInterv_Theme` | 9 | taille du texte des lignes |
 | `COUL_GRILLE_TXT` | `modInterv_Theme` | #4A5A6E | couleur du texte des lignes |
 | `COUL_GRILLE_ZEBRE` | `modInterv_Theme` | #F1F5FA | fond d'une ligne sur deux |
 | `IGR_LIGNE_H` | `modInterv_Theme` | 12,75 | hauteur d'une ligne |
