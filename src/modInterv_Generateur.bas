@@ -238,11 +238,12 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     ConstruireFiltre dsg
     ConstruireFiche4 dsg
     ConstruireBoutonsInterv dsg
-    ' lblCarte1 n'existe que si la fiche 1 est en libellé de fond : en cadre,
-    ' ses enfants sont devant lui par construction et il n'y a rien à
-    ' repousser. ReculerFonds ignore les noms absents, la liste sert aux deux.
+    ' Un cadre n'a rien à faire ici : ses enfants sont devant lui par
+    ' construction. Les deux premières cartes y figurent tout de même, sous le
+    ' nom que leur donne le thème — inoffensif pour un cadre, indispensable
+    ' pour un libellé de fond si l'essai est désactivé.
     ReculerFonds dsg, Array("lblEnteteTableI", "lblCarte4", "lblCarteFiltreI", _
-                            "lblCarte3", "lblCarte2", "lblCarte1")
+                            "lblCarte3", NomCarte2(), NomCarte1())
 
     vbComp.CodeModule.AddFromString CodeFormulairePrincipal()
     ConstruireFormulairePrincipal = dsg.Controls.Count
@@ -265,13 +266,13 @@ Private Sub ConstruireFiche1(dsg As Object)
     Dim c As Object, zone As Object, ox As Single, oy As Single
 
     If F1_EN_CADRE Then
-        Set zone = AjCtrl(dsg, "Forms.Frame.1", "fraCarte1", _
+        Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte1(), _
                           I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
         CadreI zone
         ox = I_MARGE
         oy = F1_TOP
     Else
-        Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte1", _
+        Set c = AjCtrl(dsg, "Forms.Label.1", NomCarte1(), _
                        I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
         CarteI c
         Set zone = dsg
@@ -300,25 +301,39 @@ End Sub
 Private Sub ConstruireFiche2(dsg As Object)
     Dim c As Object, tuiles As Variant, i As Long, x As Single, y As Single
     Dim col As Long, lig As Long, yCap As Single
+    Dim zone As Object, ox As Single, oy As Single
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblCarte2", I_MARGE, F2_TOP, I_CARTE_LARG, F2_HAUT)
-    CarteI c
+    If F2_EN_CADRE Then
+        Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte2(), _
+                          I_MARGE, F2_TOP, I_CARTE_LARG, F2_HAUT)
+        CadreI zone
+        ox = I_MARGE
+        oy = F2_TOP
+    Else
+        Set c = AjCtrl(dsg, "Forms.Label.1", NomCarte2(), _
+                       I_MARGE, F2_TOP, I_CARTE_LARG, F2_HAUT)
+        CarteI c
+        Set zone = dsg
+    End If
 
     ' large : ce libellé accueille aussi, le cas échéant, la raison pour laquelle
     ' le graphique ne s'affiche pas
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblSectionStats", 30, F2_TOP + 6, 700, 13)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblSectionStats", _
+                   30 - ox, F2_TOP + 6 - oy, 700, 13)
     Texte c, "STATISTIQUES", Z2Section(), MSF_TextAlignLeft
 
-    ConstruireGraphique dsg, GR_ORIGINE_X, GR_ORIGINE_Y
+    ' GrOrigineX / GrOrigineY tiennent compte du cadre : c'est la MÊME origine
+    ' que celle dont Graph_Tracer repart pour placer les barres.
+    ConstruireGraphique zone, GrOrigineX(), GrOrigineY()
 
     tuiles = TuilesStatistiques()
     For i = LBound(tuiles) To UBound(tuiles)
         col = i Mod F2_TUILES_COL
         lig = i \ F2_TUILES_COL
-        x = F2TuilesX() + col * (F2_TUILE_LARG + F2_TUILE_GX)
-        y = F2_TOP + 24 + lig * (F2_TUILE_HAUT + F2_TUILE_GY)
+        x = F2TuilesX() - ox + col * (F2_TUILE_LARG + F2_TUILE_GX)
+        y = F2_TOP + 24 - oy + lig * (F2_TUILE_HAUT + F2_TUILE_GY)
 
-        Set c = AjCtrl(dsg, "Forms.Image.1", "imgTuile_" & CStr(i + 1), x, y, _
+        Set c = AjCtrl(zone, "Forms.Image.1", "imgTuile_" & CStr(i + 1), x, y, _
                        F2_TUILE_LARG, F2_TUILE_HAUT)
         With c
             .SpecialEffect = MSF_SpecialEffectFlat
@@ -332,13 +347,13 @@ Private Sub ConstruireFiche2(dsg As Object)
         ' bloc « libellé + montant » centré verticalement dans la tuile
         yCap = y + (F2_TUILE_HAUT - (F2_TUILE_CAP_HAUT + F2_TUILE_ECART + F2_TUILE_VAL_HAUT)) / 2
 
-        Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatCap_" & CStr(i + 1), _
+        Set c = AjCtrl(zone, "Forms.Label.1", "lblStatCap_" & CStr(i + 1), _
                        x + F2_TUILE_INSET, yCap, _
                        F2_TUILE_LARG - 2 * F2_TUILE_INSET, F2_TUILE_CAP_HAUT)
         Texte c, UCase$(CStr(tuiles(i)(0))), Z2TuileCap(), MSF_TextAlignCenter
         FondTuile c
 
-        Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatVal_" & CStr(i + 1), _
+        Set c = AjCtrl(zone, "Forms.Label.1", "lblStatVal_" & CStr(i + 1), _
                        x + F2_TUILE_INSET, yCap + F2_TUILE_CAP_HAUT + F2_TUILE_ECART, _
                        F2_TUILE_LARG - 2 * F2_TUILE_INSET, F2_TUILE_VAL_HAUT)
         Texte c, vbNullString, Z2TuileVal(), MSF_TextAlignCenter
@@ -374,21 +389,21 @@ End Sub
 ' seul le sommet de l'échelle est écrit — les autres montants se lisent au
 ' survol, plutôt que d'imprimer un nombre sur chaque barre.
 '------------------------------------------------------------------------------
-Private Sub ConstruireGraphique(dsg As Object, ByVal ox As Single, ByVal oy As Single)
+Private Sub ConstruireGraphique(zone As Object, ByVal ox As Single, ByVal oy As Single)
     Dim c As Object, i As Long, y As Single, largeur As Single
 
     largeur = F2_GRAPH_LARG - GR_MARGE_G
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrLegende", ox, oy, F2_GRAPH_LARG, GR_LEGENDE_HAUT)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblGrLegende", ox, oy, F2_GRAPH_LARG, GR_LEGENDE_HAUT)
     Texte c, "Chiffre d'affaires par mois", Z2GraphTitre(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrMax", ox, oy + GR_TRACE_TOP - 5, GR_MARGE_G - 8, 11)
+    Set c = AjCtrl(zone, "Forms.Label.1", "lblGrMax", ox, oy + GR_TRACE_TOP - 5, GR_MARGE_G - 8, 11)
     Texte c, vbNullString, Z2GraphAxe(), MSF_TextAlignRight
 
     ' trois repères : le sommet de l'échelle, la moitié, la ligne de base
     For i = 1 To 3
         y = oy + GR_TRACE_TOP + (i - 1) * (GR_TRACE_HAUT / 2)
-        Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrGrille_" & CStr(i), _
+        Set c = AjCtrl(zone, "Forms.Label.1", "lblGrGrille_" & CStr(i), _
                        ox + GR_MARGE_G, y, largeur, 1)
         Fond c, IIf(i = 3, COUL_GR_BASE, COUL_GR_GRILLE), _
                 IIf(i = 3, COUL_GR_BASE, COUL_GR_GRILLE)
@@ -396,11 +411,11 @@ Private Sub ConstruireGraphique(dsg As Object, ByVal ox As Single, ByVal oy As S
 
     ' barres et noms de mois : créés ici, placés par Graph_Tracer
     For i = 1 To GR_NB_MOIS
-        Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrBarre_" & CStr(i), _
+        Set c = AjCtrl(zone, "Forms.Label.1", "lblGrBarre_" & CStr(i), _
                        ox + GR_MARGE_G, oy + GR_TRACE_TOP, GR_BARRE_LARG, 1)
         Fond c, COUL_GR_BARRE, COUL_GR_BARRE
 
-        Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrMois_" & CStr(i), _
+        Set c = AjCtrl(zone, "Forms.Label.1", "lblGrMois_" & CStr(i), _
                        ox + GR_MARGE_G, oy + GR_TRACE_TOP + GR_TRACE_HAUT + 3, _
                        GR_BARRE_LARG, GR_MOIS_HAUT)
         Texte c, vbNullString, Z2GraphAxe(), MSF_TextAlignCenter
@@ -889,6 +904,11 @@ End Sub
 Private Sub Zone(c As Object, ByVal verrouille As Boolean)
     c.Font.Name = POLICE
     c.Font.Size = TAILLE_CHAMP
+    ' GRAISSE POSÉE EXPLICITEMENT. Sans cette ligne la zone de texte héritait
+    ' de la police par défaut du formulaire, qui est en gras : nommer la même
+    ' famille que le défaut ne remet pas la graisse à zéro, et les champs
+    ' s'affichaient donc en gras. Ne jamais compter sur cet effet de bord.
+    c.Font.Bold = False
     c.SpecialEffect = MSF_SpecialEffectFlat
     c.BorderStyle = MSF_BorderStyleSingle
     c.BorderColor = COUL_CHAMP_BORD
@@ -1018,7 +1038,7 @@ Private Function CodeFormulairePrincipal() As String
 
     ' La carte recouvre toute la zone du graphique : c'est elle, et non le fond
     ' du formulaire, que la souris atteint en quittant une barre.
-    ProcI "lblCarte2_MouseMove" & SIG_SOURIS, _
+    ProcI NomCarte2() & "_MouseMove" & SIG_SOURIS, _
          "Interv_Survol Me, " & Guill("") & vbNewLine & _
          "    Graph_Survol Me, 0"
 

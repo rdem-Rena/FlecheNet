@@ -63,15 +63,20 @@ Public Sub Graph_Tracer(f As Object)
     If Not c Is Nothing Then c.Caption = Format$(mEchelle, "#,##0")
 
     ' --- barres ---------------------------------------------------------------
-    ' Left et Top d'un contrôle se comptent depuis le coin du FORMULAIRE, pas
+    ' Left et Top d'un contrôle se comptent depuis le coin de son PARENT, pas
     ' depuis celui du graphique : les positions calculées ici repartent donc de
-    ' GR_ORIGINE_X / GR_ORIGINE_Y, comme le décor posé par le générateur.
+    ' GrOrigineX / GrOrigineY, exactement comme le décor posé par le générateur.
+    '
+    ' Ces deux fonctions retranchent le coin de la carte quand celle-ci est un
+    ' cadre. Repartir de GR_ORIGINE_X / GR_ORIGINE_Y, les constantes brutes,
+    ' placerait les barres I_MARGE et F2_TOP trop loin, en bas à droite de leur
+    ' propre décor.
     '
     ' L'aire de tracé commence après la colonne de l'échelle ; chaque mois
     ' dispose d'une tranche égale, la barre est centrée dedans.
-    gauche = GR_ORIGINE_X + GR_MARGE_G
+    gauche = GrOrigineX() + GR_MARGE_G
     largeur = F2_GRAPH_LARG - GR_MARGE_G
-    base = GR_ORIGINE_Y + GR_TRACE_TOP + GR_TRACE_HAUT
+    base = GrOrigineY() + GR_TRACE_TOP + GR_TRACE_HAUT
     pas = largeur / GR_NB_MOIS
 
     For i = 1 To GR_NB_MOIS

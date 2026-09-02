@@ -66,6 +66,7 @@ Public Const I_CARTE_LARG As Single = 928     ' I_LARGEUR - 2 * I_MARGE
 ' rien d'autre à toucher — c'est le filet de sécurité tant que le comportement
 ' du cadre n'a pas été vu dans Excel.
 Public Const F1_EN_CADRE As Boolean = True
+Public Const F2_EN_CADRE As Boolean = True
 
 Public Const F1_TOP As Single = 12
 Public Const F1_HAUT As Single = 46
@@ -493,4 +494,41 @@ Private Function Style(ByVal police As String, ByVal taille As Single, _
     Style.Taille = taille
     Style.Gras = gras
     Style.Couleur = couleur
+End Function
+
+'==============================================================================
+' LES ZONES EN CADRE
+'------------------------------------------------------------------------------
+' Une carte portée par un cadre ne s'appelle plus lblCarteN mais fraCarteN : le
+' générateur, le code des événements et la remise en arrière-plan doivent tous
+' désigner le même contrôle, d'où ces deux fonctions plutôt que le nom écrit
+' trois fois.
+'==============================================================================
+Public Function NomCarte1() As String
+    NomCarte1 = IIf(F1_EN_CADRE, "fraCarte1", "lblCarte1")
+End Function
+
+Public Function NomCarte2() As String
+    NomCarte2 = IIf(F2_EN_CADRE, "fraCarte2", "lblCarte2")
+End Function
+
+'==============================================================================
+' ORIGINE DU GRAPHIQUE DANS SON CONTENEUR
+'------------------------------------------------------------------------------
+' Left et Top se comptent depuis le coin du PARENT. Tant que le graphique était
+' posé sur le formulaire, son origine valait GR_ORIGINE_X / GR_ORIGINE_Y ; dans
+' un cadre, il faut en retrancher le coin du cadre.
+'
+' Le décor est posé par le générateur, les barres sont placées à l'exécution
+' par Graph_Tracer : les deux DOIVENT partir du même point. C'est pour cela que
+' l'origine est calculée ici, en un seul endroit, et non recopiée de part et
+' d'autre — un tracé qui repartirait de l'origine absolue se retrouverait
+' I_MARGE et F2_TOP trop loin, en bas à droite de son décor.
+'==============================================================================
+Public Function GrOrigineX() As Single
+    GrOrigineX = GR_ORIGINE_X - IIf(F2_EN_CADRE, I_MARGE, 0)
+End Function
+
+Public Function GrOrigineY() As Single
+    GrOrigineY = GR_ORIGINE_Y - IIf(F2_EN_CADRE, F2_TOP, 0)
 End Function
