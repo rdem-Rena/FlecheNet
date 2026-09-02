@@ -45,22 +45,26 @@ End Sub
 '------------------------------------------------------------------------------
 ' Diagnostic : ce que les contrôles du formulaire portent VRAIMENT comme police.
 '
-' À lancer quand l'aspect d'un texte ne correspond pas à ce que le thème
-' demande. La lecture se fait dans le CONCEPTEUR, donc sur les mêmes valeurs
-' que la fenêtre des propriétés du VBE — pas sur une copie chargée en mémoire.
+' La lecture se fait dans le CONCEPTEUR, donc sur les mêmes valeurs que la
+' fenêtre des propriétés du VBE, et non sur une copie chargée en mémoire.
 '
-' Le détail complet part dans la fenêtre d'exécution (Ctrl+G dans le VBE), d'où
-' il se copie ; la boîte de dialogue n'affiche que les contrôles de saisie,
-' ceux qui posent problème le plus souvent.
+' LE DÉTAIL VA DANS UN FICHIER, à côté du classeur. La fenêtre d'exécution ne
+' garde que ses deux cents dernières lignes : avec plus de trois cents
+' contrôles, tout le début — dont les champs de saisie — y disparaissait.
 '
-' Rappel utile pour lire le résultat : à 96 ppp un point vaut 0,75 pixel. Une
-' taille qui n'est pas un multiple de 0,75 — 9,5 par exemple, soit 12,67 px —
-' fait arrondir Windows, et le texte se dessine alors plus épais que demandé.
-' Un texte qui PARAÎT gras avec Gras=Faux vient presque toujours de là.
+' Trois choses sont rapportées pour chaque contrôle :
+'   Gras    ce que MSForms répond à Font.Bold ;
+'   Poids   Font.Weight, la valeur primitive — 400 maigre, 600 demi-gras,
+'           700 gras. C'est elle qui tranche : une famille demi-grasse rend
+'           Gras=Vrai sans que personne n'ait posé de graisse ;
+'   pixels  la taille en pixels. Un corps qui ne tombe pas sur un pixel entier
+'           fait arrondir Windows, et le texte se dessine plus épais que
+'           demandé — un texte qui PARAÎT gras avec Gras=Faux vient souvent
+'           de là, et changer la graisse n'y ferait rien.
 '------------------------------------------------------------------------------
 Public Sub DiagnostiquerPolicesInterv()
     Dim vbProj As Object, vbComp As Object, dsg As Object, ctl As Object
-    Dim ligne As String, saisie As String, n As Long, nBancal As Long
+    Dim saisie As String, chemin As String, tout As String, n As Long
 
     On Error Resume Next
     Set vbProj = ThisWorkbook.VBProject
@@ -80,40 +84,67 @@ Public Sub DiagnostiquerPolicesInterv()
     End If
 
     Set dsg = vbComp.Designer
-    Debug.Print String$(70, "-")
-    Debug.Print "Polices de " & NOM_FORM_INTERV
-    Debug.Print "formulaire lui-même : " & DecrirePolice(dsg)
-    Debug.Print String$(70, "-")
+    tout = "Polices de " & NOM_FORM_INTERV & "   —   " & Format$(Now, "dd.mm.yyyy hh:nn") & _
+           vbCrLf & String$(78, "-") & vbCrLf & _
+           "FORMULAIRE" & vbTab & DecrirePolice(dsg) & vbCrLf & String$(78, "-") & vbCrLf
 
     For Each ctl In dsg.Controls
-        ligne = ctl.Name & String$(IIf(Len(ctl.Name) < 24, 24 - Len(ctl.Name), 1), " ") & _
-                TypeName(ctl) & vbTab & DecrirePolice(ctl)
-        Debug.Print ligne
+        tout = tout & LigneDiag(ctl) & vbCrLf
         n = n + 1
-        If EstBancale(ctl) Then nBancal = nBancal + 1
+        ' les contrôles de saisie sont repris dans la boîte de dialogue :
+        ' ce sont eux qu'on regarde en premier, et ils tiennent à l'écran
         If TypeName(ctl) = "TextBox" Or TypeName(ctl) = "ComboBox" Then
-            If Len(saisie) < 700 Then saisie = saisie & ligne & vbCrLf
+            saisie = saisie & LigneDiag(ctl) & vbCrLf
+            Debug.Print LigneDiag(ctl)
         End If
     Next ctl
 
-    MsgBox "Formulaire : " & DecrirePolice(dsg) & vbCrLf & vbCrLf & _
-           "Contrôles de saisie :" & vbCrLf & saisie & vbCrLf & _
-           n & " contrôles lus, dont " & nBancal & " à la taille bancale " & _
-           "(pas un multiple de 0,75 pt : Windows arrondit et épaissit)." & vbCrLf & vbCrLf & _
-           "Le détail complet est dans la fenêtre d'exécution (Ctrl+G).", _
+    chemin = CheminDiag()
+    On Error GoTo SansFichier
+    EcrireFichier chemin, tout
+    On Error GoTo 0
+
+    MsgBox "FORMULAIRE : " & DecrirePolice(dsg) & vbCrLf & vbCrLf & _
+           "CONTRÔLES DE SAISIE" & vbCrLf & saisie & vbCrLf & _
+           n & " contrôles lus. Le détail complet est dans :" & vbCrLf & chemin, _
+           vbInformation, "Polices — " & NOM_FORM_INTERV
+    Exit Sub
+
+SansFichier:
+    MsgBox "FORMULAIRE : " & DecrirePolice(dsg) & vbCrLf & vbCrLf & _
+           "CONTRÔLES DE SAISIE" & vbCrLf & saisie & vbCrLf & _
+           "(le fichier de détail n'a pas pu être écrit dans " & chemin & ")", _
            vbInformation, "Polices — " & NOM_FORM_INTERV
 End Sub
 
 '------------------------------------------------------------------------------
-' « Segoe UI 9,5 gras » — ou la raison pour laquelle on n'a pas pu lire.
+' Une ligne de diagnostic, alignée pour se lire en colonnes.
+'------------------------------------------------------------------------------
+Private Function LigneDiag(ctl As Object) As String
+    Dim nom As String
+    nom = ctl.Name
+    If Len(nom) < 22 Then nom = nom & String$(22 - Len(nom), " ")
+    LigneDiag = nom & " " & TypeName(ctl) & vbTab & DecrirePolice(ctl)
+End Function
+
+'------------------------------------------------------------------------------
+' « Segoe UI 9,5  Gras=Faux  Poids=400  12.67 px [bancal] »
 '------------------------------------------------------------------------------
 Private Function DecrirePolice(ctl As Object) As String
-    Dim s As String
+    Dim s As String, poids As String, px As Double
+
     On Error GoTo SansPolice
-    s = ctl.Font.Name & " " & CStr(ctl.Font.Size) & _
-        IIf(ctl.Font.Bold, " GRAS", " maigre")
-    If EstBancale(ctl) Then s = s & "   [taille bancale : " & _
-        Format$(ctl.Font.Size / 0.75, "0.00") & " px]"
+    s = ctl.Font.Name & " " & CStr(ctl.Font.Size)
+
+    poids = "?"
+    On Error Resume Next
+    poids = CStr(ctl.Font.Weight)
+    On Error GoTo SansPolice
+
+    px = ctl.Font.Size / 0.75
+    s = s & "  Gras=" & IIf(ctl.Font.Bold, "VRAI", "Faux") & _
+        "  Poids=" & poids & "  " & Format$(px, "0.00") & " px"
+    If Abs(px - Int(px + 0.5)) > 0.000001 Then s = s & " [BANCAL]"
     DecrirePolice = s
     Exit Function
 SansPolice:
@@ -121,15 +152,26 @@ SansPolice:
 End Function
 
 '------------------------------------------------------------------------------
-' True si le corps ne tombe pas sur un nombre entier de pixels.
+' Où écrire le détail : à côté du classeur, ou dans le dossier temporaire si
+' le classeur n'a pas encore été enregistré.
 '------------------------------------------------------------------------------
-Private Function EstBancale(ctl As Object) As Boolean
-    Dim px As Double
-    On Error GoTo Fin
-    px = ctl.Font.Size / 0.75
-    EstBancale = (Abs(px - Int(px + 0.5)) > 0.000001)
-Fin:
+Private Function CheminDiag() As String
+    Dim dossier As String
+    dossier = ThisWorkbook.Path
+    If Len(dossier) = 0 Then dossier = Environ$("TEMP")
+    CheminDiag = dossier & Application.PathSeparator & "Polices_UF_Interventions.txt"
 End Function
+
+'------------------------------------------------------------------------------
+' Écrit un texte dans un fichier, en écrasant le précédent.
+'------------------------------------------------------------------------------
+Private Sub EcrireFichier(ByVal chemin As String, ByVal contenu As String)
+    Dim n As Integer
+    n = FreeFile
+    Open chemin For Output As #n
+    Print #n, contenu
+    Close #n
+End Sub
 
 '------------------------------------------------------------------------------
 ' Diagnostic : vérifie que le classeur contient tout ce dont le formulaire des
