@@ -144,17 +144,12 @@ Public Const IFB_COMPTEUR_L As Single = 190
 ' bien mieux qu'avec un survol, qui n'éclaire que là où pointe la souris.
 Public Const COUL_GRILLE_ZEBRE As Long = &HFAF5F1&   ' #F1F5FA
 
-' Le texte des lignes est un peu plus clair que celui des fiches : dix-sept
-' lignes de noir plein pèsent lourd, alors qu'une fiche n'a que quelques mots.
-' MSForms ne propose pas de graisse fine — seulement gras ou non — c'est donc
-' la couleur qui allège le trait.
-'
-' NEUF POINTS, ET PAS HUIT ET DEMI. Un point vaut 0,75 pixel : 9 pt font
-' exactement 12 pixels de corps, alors que 8,5 pt en font 11,33. Windows
-' arrondit alors le corps demandé, et le texte se dessine plus épais qu'il ne
-' devrait — ce qui se lit comme du gras. Voir TAILLES_JUSTES, plus bas.
+' Le texte des lignes est plus petit et plus clair que celui des fiches :
+' dix-sept lignes de noir plein pèsent lourd, alors qu'une fiche n'a que
+' quelques mots. MSForms ne propose pas de graisse fine — seulement gras ou
+' non — c'est donc la couleur qui allège le trait.
 Public Const COUL_GRILLE_TXT As Long = &H6E5A4A&     ' #4A5A6E
-Public Const TAILLE_GRILLE_TXT As Single = 9
+Public Const TAILLE_GRILLE_TXT As Single = 8.5
 
 ' L'en-tête, lui, est plus sombre et nettement plus grand que le corps : c'est
 ' ce qui le détache des lignes sans avoir à le souligner.
@@ -261,22 +256,6 @@ End Function
 Public Function AuPixel(ByVal v As Single) As Single
     AuPixel = Int(v / PT_PAR_PIXEL + 0.5) * PT_PAR_PIXEL
 End Function
-
-'==============================================================================
-' TAILLES_JUSTES — les tailles de police tombent sur le pixel elles aussi
-'------------------------------------------------------------------------------
-' La même règle vaut pour le corps des caractères : 0,75 pt par pixel.
-'
-'      8      pt = 10,67 px    (bancal)
-'      8,25   pt = 11    px
-'      8,5    pt = 11,33 px    (bancal)
-'      9      pt = 12    px
-'      9,75   pt = 13    px
-'     10,5    pt = 14    px
-'
-' Un corps bancal fait arrondir Windows, et le texte se dessine plus gras que
-' demandé. Choisir de préférence une taille de la colonne de droite.
-'==============================================================================
 
 '==============================================================================
 ' Position d'un bloc de la grille de saisie

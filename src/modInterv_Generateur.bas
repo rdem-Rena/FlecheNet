@@ -173,7 +173,6 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     PropForm vbComp, "SpecialEffect", MSF_SpecialEffectFlat
     PropForm vbComp, "StartUpPosition", 1
     PropForm vbComp, "ShowModal", True
-    PoliceParDefaut dsg
 
     ConstruireFiche1 dsg
     ConstruireFiche2 dsg
@@ -526,12 +525,6 @@ Private Sub ConstruireFiche4(dsg As Object)
             .BorderStyle = MSF_BorderStyleNone
             .BackStyle = MSF_BackStyleOpaque
             .BackColor = COUL_CARTE
-            ' La bande ne montre aucun texte, mais elle porte tout de même la
-            ' police des lignes : c'est ce qu'on lit dans la fenêtre des
-            ' propriétés en cliquant entre deux cases.
-            .Font.Name = POLICE
-            .Font.Size = TAILLE_GRILLE_TXT
-            .Font.Bold = False
         End With
 
         x = gauche + IGR_PAD_X
@@ -625,7 +618,6 @@ Private Function ConstruireCalendrier(vbProj As Object) As Long
     PropForm vbComp, "BorderStyle", MSF_BorderStyleNone
     PropForm vbComp, "StartUpPosition", 0            ' position posée par le code
     PropForm vbComp, "ShowModal", True
-    PoliceParDefaut dsg
 
     ' --- bandeau --------------------------------------------------------------
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalBandeau", 0, 0, CAL_LARGEUR, CAL_BANDEAU)
@@ -689,32 +681,6 @@ End Function
 '==============================================================================
 ' MISE EN FORME
 '==============================================================================
-'------------------------------------------------------------------------------
-' Police par défaut du FORMULAIRE, posée avant le premier contrôle.
-'
-' Un contrôle MSForms recopie la police du formulaire au moment où il est créé.
-' Tant que le formulaire n'en a pas, cette police est MS Sans Serif 8 GRAS — la
-' valeur d'usine, héritée de Windows 3. Tout contrôle auquel on ne pose pas de
-' police explicite la garde : les fonds de carte et les bandes de la grille,
-' dont le libellé est vide, s'affichaient ainsi en gras dans la fenêtre des
-' propriétés du VBE.
-'
-' On la pose donc une fois, sur le formulaire, AVANT de créer quoi que ce soit :
-' plus rien ne peut retomber sur la valeur d'usine, et les appels à Texte, Zone,
-' Liste ou Bouton_ n'ont plus qu'à s'écarter de ce défaut quand ils le veulent.
-' Après coup, l'assignation n'aurait servi à rien : les contrôles déjà nés ont
-' leur propre copie.
-'------------------------------------------------------------------------------
-Private Sub PoliceParDefaut(dsg As Object)
-    On Error Resume Next
-    ' Nom en premier : changer de famille après coup remettrait taille et
-    ' graisse aux valeurs par défaut de la nouvelle police.
-    dsg.Font.Name = POLICE
-    dsg.Font.Size = TAILLE_CHAMP
-    dsg.Font.Bold = False
-    On Error GoTo 0
-End Sub
-
 Private Function AjCtrl(dsg As Object, ByVal progId As String, ByVal nom As String, _
                         ByVal gauche As Single, ByVal haut As Single, _
                         ByVal largeur As Single, ByVal hauteur As Single) As Object

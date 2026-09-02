@@ -53,7 +53,7 @@ C'est une **grille de libellés** : une case par cellule. Tout s'y règle par co
 | `TAILLE_GRILLE_ENTETE` | `modInterv_Theme` | 9,5 | taille du texte des en-têtes |
 | `COUL_GRILLE_ENTETE` | `modInterv_Theme` | #2C3E52 | couleur du texte des en-têtes |
 | `POLICE_ENTETE` | `modInterv_Theme` | Segoe UI Semibold | famille des en-têtes — c'est elle qui porte la demi-graisse |
-| `TAILLE_GRILLE_TXT` | `modInterv_Theme` | 9 | taille du texte des lignes |
+| `TAILLE_GRILLE_TXT` | `modInterv_Theme` | 8,5 | taille du texte des lignes |
 | `COUL_GRILLE_TXT` | `modInterv_Theme` | #4A5A6E | couleur du texte des lignes |
 | `COUL_GRILLE_ZEBRE` | `modInterv_Theme` | #F1F5FA | fond d'une ligne sur deux |
 | `IGR_LIGNE_H` | `modInterv_Theme` | 12,75 | hauteur d'une ligne |
@@ -69,23 +69,6 @@ Deux couleurs viennent de la palette commune, dans `modClients_Theme` : `COUL_MO
 > **Les largeurs de colonnes sont libres.** Chaque coordonnée de la grille passe par `AuPixel`, qui l'arrondit au pixel : une case posée à cheval rendrait son texte décalé et plus épais. Seule la hauteur de ligne doit être choisie juste, parce qu'elle se répète dix-sept fois et que l'erreur s'accumulerait.
 
 > **La hauteur de ligne doit valoir un nombre entier de pixels.** À 96 ppp, 1 pixel vaut 0,75 point : `IGR_LIGNE_H` doit donc être un multiple de 0,75 — 12 ; 12,75 ; 13,5 ; 14,25… Une valeur intermédiaire fait arrondir les positions différemment d'une ligne à l'autre et une ligne sur trois se décale d'un pixel. `simulate_interv.py` le vérifie.
-
-
-### Les tailles de police tombent sur le pixel, elles aussi
-
-Même règle pour le corps des caractères : un corps qui n'est pas un multiple de 0,75 point fait arrondir Windows, et le texte se dessine un peu plus épais que demandé — c'est ce qui se lisait comme du gras dans les lignes du tableau.
-
-| points | pixels | |
-|---|---|---|
-| 8 | 10,67 | bancal |
-| 8,25 | 11 | **juste** |
-| 8,5 | 11,33 | bancal |
-| 9 | 12 | **juste** |
-| 9,5 | 12,67 | bancal |
-| 9,75 | 13 | **juste** |
-| 10,5 | 14 | **juste** |
-
-`simulate_interv.py` signale les tailles bancales de la grille — en remarque, pas en erreur : à l'oeil la différence est mince, et une taille bancale reste parfaitement lisible.
 
 
 ### Colonnes affichées
