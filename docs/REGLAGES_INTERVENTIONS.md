@@ -96,7 +96,45 @@ La somme des largeurs plus `IGR_BARRE_L` (16 pt) doit tenir dans **926 pt**, soi
 
 ---
 
-## 3. Modes d'emploi
+## 3. La typographie, zone par zone
+
+Chaque rôle de libellé a ses quatre caractéristiques dans `modInterv_Theme`, section **TYPOGRAPHIE PAR ZONE**. Pour changer l'aspect d'une zone, tout est là : il n'y a pas à ouvrir le générateur.
+
+| Zone | Fond | Rôle | Famille | Taille | Graisse | Couleur |
+|---|---|---|---|---|---|---|
+| 1 | `lblCarte1` | `Z1Titre` | `POLICE` | `14` | gras | `COUL_BANDEAU` |
+|  |  | `Z1Etat` | `POLICE` | `TAILLE_SOUSTITRE` | maigre | `COUL_TEXTE_DOUX` |
+|  |  | `Z1Annee` | `POLICE` | `20` | gras | `COUL_MODIFIER` |
+| 2 | `lblCarte2` | `Z2Section` | `POLICE` | `TAILLE_SECTION` | gras | `COUL_SECTION` |
+|  |  | `Z2TuileCap` | `POLICE` | `TAILLE_TUILE_CAP` | gras | `COUL_TEXTE_DOUX` |
+|  |  | `Z2TuileVal` | `POLICE` | `TAILLE_STAT` | gras | `COUL_BANDEAU` |
+|  |  | `Z2GraphTitre` | `POLICE` | `TAILLE_FILTRE` | maigre | `COUL_TEXTE_DOUX` |
+|  |  | `Z2GraphAxe` | `POLICE` | `TAILLE_LIBELLE` | maigre | `COUL_TEXTE_DOUX` |
+| 3 | `lblCarte3` | `Z3Section` | `POLICE` | `TAILLE_SECTION` | gras | `COUL_SECTION` |
+|  |  | `Z3Libelle` | `POLICE` | `TAILLE_LIBELLE` | gras | `COUL_TEXTE_DOUX` |
+|  |  | `Z3Chevron` | `POLICE` | `9` | gras | `COUL_BOUTON_TXT` |
+| 4 | `lblCarteFiltreI` | `Z4Libelle` | `POLICE` | `TAILLE_FILTRE` | gras | `COUL_ENTETE_TXT` |
+|  |  | `Z4Lien` | `POLICE` | `TAILLE_FILTRE` | maigre | `COUL_LIEN` |
+|  |  | `Z4Compteur` | `POLICE` | `TAILLE_FILTRE` | maigre | `COUL_TEXTE_DOUX` |
+| 5 | `lblEnteteTableI` | `Z5Entete` | `POLICE_ENTETE` | `TAILLE_GRILLE_ENTETE` | maigre | `COUL_GRILLE_ENTETE` |
+| 6 | `lblG_1_1` … `lblG_17_12` | `Z6Case` | `POLICE` | `TAILLE_GRILLE_TXT` | `GRAS_GRILLE_TXT` | `COUL_GRILLE_TXT` |
+| 7 | `UF_Calendrier` | `Z7Fleche` | `POLICE` | `15` | gras | `COUL_BANDEAU_SOUS` |
+|  |  | `Z7Mois` | `POLICE` | `11` | gras | `COUL_BANDEAU_TXT` |
+|  |  | `Z7JourSem` | `POLICE` | `TAILLE_LIBELLE` | gras | `COUL_TEXTE_DOUX` |
+|  |  | `Z7Jour` | `POLICE` | `TAILLE_CHAMP` | maigre | `COUL_TEXTE` |
+|  |  | `Z7Lien` | `POLICE` | `TAILLE_FILTRE` | maigre | `COUL_LIEN` |
+|  |  | `Z7Annuler` | `POLICE` | `TAILLE_FILTRE` | maigre | `COUL_TEXTE_DOUX` |
+
+Une taille écrite en clair ne vaut que pour cette zone. Une taille **nommée** (`TAILLE_LIBELLE`, `TAILLE_FILTRE`…) vient de `modClients_Theme` et est partagée avec le formulaire des clients : la changer déplace les deux. Pour n'en bouger qu'une, remplacer le nom par un nombre.
+
+Les couleurs, elles, sont nommées à dessein : c'est la palette du classeur, et une teinte doit rester la même partout où elle veut dire la même chose.
+
+> `simulate_interv.py` refuse tout appel qui coderait une taille ou une couleur en dur dans le générateur : c'est ce qui garantit que ce tableau reste la seule source.
+
+
+---
+
+## 4. Modes d'emploi
 
 ### Rendre le texte du tableau plus grand
 

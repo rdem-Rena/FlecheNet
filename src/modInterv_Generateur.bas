@@ -245,13 +245,13 @@ Private Sub ConstruireFiche1(dsg As Object)
     CarteI c
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblTitreGlobal", 30, F1_TOP + 7, 560, 21)
-    Texte c, vbNullString, 14, True, COUL_BANDEAU, MSF_TextAlignLeft
+    Texte c, vbNullString, Z1Titre(), MSF_TextAlignLeft
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblEtatI", 30, F1_TOP + 28, 620, 13)
-    Texte c, vbNullString, TAILLE_SOUSTITRE, False, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+    Texte c, vbNullString, Z1Etat(), MSF_TextAlignLeft
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblAnnee", 700, F1_TOP + 8, 230, 30)
-    Texte c, vbNullString, 20, True, COUL_MODIFIER, MSF_TextAlignRight
+    Texte c, vbNullString, Z1Annee(), MSF_TextAlignRight
 End Sub
 
 '------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ Private Sub ConstruireFiche2(dsg As Object)
     ' large : ce libellé accueille aussi, le cas échéant, la raison pour laquelle
     ' le graphique ne s'affiche pas
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblSectionStats", 30, F2_TOP + 6, 700, 13)
-    Texte c, "STATISTIQUES", TAILLE_SECTION, True, COUL_SECTION, MSF_TextAlignLeft
+    Texte c, "STATISTIQUES", Z2Section(), MSF_TextAlignLeft
 
     ConstruireGraphique dsg, GR_ORIGINE_X, GR_ORIGINE_Y
 
@@ -299,14 +299,13 @@ Private Sub ConstruireFiche2(dsg As Object)
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatCap_" & CStr(i + 1), _
                        x + F2_TUILE_INSET, yCap, _
                        F2_TUILE_LARG - 2 * F2_TUILE_INSET, F2_TUILE_CAP_HAUT)
-        Texte c, UCase$(CStr(tuiles(i)(0))), TAILLE_TUILE_CAP, True, COUL_TEXTE_DOUX, _
-              MSF_TextAlignCenter
+        Texte c, UCase$(CStr(tuiles(i)(0))), Z2TuileCap(), MSF_TextAlignCenter
         FondTuile c
 
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblStatVal_" & CStr(i + 1), _
                        x + F2_TUILE_INSET, yCap + F2_TUILE_CAP_HAUT + F2_TUILE_ECART, _
                        F2_TUILE_LARG - 2 * F2_TUILE_INSET, F2_TUILE_VAL_HAUT)
-        Texte c, vbNullString, TAILLE_STAT, True, COUL_BANDEAU, MSF_TextAlignCenter
+        Texte c, vbNullString, Z2TuileVal(), MSF_TextAlignCenter
         FondTuile c
     Next i
 End Sub
@@ -345,10 +344,10 @@ Private Sub ConstruireGraphique(dsg As Object, ByVal ox As Single, ByVal oy As S
     largeur = F2_GRAPH_LARG - GR_MARGE_G
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrLegende", ox, oy, F2_GRAPH_LARG, GR_LEGENDE_HAUT)
-    Texte c, "Chiffre d'affaires par mois", TAILLE_FILTRE, False, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+    Texte c, "Chiffre d'affaires par mois", Z2GraphTitre(), MSF_TextAlignLeft
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrMax", ox, oy + GR_TRACE_TOP - 5, GR_MARGE_G - 8, 11)
-    Texte c, vbNullString, TAILLE_LIBELLE, False, COUL_TEXTE_DOUX, MSF_TextAlignRight
+    Texte c, vbNullString, Z2GraphAxe(), MSF_TextAlignRight
 
     ' trois repères : le sommet de l'échelle, la moitié, la ligne de base
     For i = 1 To 3
@@ -368,7 +367,7 @@ Private Sub ConstruireGraphique(dsg As Object, ByVal ox As Single, ByVal oy As S
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblGrMois_" & CStr(i), _
                        ox + GR_MARGE_G, oy + GR_TRACE_TOP + GR_TRACE_HAUT + 3, _
                        GR_BARRE_LARG, GR_MOIS_HAUT)
-        Texte c, vbNullString, TAILLE_LIBELLE, False, COUL_TEXTE_DOUX, MSF_TextAlignCenter
+        Texte c, vbNullString, Z2GraphAxe(), MSF_TextAlignCenter
     Next i
 End Sub
 
@@ -383,7 +382,7 @@ Private Sub ConstruireFiche3(dsg As Object)
     CarteI c
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblSectionSaisieI", 30, F3_TOP + 6, 300, 13)
-    Texte c, "FICHE INTERVENTION", TAILLE_SECTION, True, COUL_SECTION, MSF_TextAlignLeft
+    Texte c, "FICHE INTERVENTION", Z3Section(), MSF_TextAlignLeft
 
     ch = ObtenirChampsInterv()
     ordre = 1
@@ -408,7 +407,7 @@ Private Sub ConstruireFiche3(dsg As Object)
             Case_ c, ch(i).Libelle
         Else
             Set c = AjCtrl(dsg, "Forms.Label.1", INomLibelle(ch(i)), x, y, larg, ICH_LBL_HAUT)
-            Texte c, UCase$(ch(i).Libelle), TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+            Texte c, UCase$(ch(i).Libelle), Z3Libelle(), MSF_TextAlignLeft
 
             Select Case ch(i).TypeCtrl
                 Case ITYPE_LISTE, ITYPE_AUTO
@@ -423,7 +422,7 @@ Private Sub ConstruireFiche3(dsg As Object)
                     Zone c, False
                     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalendrier", _
                                    x + larg - 18, y + ICH_LBL_HAUT + 1, 18, haut)
-                    Texte c, ChrW(9662), 9, True, COUL_BOUTON_TXT, MSF_TextAlignCenter
+                    Texte c, ChrW(9662), Z3Chevron(), MSF_TextAlignCenter
                     c.BackStyle = MSF_BackStyleOpaque
                     c.BackColor = COUL_MODIFIER
                     c.ControlTipText = "Ouvrir le calendrier"
@@ -455,7 +454,7 @@ Private Sub ConstruireFiche3(dsg As Object)
     ' il occupe la ligne de libellés que TVA et Forfait laissent vide
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblI_Facturation", IGrilleX(3), IGrilleY(4), _
                    IG_BLOC, ICH_LBL_HAUT)
-    Texte c, "FACTURATION", TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+    Texte c, "FACTURATION", Z3Libelle(), MSF_TextAlignLeft
 End Sub
 
 '------------------------------------------------------------------------------
@@ -470,7 +469,7 @@ Private Sub ConstruireFiltre(dsg As Object)
     y = IF_TOP + 10
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblFiltreTitreI", IFB_TITRE_X, y + 2, 62, 14)
-    Texte c, "Filtrer sur", TAILLE_FILTRE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
+    Texte c, "Filtrer sur", Z4Libelle(), MSF_TextAlignLeft
 
     Set c = AjCtrl(dsg, "Forms.ComboBox.1", "cboChampFiltreI", IFB_CHAMP_X, y, _
                    IFB_CHAMP_L, ICH_CTL_HAUT)
@@ -485,7 +484,7 @@ Private Sub ConstruireFiltre(dsg As Object)
 
     ' --- second filtre, sur le mois de la date --------------------------------
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblMoisFiltreI", IFB_MOIS_LBL_X, y + 2, 28, 14)
-    Texte c, "Mois", TAILLE_FILTRE, True, COUL_ENTETE_TXT, MSF_TextAlignLeft
+    Texte c, "Mois", Z4Libelle(), MSF_TextAlignLeft
 
     Set c = AjCtrl(dsg, "Forms.ComboBox.1", "cboMoisI", IFB_MOIS_X, y, _
                    IFB_MOIS_L, ICH_CTL_HAUT)
@@ -494,13 +493,13 @@ Private Sub ConstruireFiltre(dsg As Object)
     c.ControlTipText = "N'afficher que les interventions d'un mois"
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblResetFiltreI", IFB_RESET_X, y + 2, 80, 14)
-    Texte c, "Réinitialiser", TAILLE_FILTRE, False, COUL_LIEN, MSF_TextAlignLeft
+    Texte c, "Réinitialiser", Z4Lien(), MSF_TextAlignLeft
     c.ControlTipText = "Effacer les deux filtres et réafficher toutes les interventions"
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCompteurI", _
                    I_MARGE + I_CARTE_LARG - F2_PADDING - IFB_COMPTEUR_L, y + 2, _
                    IFB_COMPTEUR_L, 14)
-    Texte c, vbNullString, TAILLE_FILTRE, False, COUL_TEXTE_DOUX, MSF_TextAlignRight
+    Texte c, vbNullString, Z4Compteur(), MSF_TextAlignRight
 End Sub
 
 '------------------------------------------------------------------------------
@@ -539,8 +538,7 @@ Private Sub ConstruireFiche4(dsg As Object)
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblEntI_" & CStr(i + 1), _
                        AuPixel(x), AuPixel(IT_TOP + 5), _
                        AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
-        Texte c, CStr(lib(i)), TAILLE_GRILLE_ENTETE, False, COUL_GRILLE_ENTETE, _
-              CLng(ali(i)), POLICE_ENTETE
+        Texte c, CStr(lib(i)), Z5Entete(), CLng(ali(i))
         c.ControlTipText = "Cliquez pour trier sur cette colonne"
         x = x + CSng(larg(i))
     Next i
@@ -573,12 +571,10 @@ Private Sub ConstruireFiche4(dsg As Object)
             .BorderStyle = MSF_BorderStyleNone
             .BackStyle = MSF_BackStyleOpaque
             .BackColor = COUL_CARTE
-            ' La bande ne montre aucun texte, mais elle fait partie du tableau :
-            ' elle en porte donc la police, et non le gras du formulaire.
-            .Font.Name = POLICE
-            .Font.Size = TAILLE_GRILLE_TXT
-            .Font.Bold = GRAS_GRILLE_TXT
         End With
+        ' La bande ne montre aucun texte, mais elle fait partie du tableau :
+        ' elle porte donc le style de la zone 6, et non le gras du formulaire.
+        PoserStyle c, Z6Case()
 
         x = gauche + IGR_PAD_X
         For i = 0 To nbCol - 1
@@ -586,8 +582,7 @@ Private Sub ConstruireFiche4(dsg As Object)
                            "lblG_" & CStr(r) & "_" & CStr(i + 1), _
                            AuPixel(x), AuPixel(y), _
                            AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
-            Texte c, vbNullString, TAILLE_GRILLE_TXT, GRAS_GRILLE_TXT, COUL_GRILLE_TXT, _
-                  CLng(ali(i))
+            Texte c, vbNullString, Z6Case(), CLng(ali(i))
             x = x + CSng(larg(i))
         Next i
     Next r
@@ -678,21 +673,21 @@ Private Function ConstruireCalendrier(vbProj As Object) As Long
     Fond c, COUL_BANDEAU, COUL_BANDEAU
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalPrec", 10, 10, 24, 22)
-    Texte c, ChrW(8249), 15, True, COUL_BANDEAU_SOUS, MSF_TextAlignCenter
+    Texte c, ChrW(8249), Z7Fleche(), MSF_TextAlignCenter
     c.ControlTipText = "Mois précédent"
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalMois", 40, 11, 180, 19)
-    Texte c, vbNullString, 11, True, COUL_BANDEAU_TXT, MSF_TextAlignCenter
+    Texte c, vbNullString, Z7Mois(), MSF_TextAlignCenter
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalSuiv", CAL_LARGEUR - 34, 10, 24, 22)
-    Texte c, ChrW(8250), 15, True, COUL_BANDEAU_SOUS, MSF_TextAlignCenter
+    Texte c, ChrW(8250), Z7Fleche(), MSF_TextAlignCenter
     c.ControlTipText = "Mois suivant"
 
     ' --- en-têtes des jours ---------------------------------------------------
     For i = 0 To 6
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblJS_" & CStr(i + 1), _
                        CAL_GRILLE_X + i * CAL_JOUR_LARG, CAL_ENTETES_Y, CAL_JOUR_LARG, 13)
-        Texte c, vbNullString, TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignCenter
+        Texte c, vbNullString, Z7JourSem(), MSF_TextAlignCenter
     Next i
 
     ' --- colonnes du week-end, teintées derrière la grille --------------------
@@ -710,21 +705,21 @@ Private Function ConstruireCalendrier(vbProj As Object) As Long
         Set c = AjCtrl(dsg, "Forms.Label.1", "lblJ_" & CStr(i), _
                        CAL_GRILLE_X + col * CAL_JOUR_LARG, _
                        CAL_GRILLE_Y + lig * CAL_JOUR_HAUT, CAL_JOUR_LARG, CAL_JOUR_HAUT)
-        Texte c, vbNullString, TAILLE_CHAMP, False, COUL_TEXTE, MSF_TextAlignCenter
+        Texte c, vbNullString, Z7Jour(), MSF_TextAlignCenter
     Next i
 
     ' --- raccourcis du bas ----------------------------------------------------
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalAujourdhui", CAL_GRILLE_X, CAL_PIED_Y, 92, 14)
-    Texte c, "Aujourd'hui", TAILLE_FILTRE, False, COUL_LIEN, MSF_TextAlignLeft
+    Texte c, "Aujourd'hui", Z7Lien(), MSF_TextAlignLeft
     c.ControlTipText = "Revenir au mois en cours"
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalFinMois", CAL_GRILLE_X + 97, CAL_PIED_Y, 80, 14)
-    Texte c, "Fin de mois", TAILLE_FILTRE, False, COUL_LIEN, MSF_TextAlignLeft
+    Texte c, "Fin de mois", Z7Lien(), MSF_TextAlignLeft
     c.ControlTipText = "Choisir le dernier jour du mois affiché"
 
     Set c = AjCtrl(dsg, "Forms.Label.1", "lblCalAnnuler", CAL_LARGEUR - CAL_GRILLE_X - 57, _
                    CAL_PIED_Y, 57, 14)
-    Texte c, "Annuler", TAILLE_FILTRE, False, COUL_TEXTE_DOUX, MSF_TextAlignRight
+    Texte c, "Annuler", Z7Annuler(), MSF_TextAlignRight
 
     ReculerFonds dsg, Array("lblCalWE_1", "lblCalWE_2", "lblCalBandeau")
 
@@ -799,22 +794,32 @@ End Sub
 ' Habille un libellé : texte, taille, graisse, couleur, alignement.
 ' Le fond est transparent pour laisser voir la carte au-dessous.
 '------------------------------------------------------------------------------
-Private Sub Texte(c As Object, ByVal texte As String, ByVal taille As Single, _
-                  ByVal gras As Boolean, ByVal couleur As Long, ByVal alignement As Long, _
-                  Optional ByVal police As String = vbNullString)
+Private Sub Texte(c As Object, ByVal texte As String, ByRef st As StyleTexte, _
+                  ByVal alignement As Long)
     c.Caption = texte
     c.BackStyle = MSF_BackStyleTransparent
     c.SpecialEffect = MSF_SpecialEffectFlat
     c.BorderStyle = MSF_BorderStyleNone
-    c.ForeColor = couleur
     c.TextAlign = alignement
     c.WordWrap = False
     c.AutoSize = False
-    ' Le nom de FAMILLE en premier : la changer après coup remet la taille et la
-    ' graisse aux valeurs par défaut de la nouvelle police.
-    c.Font.Name = IIf(Len(police) > 0, police, POLICE)
-    c.Font.Size = taille
-    c.Font.Bold = gras
+    PoserStyle c, st
+End Sub
+
+'------------------------------------------------------------------------------
+' Pose les quatre caractéristiques d'un style sur un contrôle.
+'
+' Le nom de FAMILLE en premier : la changer après coup remettrait la taille et
+' la graisse aux valeurs par défaut de la nouvelle police.
+'
+' Séparée de Texte pour servir aussi aux contrôles sans légende — les bandes de
+' fond de la grille — qui portent la police de leur zone sans rien afficher.
+'------------------------------------------------------------------------------
+Private Sub PoserStyle(c As Object, ByRef st As StyleTexte)
+    c.ForeColor = st.Couleur
+    c.Font.Name = st.Police
+    c.Font.Size = st.Taille
+    c.Font.Bold = st.Gras
 End Sub
 
 '------------------------------------------------------------------------------

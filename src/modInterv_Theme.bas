@@ -13,6 +13,16 @@ Option Explicit
 ' modClients_Theme doit être présent dans le projet pour que ce module compile.
 '==============================================================================
 
+'--- Les quatre caractéristiques d'un texte -----------------------------------
+' Réunies dans un seul objet, elles se posent d'un bloc : impossible d'en
+' changer une en oubliant les autres. Voir la TYPOGRAPHIE PAR ZONE, tout en bas.
+Public Type StyleTexte
+    Police As String
+    Taille As Single
+    Gras As Boolean
+    Couleur As Long
+End Type
+
 '--- Couleurs propres à ce formulaire -----------------------------------------
 ' Les deux boutons qui ouvrent un autre formulaire ont leur teinte à eux, pour
 ' se distinguer du groupe de saisie. Notation &HBBGGRR&, comme dans
@@ -344,4 +354,126 @@ Public Function ICouleurBouton(ByVal nomBouton As String, ByVal survol As Boolea
         Case "btnInfo":       ICouleurBouton = IIf(survol, COUL_INFO_H, COUL_INFO)
         Case Else:            ICouleurBouton = IIf(survol, COUL_EFFACER_H, COUL_EFFACER)
     End Select
+End Function
+
+'==============================================================================
+' TYPOGRAPHIE PAR ZONE
+'------------------------------------------------------------------------------
+' Une zone = une carte du formulaire, désignée par son fond. Chaque rôle de
+' libellé qui s'y trouve a sa ligne, et cette ligne porte les quatre
+' caractéristiques du texte : famille, taille, graisse, couleur.
+'
+'   Zone 1   lblCarte1         l'intitulé global
+'   Zone 2   lblCarte2         les statistiques et le graphique
+'   Zone 3   lblCarte3         la fiche intervention
+'   Zone 4   lblCarteFiltreI   la barre de filtrage
+'   Zone 5   lblEnteteTableI   la ligne d'en-tête du tableau
+'   Zone 6   lblG_1_1 … lblG_17_12   l'intérieur du tableau
+'   Zone 7   UF_Calendrier     le sélecteur de date, autre formulaire
+'
+' POUR CHANGER L'ASPECT D'UNE ZONE, tout est ici : il n'y a pas à ouvrir le
+' générateur. Une taille écrite en clair ne vaut que pour cette zone ; une
+' taille nommée (TAILLE_LIBELLE…) est partagée avec le formulaire des clients,
+' et la changer déplace les deux — pour n'en bouger qu'une, remplacer le nom
+' par un nombre.
+'
+' Les COULEURS, elles, sont nommées à dessein : c'est la palette du classeur,
+' et une teinte doit rester la même partout où elle veut dire la même chose.
+'==============================================================================
+
+'--- Zone 1 : lblCarte1, l'intitulé global ------------------------------------
+Public Function Z1Titre() As StyleTexte
+    Z1Titre = Style(POLICE, 14, True, COUL_BANDEAU)
+End Function
+Public Function Z1Etat() As StyleTexte
+    Z1Etat = Style(POLICE, TAILLE_SOUSTITRE, False, COUL_TEXTE_DOUX)
+End Function
+Public Function Z1Annee() As StyleTexte
+    Z1Annee = Style(POLICE, 20, True, COUL_MODIFIER)
+End Function
+
+'--- Zone 2 : lblCarte2, statistiques et graphique ----------------------------
+Public Function Z2Section() As StyleTexte
+    Z2Section = Style(POLICE, TAILLE_SECTION, True, COUL_SECTION)
+End Function
+Public Function Z2TuileCap() As StyleTexte
+    Z2TuileCap = Style(POLICE, TAILLE_TUILE_CAP, True, COUL_TEXTE_DOUX)
+End Function
+Public Function Z2TuileVal() As StyleTexte
+    Z2TuileVal = Style(POLICE, TAILLE_STAT, True, COUL_BANDEAU)
+End Function
+Public Function Z2GraphTitre() As StyleTexte
+    Z2GraphTitre = Style(POLICE, TAILLE_FILTRE, False, COUL_TEXTE_DOUX)
+End Function
+Public Function Z2GraphAxe() As StyleTexte
+    Z2GraphAxe = Style(POLICE, TAILLE_LIBELLE, False, COUL_TEXTE_DOUX)
+End Function
+
+'--- Zone 3 : lblCarte3, la fiche intervention --------------------------------
+Public Function Z3Section() As StyleTexte
+    Z3Section = Style(POLICE, TAILLE_SECTION, True, COUL_SECTION)
+End Function
+Public Function Z3Libelle() As StyleTexte
+    Z3Libelle = Style(POLICE, TAILLE_LIBELLE, True, COUL_TEXTE_DOUX)
+End Function
+Public Function Z3Chevron() As StyleTexte
+    Z3Chevron = Style(POLICE, 9, True, COUL_BOUTON_TXT)
+End Function
+
+'--- Zone 4 : lblCarteFiltreI, la barre de filtrage ---------------------------
+Public Function Z4Libelle() As StyleTexte
+    Z4Libelle = Style(POLICE, TAILLE_FILTRE, True, COUL_ENTETE_TXT)
+End Function
+Public Function Z4Lien() As StyleTexte
+    Z4Lien = Style(POLICE, TAILLE_FILTRE, False, COUL_LIEN)
+End Function
+Public Function Z4Compteur() As StyleTexte
+    Z4Compteur = Style(POLICE, TAILLE_FILTRE, False, COUL_TEXTE_DOUX)
+End Function
+
+'--- Zone 5 : lblEnteteTableI, l'en-tête du tableau ---------------------------
+' Maigre, mais dans une famille demi-grasse : MSForms ne connaît que gras ou
+' pas gras, c'est donc la FAMILLE qui porte la graisse intermédiaire.
+Public Function Z5Entete() As StyleTexte
+    Z5Entete = Style(POLICE_ENTETE, TAILLE_GRILLE_ENTETE, False, COUL_GRILLE_ENTETE)
+End Function
+
+'--- Zone 6 : lblG_1_1 … lblG_17_12, l'intérieur du tableau -------------------
+' Les 204 cases partagent ce seul style, et les bandes de fond des lignes le
+' portent aussi. C'est l'exception au défaut du formulaire : neuf points
+' maigres là où le reste est en huit points gras.
+Public Function Z6Case() As StyleTexte
+    Z6Case = Style(POLICE, TAILLE_GRILLE_TXT, GRAS_GRILLE_TXT, COUL_GRILLE_TXT)
+End Function
+
+'--- Zone 7 : UF_Calendrier ---------------------------------------------------
+Public Function Z7Fleche() As StyleTexte
+    Z7Fleche = Style(POLICE, 15, True, COUL_BANDEAU_SOUS)
+End Function
+Public Function Z7Mois() As StyleTexte
+    Z7Mois = Style(POLICE, 11, True, COUL_BANDEAU_TXT)
+End Function
+Public Function Z7JourSem() As StyleTexte
+    Z7JourSem = Style(POLICE, TAILLE_LIBELLE, True, COUL_TEXTE_DOUX)
+End Function
+Public Function Z7Jour() As StyleTexte
+    Z7Jour = Style(POLICE, TAILLE_CHAMP, False, COUL_TEXTE)
+End Function
+Public Function Z7Lien() As StyleTexte
+    Z7Lien = Style(POLICE, TAILLE_FILTRE, False, COUL_LIEN)
+End Function
+Public Function Z7Annuler() As StyleTexte
+    Z7Annuler = Style(POLICE, TAILLE_FILTRE, False, COUL_TEXTE_DOUX)
+End Function
+
+'------------------------------------------------------------------------------
+' Assemble les quatre caractéristiques. Un Const ne conviendrait pas : il ne
+' peut porter qu'une valeur simple, et il faudrait quatre noms par rôle.
+'------------------------------------------------------------------------------
+Private Function Style(ByVal police As String, ByVal taille As Single, _
+                       ByVal gras As Boolean, ByVal couleur As Long) As StyleTexte
+    Style.Police = police
+    Style.Taille = taille
+    Style.Gras = gras
+    Style.Couleur = couleur
 End Function
