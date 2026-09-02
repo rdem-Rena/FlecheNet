@@ -797,9 +797,7 @@ End Function
 '------------------------------------------------------------------------------
 Private Sub PoliceParDefaut(dsg As Object)
     On Error Resume Next
-    dsg.Font.Name = POLICE
-    dsg.Font.Size = TAILLE_DEFAUT
-    dsg.Font.Bold = GRAS_DEFAUT
+    PoserPolice dsg, POLICE, TAILLE_DEFAUT, GRAS_DEFAUT
     On Error GoTo 0
 End Sub
 
@@ -892,9 +890,41 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub PoserStyle(c As Object, ByRef st As StyleTexte)
     c.ForeColor = st.Couleur
-    c.Font.Name = st.Police
-    c.Font.Size = st.Taille
-    c.Font.Bold = st.Gras
+    PoserPolice c, st.Police, st.Taille, st.Gras
+End Sub
+
+'------------------------------------------------------------------------------
+' Pose une police sur un contrôle. LE SEUL ENDROIT qui écrive dans c.Font.
+'
+' L'ORDRE EST LA RAISON D'ÊTRE DE CETTE PROCÉDURE, et il n'est pas celui qu'on
+' écrirait spontanément.
+'
+'   1. la FAMILLE d'abord : en changer remet le reste aux valeurs par défaut
+'      de la nouvelle police ;
+'   2. la GRAISSE ensuite, jamais après la taille ;
+'   3. le POIDS, qui est la même chose vue de plus bas — 400 maigre, 700 gras.
+'      Certaines versions ne reprennent que celui-là ; on pose les deux ;
+'   4. la TAILLE en DERNIER.
+'
+' Pourquoi la taille en dernier : MSForms recrée la police en pixels entiers au
+' moment où on lui donne un corps. Demander 8 points en rend 8,25, soit onze
+' pixels tout ronds — on le voit dans le diagnostic. Cette recréation emporte
+' la graisse posée APRÈS elle : c'est pour cela que les zones de saisie
+' restaient en gras alors que Font.Bold = False était bien exécuté, et que ni
+' l'override ni le changement du défaut du formulaire n'y ont rien changé.
+'
+' Le poids est posé sous On Error Resume Next : toutes les versions de MSForms
+' n'exposent pas Weight, et son absence ne doit pas faire échouer la
+' génération — la graisse aura déjà été posée à la ligne précédente.
+'------------------------------------------------------------------------------
+Private Sub PoserPolice(c As Object, ByVal police As String, _
+                        ByVal taille As Single, ByVal gras As Boolean)
+    c.Font.Name = police
+    c.Font.Bold = gras
+    On Error Resume Next
+    c.Font.Weight = IIf(gras, 700, 400)
+    On Error GoTo 0
+    c.Font.Size = taille
 End Sub
 
 '------------------------------------------------------------------------------
@@ -902,13 +932,10 @@ End Sub
 ' programme : il reste lisible et son contenu copiable.
 '------------------------------------------------------------------------------
 Private Sub Zone(c As Object, ByVal verrouille As Boolean)
-    c.Font.Name = POLICE
-    c.Font.Size = TAILLE_CHAMP
+    PoserPolice c, POLICE, TAILLE_CHAMP, False
     ' GRAISSE POSÉE EXPLICITEMENT, jamais héritée du formulaire. Elle ne suffit
     ' pourtant pas à elle seule : MSForms ne reprend pas toujours une graisse
     ' remise à False sur un contrôle créé par le concepteur, et c'est pour cela
-    ' que GRAS_DEFAUT vaut désormais False — voir modInterv_Theme.
-    c.Font.Bold = False
     c.SpecialEffect = MSF_SpecialEffectFlat
     c.BorderStyle = MSF_BorderStyleSingle
     c.BorderColor = COUL_CHAMP_BORD
@@ -932,10 +959,7 @@ End Sub
 '             correspondre à aucun client existant.
 '------------------------------------------------------------------------------
 Private Sub Liste(c As Object, ByVal filtree As Boolean)
-    c.Font.Name = POLICE
-    c.Font.Size = TAILLE_CHAMP
-    ' Comme pour Zone : la graisse est posée, jamais héritée du formulaire.
-    c.Font.Bold = False
+    PoserPolice c, POLICE, TAILLE_CHAMP, False
     c.SpecialEffect = MSF_SpecialEffectFlat
     c.BorderStyle = MSF_BorderStyleSingle
     c.BorderColor = COUL_CHAMP_BORD
@@ -953,12 +977,10 @@ End Sub
 ' à distinguer d'un simple libellé.
 '------------------------------------------------------------------------------
 Private Sub Case_(c As Object, ByVal libelle As String)
+    PoserPolice c, POLICE, TAILLE_FILTRE, False
     c.Caption = libelle
     c.BackStyle = MSF_BackStyleTransparent
     c.ForeColor = COUL_TEXTE
-    c.Font.Name = POLICE
-    c.Font.Size = TAILLE_FILTRE
-    c.Font.Bold = False
     c.WordWrap = False
 End Sub
 
@@ -967,14 +989,12 @@ End Sub
 ' soulignée et rang de tabulation.
 '------------------------------------------------------------------------------
 Private Sub Bouton_(c As Object, ByVal libelle As String, ByVal raccourci As String, _
+    PoserPolice c, POLICE, TAILLE_BOUTON, True
                     ByVal couleur As Long, ByVal ordre As Long)
     c.Caption = libelle
     c.Accelerator = raccourci
     c.BackColor = couleur
     c.ForeColor = COUL_BOUTON_TXT
-    c.Font.Name = POLICE
-    c.Font.Size = TAILLE_BOUTON
-    c.Font.Bold = True
     c.TabIndex = ordre
 End Sub
 
