@@ -448,7 +448,7 @@ End Sub
 Private Sub ConstruireFiche3(dsg As Object)
     Dim c As Object, ch() As ChampInterv, i As Long
     Dim x As Single, y As Single, larg As Single, haut As Single, ordre As Long
-    Dim zone As Object, ox As Single, oy As Single
+    Dim zone As Object, ox As Single, oy As Single, cDate As Object
 
     If F3_EN_CADRE Then
         Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte3(), _
@@ -471,6 +471,9 @@ Private Sub ConstruireFiche3(dsg As Object)
     ordre = 1
 
     For i = LBound(ch) To UBound(ch)
+        ' l'étape nomme le champ : une erreur MSForms ne dit jamais sur quel
+        ' contrôle elle s'est produite
+        mEtape = "fiche 3 (saisie), champ " & ch(i).Colonne
         x = IGrilleX(ch(i).Col) - ox
         y = IGrilleY(ch(i).Ligne) - oy
         larg = ILargeurBlocs(ch(i).Blocs)
@@ -499,17 +502,28 @@ Private Sub ConstruireFiche3(dsg As Object)
                     Liste c, (ch(i).TypeCtrl = ITYPE_AUTO)
 
                 Case ITYPE_DATE
-                    ' la zone de date laisse la place au bouton du calendrier
-                    Set c = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
-                                   x, y + ICH_LBL_HAUT + 1, larg - 20, haut)
-                    Zone c, False
+                    ' La zone de date laisse la place au bouton du calendrier.
+                    '
+                    ' Elle est MISE DE CÔTÉ dans cDate, et non rappelée par son
+                    ' nom après coup : zone.Controls("...") interrogeait la
+                    ' collection d'un CADRE, ce que le concepteur ne gère pas
+                    ' toujours — d'où une erreur 438 à la génération. Garder
+                    ' l'objet évite la question, et c'était de toute façon un
+                    ' détour : on venait de le créer.
+                    Set cDate = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
+                                       x, y + ICH_LBL_HAUT + 1, larg - 20, haut)
+                    Zone cDate, False
+
                     Set c = AjCtrl(zone, "Forms.Label.1", "lblCalendrier", _
                                    x + larg - 18, y + ICH_LBL_HAUT + 1, 18, haut)
                     Texte c, ChrW(9662), Z3Chevron(), MSF_TextAlignCenter
                     c.BackStyle = MSF_BackStyleOpaque
                     c.BackColor = COUL_MODIFIER
                     c.ControlTipText = "Ouvrir le calendrier"
-                    Set c = zone.Controls(INomControle(ch(i)))
+
+                    ' la suite du tour porte sur la zone de date, pas sur le
+                    ' chevron : c'est elle qui reçoit l'aide et le tabulateur
+                    Set c = cDate
 
                 Case Else
                     Set c = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
