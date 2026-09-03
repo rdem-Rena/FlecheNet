@@ -1222,7 +1222,7 @@ Public Sub Interv_Fermeture(f As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Facturer ouvre UF_Facture ; le formulaire d'information reste à définir.
+' Facturer ouvre UF_Facture, Info ouvre UF_Statistiques.
 '
 ' La facturation se fait par CLIENT et non par intervention : le formulaire
 ' ouvert dresse lui-même la liste de ce qui reste à facturer, sans rien
@@ -1237,9 +1237,7 @@ End Sub
 ' Bouton Info : le formulaire d'informations reste à définir.
 '------------------------------------------------------------------------------
 Public Sub Interv_Info(f As Object)
-    MsgBox "Le formulaire d'informations reste à définir." & vbCrLf & vbCrLf & _
-           "Point de branchement : modInterv_Formulaire.Interv_Info.", _
-           vbInformation, "Info"
+    OuvrirStatistiques
 End Sub
 
 '==============================================================================
