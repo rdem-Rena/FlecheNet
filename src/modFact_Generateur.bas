@@ -111,7 +111,8 @@ Private Sub ConstruireZone1(dsg As Object)
 
     Set zone = AjF(dsg, "Forms.Frame.1", "fraFCarte1", _
                    FA_MARGE, FA_Z1_TOP, FA_CARTE_LARG, FA_Z1_HAUT)
-    BandeauCarteF zone
+    CadreF zone
+        EnBandeauF zone
 
     Set c = AjF(zone, "Forms.Label.1", "lblFTitre", 14, 12, 620, 21)
     TexteF c, "Liste des clients non encore facturés", ZF1Titre(), MSF_TextAlignLeft
@@ -377,14 +378,18 @@ Private Sub CadreF(c As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Le BANDEAU SUPÉRIEUR : même carte, mais en aplat bleu foncé.
+' Le BANDEAU SUPÉRIEUR : la carte de la zone 1, en aplat bleu foncé.
 '
-' Les quatre formulaires du classeur portent le même, celui de la gestion des
-' clients. Seule la couleur change ici ; le titre, la ligne d'état et l'année
-' prennent leurs styles du bandeau commun, dans modInterv_Theme.
+' NE POSE QUE LA COULEUR, et n'appelle aucun habilleur. Elle en appelait un,
+' celui des CADRES, y compris quand la carte était un libellé : ce dernier n'a
+' pas de barres de défilement, et MSForms répondait « propriété non gérée par
+' cet objet ». L'appelant choisit désormais son habilleur, puis recolore.
+'
+' Les quatre formulaires du classeur portent le même bandeau, celui de la
+' gestion des clients ; le titre, la ligne d'état et l'année prennent leurs
+' styles du bandeau commun, dans modInterv_Theme.
 '------------------------------------------------------------------------------
-Private Sub BandeauCarteF(c As Object)
-    CadreF c
+Private Sub EnBandeauF(c As Object)
     c.BackColor = COUL_BANDEAU
     c.BorderColor = COUL_BANDEAU
 End Sub

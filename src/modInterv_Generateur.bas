@@ -35,6 +35,11 @@ Private Const SIG_SOURIS As String = "(ByVal Button As Integer, ByVal Shift As I
 
 Private mCode As String
 
+' L'ÉTAPE EN COURS, pour que le message d'erreur dise OÙ la génération a
+' échoué. Une erreur MSForms ne nomme jamais le contrôle fautif : sans cela,
+' « propriété non gérée par cet objet » laisse chercher dans mille lignes.
+Private mEtape As String
+
 '==============================================================================
 ' POINT D'ENTRÉE
 '==============================================================================
@@ -95,6 +100,7 @@ Erreur:
     Else
         MsgBox "La génération a échoué :" & vbCrLf & vbCrLf & _
                Err.Number & " - " & Err.Description & vbCrLf & vbCrLf & _
+               IIf(Len(mEtape) > 0, "Étape : " & mEtape & vbCrLf & vbCrLf, "") & _
                "Si le problème persiste : fermez puis rouvrez le classeur, lancez " & _
                "NettoyerFormulairesOrphelins, et relancez la génération.", _
                vbCritical, "Génération du formulaire"
@@ -235,12 +241,19 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     PropForm vbComp, "ShowModal", True
     PoliceParDefaut dsg
 
+    mEtape = "fiche 1 (intitulé)"
     ConstruireFiche1 dsg
+    mEtape = "fiche 2 (statistiques)"
     ConstruireFiche2 dsg
+    mEtape = "fiche 3 (saisie)"
     ConstruireFiche3 dsg
+    mEtape = "barre de filtrage"
     ConstruireFiltre dsg
+    mEtape = "fiche 4 (tableau)"
     ConstruireFiche4 dsg
+    mEtape = "boutons"
     ConstruireBoutonsInterv dsg
+    mEtape = "ordre de plan"
     ' Un cadre n'a rien à faire ici : ses enfants sont devant lui par
     ' construction. Les deux premières cartes y figurent tout de même, sous le
     ' nom que leur donne le thème — inoffensif pour un cadre, indispensable
@@ -248,7 +261,9 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     ReculerFonds dsg, Array("lblEnteteTableI", "lblCarte4", NomCarteFiltre(), _
                             NomCarte3(), NomCarte2(), NomCarte1())
 
+    mEtape = "module de code"
     vbComp.CodeModule.AddFromString CodeFormulairePrincipal()
+    mEtape = vbNullString
     ConstruireFormulairePrincipal = dsg.Controls.Count
 End Function
 
@@ -271,13 +286,15 @@ Private Sub ConstruireFiche1(dsg As Object)
     If F1_EN_CADRE Then
         Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte1(), _
                           I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
-        BandeauCarteI zone
+        CadreI zone
+        EnBandeauI zone
         ox = I_MARGE
         oy = F1_TOP
     Else
         Set c = AjCtrl(dsg, "Forms.Label.1", NomCarte1(), _
                        I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
-        BandeauCarteI c
+        CarteI c
+        EnBandeauI c
         Set zone = dsg
     End If
 
@@ -734,6 +751,7 @@ Private Function ConstruireCalendrier(vbProj As Object) As Long
     Dim vbComp As Object, dsg As Object, c As Object, i As Long
     Dim col As Long, lig As Long
 
+    mEtape = "calendrier"
     Set vbComp = PreparerForm(vbProj, NOM_FORM_CALENDRIER)
     Set dsg = vbComp.Designer
 
@@ -882,14 +900,18 @@ Private Sub CadreI(c As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Le BANDEAU SUPÉRIEUR : même carte, mais en aplat bleu foncé.
+' Le BANDEAU SUPÉRIEUR : la carte de la zone 1, en aplat bleu foncé.
 '
-' Les quatre formulaires du classeur portent le même, celui de la gestion des
-' clients. Seule la couleur change ici ; le titre, la ligne d'état et l'année
-' prennent leurs styles du bandeau commun, dans modInterv_Theme.
+' NE POSE QUE LA COULEUR, et n'appelle aucun habilleur. Elle en appelait un,
+' celui des CADRES, y compris quand la carte était un libellé : ce dernier n'a
+' pas de barres de défilement, et MSForms répondait « propriété non gérée par
+' cet objet ». L'appelant choisit désormais son habilleur, puis recolore.
+'
+' Les quatre formulaires du classeur portent le même bandeau, celui de la
+' gestion des clients ; le titre, la ligne d'état et l'année prennent leurs
+' styles du bandeau commun, dans modInterv_Theme.
 '------------------------------------------------------------------------------
-Private Sub BandeauCarteI(c As Object)
-    CadreI c
+Private Sub EnBandeauI(c As Object)
     c.BackColor = COUL_BANDEAU
     c.BorderColor = COUL_BANDEAU
 End Sub
