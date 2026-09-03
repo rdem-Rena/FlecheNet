@@ -37,15 +37,21 @@ Public Const ST_Z3_HAUT As Single = 132
 Public Const ST_GR_X As Single = 24             ' origine du graphique DANS son cadre
 Public Const ST_GR_Y As Single = 8
 
+' Largeur PROPRE à ce graphique, et non F2_GRAPH_LARG : celui du formulaire des
+' interventions partage une carte avec six tuiles et n'a que 518 points ; ici la
+' carte lui est presque entière, autant qu'il en profite.
+Public Const ST_GR_LARG As Single = 640
+
 ' La barre de progression, à droite du graphique. Verticale : elle se remplit
 ' du bas vers le haut, comme un thermomètre.
-Public Const ST_OBJ_X As Single = 640
+Public Const ST_OBJ_X As Single = 690
 Public Const ST_OBJ_LARG As Single = 54
 Public Const ST_OBJ_TOP As Single = 24
 Public Const ST_OBJ_HAUT As Single = 84
-' Le libellé et les montants tiennent à droite de la cuve : 640 + 54 + 12 + 180
-' = 886, sous les 926 points utiles de la carte.
-Public Const ST_OBJ_TXT_L As Single = 180
+' Le libellé et les montants tiennent à droite de la cuve : 690 + 54 + 12 + 160
+' = 916, sous les 926 points utiles de la carte. Le graphique s'arrête à 664,
+' ce qui laisse 26 points entre les deux.
+Public Const ST_OBJ_TXT_L As Single = 160
 
 '--- Zone 4 : la barre de filtrage --------------------------------------------
 Public Const ST_Z4_TOP As Single = 282
@@ -54,23 +60,26 @@ Public Const ST_CTL_HAUT As Single = 18
 
 ' Abscisses des sept filtres, dans leur cadre. Tout tient sur une ligne.
 Public Const ST_F_MOIS_LBL As Single = 14
-Public Const ST_F_MOIS As Single = 48
-Public Const ST_F_MOIS_L As Single = 104
-Public Const ST_F_ENT_LBL As Single = 164
-Public Const ST_F_ENT As Single = 228
-Public Const ST_F_ENT_L As Single = 130
-Public Const ST_F_NOM_LBL As Single = 368
-Public Const ST_F_NOM As Single = 404
-Public Const ST_F_NOM_L As Single = 110
-Public Const ST_F_TVA As Single = 524
-Public Const ST_F_TVA_L As Single = 52
-Public Const ST_F_FORF As Single = 580
-Public Const ST_F_FORF_L As Single = 62
-Public Const ST_F_FACT As Single = 646
-Public Const ST_F_FACT_L As Single = 70
-Public Const ST_F_NUM_LBL As Single = 722
-Public Const ST_F_NUM As Single = 800
-Public Const ST_F_NUM_L As Single = 114
+Public Const ST_F_MOIS As Single = 46
+Public Const ST_F_MOIS_L As Single = 92
+Public Const ST_F_ENT_LBL As Single = 144
+Public Const ST_F_ENT As Single = 204
+Public Const ST_F_ENT_L As Single = 110
+Public Const ST_F_NOM_LBL As Single = 320
+Public Const ST_F_NOM As Single = 354
+Public Const ST_F_NOM_L As Single = 92
+Public Const ST_F_TVA As Single = 452
+Public Const ST_F_TVA_L As Single = 48
+Public Const ST_F_FORF As Single = 504
+Public Const ST_F_FORF_L As Single = 58
+Public Const ST_F_FACT As Single = 566
+Public Const ST_F_FACT_L As Single = 66
+' Le bouton de remise à zéro, entre « Facturé » et « N° facture ».
+Public Const ST_F_RAZ As Single = 638
+Public Const ST_F_RAZ_L As Single = 80
+Public Const ST_F_NUM_LBL As Single = 724
+Public Const ST_F_NUM As Single = 792
+Public Const ST_F_NUM_L As Single = 96
 
 '--- Zone 5 : le tableau ------------------------------------------------------
 Public Const ST_Z5_TOP As Single = 330

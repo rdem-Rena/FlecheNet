@@ -99,6 +99,39 @@ Public Sub Stat_Quitter(f As Object)
 End Sub
 
 '==============================================================================
+' REMETTRE LES FILTRES DANS LEUR ÉTAT D'ORIGINE
+'------------------------------------------------------------------------------
+' Les sept d'un coup, et un seul recalcul à la fin : mChargement l'empêche de
+' se déclencher sept fois pendant qu'on vide les contrôles.
+'==============================================================================
+Public Sub Stat_Reinitialiser(f As Object)
+    Dim c As Object, i As Long
+    Dim vides As Variant, cases As Variant
+
+    mChargement = True
+
+    Set c = SCtl(f, "cboSMois")
+    If Not c Is Nothing Then c.ListIndex = 0
+
+    vides = Array("txtSEntreprise", "txtSNom", "txtSNoFacture")
+    For i = LBound(vides) To UBound(vides)
+        Set c = SCtl(f, CStr(vides(i)))
+        If Not c Is Nothing Then c.Text = vbNullString
+    Next i
+
+    cases = Array("chkSTVA", "chkSForfait", "chkSFacture")
+    For i = LBound(cases) To UBound(cases)
+        Set c = SCtl(f, CStr(cases(i)))
+        If Not c Is Nothing Then c.Value = False
+    Next i
+
+    mPremiere = 1
+    mSel = 0
+    mChargement = False
+    Stat_Rafraichir f
+End Sub
+
+'==============================================================================
 ' LE RECALCUL COMPLET
 '------------------------------------------------------------------------------
 ' Un seul chemin : les filtres donnent les lignes, les lignes donnent tout le
@@ -206,7 +239,7 @@ Private Sub PeindreGraphique(f As Object)
     If Not c Is Nothing Then c.Caption = Format$(echelle, "#,##0")
 
     gauche = ST_GR_X + GR_MARGE_G
-    largeur = F2_GRAPH_LARG - GR_MARGE_G
+    largeur = ST_GR_LARG - GR_MARGE_G
     base = ST_GR_Y + GR_TRACE_TOP + GR_TRACE_HAUT
     pas = largeur / GR_NB_MOIS
 
@@ -427,18 +460,23 @@ Private Function STexteDe(f As Object, ByVal nom As String) As String
     If Not c Is Nothing Then STexteDe = Trim$(EnTexte(c.Text))
 End Function
 
-' L'état d'une case à trois états. Value vaut Null quand elle est grisée, ce
-' qui ne se compare pas : d'où IsNull avant tout le reste.
+' L'état d'une case à cocher : cochée garde les lignes vraies, décochée les
+' fausses.
+'
+' Null ne devrait plus se présenter — les cases n'ont que deux états depuis que
+' l'état grisé a été retiré — mais un formulaire resté ouvert d'une version
+' précédente pourrait en porter un. Il se lit alors comme décoché, ce qui est
+' précisément le comportement demandé.
 Private Function STriEtat(f As Object, ByVal nom As String) As Long
     Dim c As Object
 
-    STriEtat = TRI_INDIFFERENT
+    STriEtat = TRI_FAUX
     Set c = SCtl(f, nom)
     If c Is Nothing Then Exit Function
 
     On Error Resume Next
     If IsNull(c.Value) Then
-        STriEtat = TRI_INDIFFERENT
+        STriEtat = TRI_FAUX
     ElseIf c.Value = True Then
         STriEtat = TRI_VRAI
     Else

@@ -111,7 +111,7 @@ Private Sub ConstruireZone1(dsg As Object)
 
     Set zone = AjF(dsg, "Forms.Frame.1", "fraFCarte1", _
                    FA_MARGE, FA_Z1_TOP, FA_CARTE_LARG, FA_Z1_HAUT)
-    CadreF zone
+    BandeauCarteF zone
 
     Set c = AjF(zone, "Forms.Label.1", "lblFTitre", 14, 12, 620, 21)
     TexteF c, "Liste des clients non encore facturés", ZF1Titre(), MSF_TextAlignLeft
@@ -374,6 +374,19 @@ Private Sub CadreF(c As Object)
     c.BorderStyle = MSF_BorderStyleSingle
     c.BorderColor = COUL_BORDURE
     c.ScrollBars = MSF_ScrollBarsNone
+End Sub
+
+'------------------------------------------------------------------------------
+' Le BANDEAU SUPÉRIEUR : même carte, mais en aplat bleu foncé.
+'
+' Les quatre formulaires du classeur portent le même, celui de la gestion des
+' clients. Seule la couleur change ici ; le titre, la ligne d'état et l'année
+' prennent leurs styles du bandeau commun, dans modInterv_Theme.
+'------------------------------------------------------------------------------
+Private Sub BandeauCarteF(c As Object)
+    CadreF c
+    c.BackColor = COUL_BANDEAU
+    c.BorderColor = COUL_BANDEAU
 End Sub
 
 Private Sub FondF(c As Object, ByVal fond As Long, ByVal bordure As Long)

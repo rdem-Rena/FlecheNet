@@ -100,7 +100,7 @@ Private Sub ConstruireSZone1(dsg As Object)
 
     Set zone = AjS(dsg, "Forms.Frame.1", "fraSCarte1", _
                    ST_MARGE, ST_Z1_TOP, ST_CARTE_LARG, ST_Z1_HAUT)
-    CadreS zone
+    BandeauCarteS zone
 
     Set c = AjS(zone, "Forms.Label.1", "lblSTitre", 14, 12, 620, 21)
     TexteS c, "Statistiques", ZS1Titre(), MSF_TextAlignLeft
@@ -173,10 +173,10 @@ Private Sub ConstruireSZone3(dsg As Object)
                    ST_MARGE, ST_Z3_TOP, ST_CARTE_LARG, ST_Z3_HAUT)
     CadreS zone
 
-    largeur = F2_GRAPH_LARG - GR_MARGE_G
+    largeur = ST_GR_LARG - GR_MARGE_G
 
     Set c = AjS(zone, "Forms.Label.1", "lblSGrLegende", ST_GR_X, ST_GR_Y, _
-                F2_GRAPH_LARG, GR_LEGENDE_HAUT)
+                ST_GR_LARG, GR_LEGENDE_HAUT)
     TexteS c, "Chiffre d'affaires par mois", ZSGraphTitre(), MSF_TextAlignLeft
 
     Set c = AjS(zone, "Forms.Label.1", "lblSGrMax", ST_GR_X, _
@@ -251,7 +251,7 @@ Private Sub ConstruireSZone4(dsg As Object)
     Set c = AjS(zone, "Forms.ComboBox.1", "cboSMois", ST_F_MOIS, y, ST_F_MOIS_L, ST_CTL_HAUT)
     ListeS c
 
-    Set c = AjS(zone, "Forms.Label.1", "lblSFEntCap", ST_F_ENT_LBL, y + 2, 62, 14)
+    Set c = AjS(zone, "Forms.Label.1", "lblSFEntCap", ST_F_ENT_LBL, y + 2, 56, 14)
     TexteS c, "Entreprise", ZSFiltre(), MSF_TextAlignLeft
     Set c = AjS(zone, "Forms.TextBox.1", "txtSEntreprise", ST_F_ENT, y, ST_F_ENT_L, ST_CTL_HAUT)
     ZoneS c
@@ -272,7 +272,12 @@ Private Sub ConstruireSZone4(dsg As Object)
     c.ControlTipText = "Grisée : toutes. Cochée : les facturées. Décochée : celles qui " & _
                        "n'ont pas de numéro."
 
-    Set c = AjS(zone, "Forms.Label.1", "lblSFNumCap", ST_F_NUM_LBL, y + 2, 74, 14)
+    Set c = AjS(zone, "Forms.CommandButton.1", "btnSRaz", ST_F_RAZ, y - 1, _
+                ST_F_RAZ_L, ST_CTL_HAUT + 2)
+    BoutonS c, ChrW(8635) & " Filtres", "F", COUL_EFFACER, 40
+    c.ControlTipText = "Remettre les sept filtres dans leur état d'origine"
+
+    Set c = AjS(zone, "Forms.Label.1", "lblSFNumCap", ST_F_NUM_LBL, y + 2, 66, 14)
     TexteS c, "N" & ChrW(176) & " facture", ZSFiltre(), MSF_TextAlignRight
     Set c = AjS(zone, "Forms.TextBox.1", "txtSNoFacture", ST_F_NUM, y, ST_F_NUM_L, ST_CTL_HAUT)
     ZoneS c
@@ -406,6 +411,19 @@ Private Sub CadreS(c As Object)
     c.ScrollBars = MSF_ScrollBarsNone
 End Sub
 
+'------------------------------------------------------------------------------
+' Le BANDEAU SUPÉRIEUR : même carte, mais en aplat bleu foncé.
+'
+' Les quatre formulaires du classeur portent le même, celui de la gestion des
+' clients. Seule la couleur change ici ; le titre, la ligne d'état et l'année
+' prennent leurs styles du bandeau commun, dans modInterv_Theme.
+'------------------------------------------------------------------------------
+Private Sub BandeauCarteS(c As Object)
+    CadreS c
+    c.BackColor = COUL_BANDEAU
+    c.BorderColor = COUL_BANDEAU
+End Sub
+
 Private Sub FondS(c As Object, ByVal fond As Long, ByVal bordure As Long)
     c.Caption = vbNullString
     c.BackStyle = MSF_BackStyleOpaque
@@ -463,16 +481,23 @@ Private Sub ListeS(c As Object)
     c.Style = MSF_StyleDropDownList
 End Sub
 
-' TripleState : la case a un troisième état, grisé, qui ne filtre rien. Value
-' vaut alors Null, ce que modStat_Formulaire traduit en TRI_INDIFFERENT.
+' DEUX ÉTATS SEULEMENT. La case avait d'abord un troisième état, grisé, qui ne
+' filtrait rien ; il ne devait pas rester, l'état grisé devant se comporter
+' comme décoché. Plutôt que de faire répondre deux états la même chose — ce que
+' personne ne peut deviner à l'écran — le troisième est retiré : cochée garde
+' les lignes vraies, décochée les fausses, et c'est tout.
+'
+' Conséquence à connaître : à l'ouverture les trois cases sont décochées, donc
+' le tableau ne montre que les lignes sans TVA, sans forfait et non facturées.
+' Le bouton « Filtres » rend cet état d'origine.
 Private Sub CaseS(c As Object, ByVal libelle As String)
     PoserPolice c, POLICE, 9, False
     c.Caption = libelle
     c.BackStyle = MSF_BackStyleTransparent
     c.ForeColor = COUL_TEXTE
     c.WordWrap = False
-    c.TripleState = True
-    c.Value = Null
+    c.TripleState = False
+    c.Value = False
 End Sub
 
 Private Sub BoutonS(c As Object, ByVal libelle As String, ByVal raccourci As String, _
@@ -534,6 +559,7 @@ Private Function CodeStat() As String
     ProcS "chkSFacture_Click()", "Stat_Rafraichir Me"
     ProcS "txtSNoFacture_Change()", "Stat_Rafraichir Me"
 
+    ProcS "btnSRaz_Click()", "Stat_Reinitialiser Me"
     ProcS "btnSQuitter_Click()", "Stat_Quitter Me"
 
     CodeStat = mCodeS

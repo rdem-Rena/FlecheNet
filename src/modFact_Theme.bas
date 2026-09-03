@@ -114,11 +114,12 @@ End Function
 '==============================================================================
 
 '--- Zone 1 : l'intitulé ------------------------------------------------------
+' Délégués au bandeau commun : voir Z1Titre dans modInterv_Theme.
 Public Function ZF1Titre() As StyleTexte
-    ZF1Titre = StyleF(POLICE, 14, True, COUL_BANDEAU)
+    ZF1Titre = Z1Titre()
 End Function
 Public Function ZF1Annee() As StyleTexte
-    ZF1Annee = StyleF(POLICE, 20, True, COUL_MODIFIER)
+    ZF1Annee = Z1Annee()
 End Function
 
 '--- Bandeau de titre d'un tableau --------------------------------------------

@@ -102,9 +102,9 @@ Chaque rôle de libellé a ses quatre caractéristiques dans `modInterv_Theme`, 
 
 | Zone | Fond | Rôle | Famille | Taille | Graisse | Couleur |
 |---|---|---|---|---|---|---|
-| 1 | `lblCarte1` | `Z1Titre` | `POLICE` | `14` | gras | `COUL_BANDEAU` |
-|  |  | `Z1Etat` | `POLICE` | `TAILLE_SOUSTITRE` | maigre | `COUL_TEXTE_DOUX` |
-|  |  | `Z1Annee` | `POLICE` | `20` | gras | `COUL_MODIFIER` |
+| 1 | `lblCarte1` | `Z1Titre` | `POLICE` | `TAILLE_TITRE` | gras | `COUL_BANDEAU_TXT` |
+|  |  | `Z1Etat` | `POLICE` | `TAILLE_SOUSTITRE` | maigre | `COUL_BANDEAU_SOUS` |
+|  |  | `Z1Annee` | `POLICE` | `20` | gras | `COUL_BANDEAU_TXT` |
 | 2 | `lblCarte2` | `Z2Section` | `POLICE` | `TAILLE_SECTION` | gras | `COUL_SECTION` |
 |  |  | `Z2TuileCap` | `POLICE` | `TAILLE_TUILE_CAP` | gras | `COUL_TEXTE_DOUX` |
 |  |  | `Z2TuileVal` | `POLICE` | `TAILLE_STAT` | gras | `COUL_BANDEAU` |

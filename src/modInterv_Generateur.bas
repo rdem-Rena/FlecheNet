@@ -271,13 +271,13 @@ Private Sub ConstruireFiche1(dsg As Object)
     If F1_EN_CADRE Then
         Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte1(), _
                           I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
-        CadreI zone
+        BandeauCarteI zone
         ox = I_MARGE
         oy = F1_TOP
     Else
         Set c = AjCtrl(dsg, "Forms.Label.1", NomCarte1(), _
                        I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
-        CarteI c
+        BandeauCarteI c
         Set zone = dsg
     End If
 
@@ -879,6 +879,19 @@ Private Sub CadreI(c As Object)
     c.BorderStyle = MSF_BorderStyleSingle
     c.BorderColor = COUL_BORDURE
     c.ScrollBars = MSF_ScrollBarsNone
+End Sub
+
+'------------------------------------------------------------------------------
+' Le BANDEAU SUPÉRIEUR : même carte, mais en aplat bleu foncé.
+'
+' Les quatre formulaires du classeur portent le même, celui de la gestion des
+' clients. Seule la couleur change ici ; le titre, la ligne d'état et l'année
+' prennent leurs styles du bandeau commun, dans modInterv_Theme.
+'------------------------------------------------------------------------------
+Private Sub BandeauCarteI(c As Object)
+    CadreI c
+    c.BackColor = COUL_BANDEAU
+    c.BorderColor = COUL_BANDEAU
 End Sub
 
 Private Sub Fond(c As Object, ByVal fond As Long, ByVal bordure As Long)

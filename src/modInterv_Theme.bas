@@ -411,15 +411,22 @@ End Function
 ' et une teinte doit rester la même partout où elle veut dire la même chose.
 '==============================================================================
 
-'--- Zone 1 : lblCarte1, l'intitulé global ------------------------------------
+'--- Zone 1 : le BANDEAU SUPÉRIEUR --------------------------------------------
+' Les quatre formulaires du classeur portent le même bandeau, celui de la
+' gestion des clients : une bande bleu foncé, un titre blanc, une ligne d'état
+' bleu clair. Les styles sont définis ICI et délégués par les trois autres —
+' une seule définition, aucun risque de dérive.
+'
+' Le fond de la bande, lui, se pose dans les générateurs : c'est une couleur de
+' contrôle, pas un style de texte. Voir BandeauCarte.
 Public Function Z1Titre() As StyleTexte
-    Z1Titre = Style(POLICE, 14, True, COUL_BANDEAU)
+    Z1Titre = Style(POLICE, TAILLE_TITRE, True, COUL_BANDEAU_TXT)
 End Function
 Public Function Z1Etat() As StyleTexte
-    Z1Etat = Style(POLICE, TAILLE_SOUSTITRE, False, COUL_TEXTE_DOUX)
+    Z1Etat = Style(POLICE, TAILLE_SOUSTITRE, False, COUL_BANDEAU_SOUS)
 End Function
 Public Function Z1Annee() As StyleTexte
-    Z1Annee = Style(POLICE, 20, True, COUL_MODIFIER)
+    Z1Annee = Style(POLICE, 20, True, COUL_BANDEAU_TXT)
 End Function
 
 '--- Zone 2 : lblCarte2, statistiques et graphique ----------------------------
