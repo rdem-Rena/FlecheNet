@@ -22,12 +22,19 @@ Public Const NOM_FORM_FACTURE As String = "UF_Facture"
 ' qu'Enregistrer met à jour.
 Public Const FC_SELECT As String = "Select."
 
-' Ce qu'affiche une case à cocher de la grille. Une croix plutôt qu'un symbole
-' de case : les glyphes de cases ne sont pas dans toutes les polices, et un
-' libellé bordé se lit déjà comme une case.
-Public Const FC_COCHE As String = "X"
-
 Public Const TOUS_LES_MOIS_F As String = "Tous les mois"
+
+'------------------------------------------------------------------------------
+' Ce qu'affiche une case à cocher de la grille : le « vu ».
+'
+' Une FONCTION et non une constante, parce qu'un Const ne peut porter qu'une
+' valeur littérale, et que ce caractère doit s'écrire en ChrW : il n'existe pas
+' en Windows-1252, et le laisser tel quel dans le source le ferait perdre à la
+' conversion. U+2713 est présent dans Segoe UI, la police des deux grilles.
+'------------------------------------------------------------------------------
+Public Function FCoche() As String
+    FCoche = ChrW(10003)
+End Function
 
 '==============================================================================
 ' TABLEAU DU HAUT — les clients dont des travaux restent à facturer
@@ -62,13 +69,13 @@ End Function
 Public Function FTravauxColonnes() As Variant
     FTravauxColonnes = Array(IC_NO, IC_DATE, IC_HEURES, IC_PERS, IC_TAUX, _
                              IC_TVA, IC_FORFAIT, IC_CA, IC_TEXTE, IC_COMMENT, _
-                             FC_SELECT, IC_FACTURE)
+                             IC_FACTURE, FC_SELECT)
 End Function
 
 Public Function FTravauxLibelles() As Variant
     FTravauxLibelles = Array("N" & ChrW(176), "Date", "Heures", "Pers.", "Taux/Forf.", _
                              "TVA", "Forf.", "CA", "Texte de facture", "Commentaires", _
-                             "Select.", "Fact.")
+                             "Fact.", "Select.")
 End Function
 
 ' 906 points au total, comme la grille des interventions : la carte fait
@@ -81,7 +88,7 @@ Public Function FTravauxAlignements() As Variant
     FTravauxAlignements = Array(MSF_TextAlignRight, MSF_TextAlignLeft, MSF_TextAlignRight, _
                                 MSF_TextAlignCenter, MSF_TextAlignRight, MSF_TextAlignCenter, _
                                 MSF_TextAlignCenter, MSF_TextAlignRight, MSF_TextAlignLeft, _
-                                MSF_TextAlignLeft, MSF_TextAlignCenter, MSF_TextAlignLeft)
+                                MSF_TextAlignLeft, MSF_TextAlignLeft, MSF_TextAlignCenter)
 End Function
 
 '------------------------------------------------------------------------------

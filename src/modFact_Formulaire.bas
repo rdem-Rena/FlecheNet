@@ -63,6 +63,9 @@ Public Sub Fact_Initialiser(f As Object)
     Dim c As Object, i As Long
 
     Set mCoches = CreateObject("Scripting.Dictionary")
+    ' Le module survit à la fermeture du formulaire : sans cette remise à zéro,
+    ' une deuxième ouverture ne corrigerait plus sa hauteur.
+    mAjuste = False
     mPremierC = 1
     mPremierT = 1
     mSelC = 0
@@ -207,7 +210,6 @@ Public Sub Fact_TravailClic(f As Object, ByVal ligneEcran As Long, ByVal colonne
         End If
     Else
         mSelT = idx
-        MontrerTextes f, CLng(mLignesT(idx))
     End If
     PeindreTravaux f
 End Sub
@@ -249,6 +251,17 @@ Private Sub PeindreTravaux(f As Object)
 
     MajBarre f, "sbFTravaux", FNb(mLignesT), FA_Z4_LIGNES, mPremierT
     MajTotaux f
+
+    ' Les deux zones de texte du bas suivent la ligne choisie, et se vident
+    ' quand il n'y en a plus. C'est fait ICI, à chaque repeint, et non au clic :
+    ' changer de client ou de filtre remet mSelT à zéro sans qu'on ait cliqué,
+    ' et les deux champs gardaient alors le texte du record précédent — celui
+    ' d'un client qui n'est même plus à l'écran.
+    If mSelT >= 1 And mSelT <= FNb(mLignesT) Then
+        MontrerTextes f, CLng(mLignesT(mSelT))
+    Else
+        MontrerTextes f, 0
+    End If
 End Sub
 
 '------------------------------------------------------------------------------
@@ -260,11 +273,11 @@ End Sub
 '------------------------------------------------------------------------------
 Private Function ValeurTravail(ByVal ligne As Long, ByVal colonne As String) As String
     If colonne = FC_SELECT Then
-        ValeurTravail = IIf(mCoches.Exists(CStr(ligne)), FC_COCHE, vbNullString)
+        ValeurTravail = IIf(mCoches.Exists(CStr(ligne)), FCoche(), vbNullString)
     ElseIf colonne = IC_CA Then
         ValeurTravail = Format$(Fact_CADeLaLigne(ligne), "#,##0.00")
     ElseIf FEstCase(colonne) Then
-        ValeurTravail = IIf(Fact_EnBooleen(Interv_Valeur(ligne, colonne)), FC_COCHE, vbNullString)
+        ValeurTravail = IIf(Fact_EnBooleen(Interv_Valeur(ligne, colonne)), FCoche(), vbNullString)
     Else
         ValeurTravail = Interv_ValeurAffichee(ligne, colonne)
     End If
@@ -288,14 +301,17 @@ End Sub
 '------------------------------------------------------------------------------
 ' Le texte de facture et les commentaires de la ligne choisie.
 '------------------------------------------------------------------------------
+'   ligne = 0 : aucune ligne choisie, les deux champs se vident.
 Private Sub MontrerTextes(f As Object, ByVal ligne As Long)
     Dim c As Object
 
     Set c = FCtl(f, "txtFTexte")
-    If Not c Is Nothing Then c.Text = EnTexte(Interv_Valeur(ligne, IC_TEXTE))
+    If Not c Is Nothing Then _
+        c.Text = IIf(ligne = 0, vbNullString, EnTexte(Interv_Valeur(ligne, IC_TEXTE)))
 
     Set c = FCtl(f, "txtFComm")
-    If Not c Is Nothing Then c.Text = EnTexte(Interv_Valeur(ligne, IC_COMMENT))
+    If Not c Is Nothing Then _
+        c.Text = IIf(ligne = 0, vbNullString, EnTexte(Interv_Valeur(ligne, IC_COMMENT)))
 End Sub
 
 '==============================================================================

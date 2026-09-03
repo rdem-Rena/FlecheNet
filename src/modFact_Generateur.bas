@@ -85,7 +85,7 @@ Private Function ConstruireFacture(vbProj As Object) As Long
 
     PropF vbComp, "Caption", "Facturation"
     PropF vbComp, "Width", FA_LARGEUR
-    PropF vbComp, "Height", FA_HAUTEUR
+    PropF vbComp, "Height", FA_HAUTEUR + FA_RESERVE_TITRE
     PropF vbComp, "BackColor", COUL_FOND
     PropF vbComp, "SpecialEffect", MSF_SpecialEffectFlat
     PropF vbComp, "StartUpPosition", 1
@@ -182,18 +182,18 @@ Private Sub ConstruireZone4(dsg As Object)
 
     ' --- la ligne des totaux, sous les colonnes qu'elle additionne ------------
     larg = FTravauxLargeurs()
-    y = AuPixel(FGrilleLignesY() + FA_Z4_LIGNES * FA_LIGNE_H + 2)
-    x = AuPixel(FA_PAD_X + 1)
+    y = AuPixel(FGrilleLignesY() + FA_Z4_LIGNES * IGR_LIGNE_H + 2)
+    x = AuPixel(IGR_PAD_X + 1)
 
     For i = LBound(larg) To UBound(larg)
         If i - LBound(larg) + 1 = FIndexTravaux(IC_HEURES) Then
             Set c = AjF(zone, "Forms.Label.1", "lblFTotHeures", AuPixel(x), y, _
-                        AuPixel(CSng(larg(i)) - 2 * FA_PAD_X), FA_TOTAUX_HAUT)
+                        AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), FA_TOTAUX_HAUT)
             TexteF c, vbNullString, ZFTotal(), MSF_TextAlignRight
             c.ControlTipText = "Total des heures affichées"
         ElseIf i - LBound(larg) + 1 = FIndexTravaux(IC_CA) Then
             Set c = AjF(zone, "Forms.Label.1", "lblFTotCA", AuPixel(x), y, _
-                        AuPixel(CSng(larg(i)) - 2 * FA_PAD_X), FA_TOTAUX_HAUT)
+                        AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), FA_TOTAUX_HAUT)
             TexteF c, vbNullString, ZFTotal(), MSF_TextAlignRight
             c.ControlTipText = "Total du chiffre d'affaires affiché"
         End If
@@ -278,21 +278,21 @@ Private Sub ConstruireGrilleF(zone As Object, ByVal prefixe As String, _
     FondF c, COUL_ENTETE_TBL, COUL_ENTETE_TBL
 
     ' --- titres de colonnes ---------------------------------------------------
-    x = gauche + FA_PAD_X
+    x = gauche + IGR_PAD_X
     For i = 0 To nbCol - 1
         Set c = AjF(zone, "Forms.Label.1", "lblFEnt" & prefixe & "_" & CStr(i + 1), _
                     AuPixel(x), AuPixel(FGrilleEnteteY() + 4), _
-                    AuPixel(CSng(larg(i)) - 2 * FA_PAD_X), AuPixel(FA_LIGNE_H))
+                    AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
         TexteF c, CStr(lib(i)), ZFEntete(), CLng(ali(i))
         x = x + CSng(larg(i))
     Next i
 
     ' --- les lignes et leurs cases --------------------------------------------
     For r = 1 To nbLignes
-        y = FGrilleLignesY() + (r - 1) * FA_LIGNE_H
+        y = FGrilleLignesY() + (r - 1) * IGR_LIGNE_H
 
         Set c = AjF(zone, "Forms.Label.1", "lblF" & prefixe & "L_" & CStr(r), _
-                    gauche, AuPixel(y), AuPixel(largeur - FA_BARRE_L), AuPixel(FA_LIGNE_H))
+                    gauche, AuPixel(y), AuPixel(largeur - IGR_BARRE_L), AuPixel(IGR_LIGNE_H))
         With c
             .Caption = vbNullString
             .SpecialEffect = MSF_SpecialEffectFlat
@@ -302,12 +302,12 @@ Private Sub ConstruireGrilleF(zone As Object, ByVal prefixe As String, _
         End With
         PoserStyleF c, ZFCase()
 
-        x = gauche + FA_PAD_X
+        x = gauche + IGR_PAD_X
         For i = 0 To nbCol - 1
             Set c = AjF(zone, "Forms.Label.1", _
                         "lblF" & prefixe & "_" & CStr(r) & "_" & CStr(i + 1), _
                         AuPixel(x), AuPixel(y), _
-                        AuPixel(CSng(larg(i)) - 2 * FA_PAD_X), AuPixel(FA_LIGNE_H))
+                        AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
             TexteF c, vbNullString, ZFCase(), CLng(ali(i))
             x = x + CSng(larg(i))
         Next i
@@ -317,8 +317,8 @@ Private Sub ConstruireGrilleF(zone As Object, ByVal prefixe As String, _
     ' Curseur de TAILLE FIXE : avec ProportionalThumb, MSForms le dimensionne à
     ' LargeChange sur la plage, et il occupe alors presque toute la glissière.
     Set c = AjF(zone, "Forms.ScrollBar.1", nomBarre, _
-                AuPixel(gauche + largeur - FA_BARRE_L), AuPixel(FGrilleLignesY()), _
-                AuPixel(FA_BARRE_L), AuPixel(nbLignes * FA_LIGNE_H))
+                AuPixel(gauche + largeur - IGR_BARRE_L), AuPixel(FGrilleLignesY()), _
+                AuPixel(IGR_BARRE_L), AuPixel(nbLignes * IGR_LIGNE_H))
     With c
         .Min = 0
         .Max = 0
@@ -335,8 +335,8 @@ End Sub
 Private Sub BandeauF(zone As Object, ByVal nom As String, ByVal titre As String)
     Dim c As Object
 
-    Set c = AjF(zone, "Forms.Label.1", nom, AuPixel(FA_PAD_X + 1), AuPixel(4), _
-                FGrilleLargeur() - 2 * FA_PAD_X, 13)
+    Set c = AjF(zone, "Forms.Label.1", nom, AuPixel(IGR_PAD_X + 1), AuPixel(4), _
+                FGrilleLargeur() - 2 * IGR_PAD_X, 13)
     TexteF c, UCase$(titre), ZFSection(), MSF_TextAlignLeft
 End Sub
 

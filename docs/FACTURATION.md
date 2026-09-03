@@ -50,8 +50,8 @@ Fenêtre de **960 × 636 points** de surface utile (≈ 1280 × 848 pixels à 96
 | 8 | `CA` | CA | 62 pt |
 | 9 | `Texte_Facture` | Texte de facture | 200 pt |
 | 10 | `Commentaires` | Commentaires | 200 pt |
-| 11 | `Select.` | Select. | 46 pt |
-| 12 | `No_Facture` | Fact. | 46 pt |
+| 11 | `No_Facture` | Fact. | 46 pt |
+| 12 | `Select.` | Select. | 46 pt |
 | | | | **888 pt** |
 
 ---
@@ -81,9 +81,9 @@ Fenêtre de **960 × 636 points** de surface utile (≈ 1280 × 848 pixels à 96
 | `FA_HAUTEUR` | `modFact_Theme` | 636 |
 | `FA_Z2_LIGNES` | `modFact_Theme` | 9 |
 | `FA_Z4_LIGNES` | `modFact_Theme` | 12 |
-| `FA_LIGNE_H` | `modFact_Theme` | 12,75 |
-| `FA_PAD_X` | `modFact_Theme` | 4,5 |
-| `FA_BARRE_L` | `modFact_Theme` | 16 |
+| `FA_LIGNE_H` | `modFact_Theme` | ? |
+| `FA_PAD_X` | `modFact_Theme` | ? |
+| `FA_BARRE_L` | `modFact_Theme` | ? |
 
 Les largeurs de colonnes sont dans `modFact_Schema`, la typographie dans la section **TYPOGRAPHIE PAR ZONE** de `modFact_Theme`.
 

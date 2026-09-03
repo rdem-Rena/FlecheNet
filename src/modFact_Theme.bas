@@ -17,7 +17,14 @@ Option Explicit
 
 '--- Fenêtre et cartes --------------------------------------------------------
 Public Const FA_LARGEUR As Single = 960
-Public Const FA_HAUTEUR As Single = 636
+Public Const FA_HAUTEUR As Single = 636         ' surface UTILE, hors barre de titre
+
+' La propriété Height d'un UserForm est sa hauteur EXTÉRIEURE : posée à
+' FA_HAUTEUR, elle laisserait la barre de titre manger le bas, et le dernier
+' bouton disparaîtrait sous le bord. Le générateur pose donc FA_HAUTEUR plus
+' cette réserve, et Fact_Activer affine ensuite au point près en lisant
+' InsideHeight — la réserve n'a pas besoin d'être exacte, seulement suffisante.
+Public Const FA_RESERVE_TITRE As Single = 24
 Public Const FA_MARGE As Single = 16
 Public Const FA_CARTE_LARG As Single = 928      ' FA_LARGEUR - 2 * FA_MARGE
 Public Const FA_PADDING As Single = 14
@@ -50,14 +57,15 @@ Public Const FA_BT_HAUT As Single = 28
 Public Const FA_BT_LARG As Single = 120
 
 '--- Grilles ------------------------------------------------------------------
-' Mêmes conventions que la grille des interventions : la hauteur de ligne vaut
-' un nombre entier de pixels (12,75 pt = 17 px), sans quoi une ligne sur trois
-' se décalerait, et le texte des cases est en neuf points, soit douze pixels.
+' LA CONFIGURATION DU TABLEAU DES INTERVENTIONS EST REPRISE TELLE QUELLE, et
+' non recopiée : hauteur de ligne, retrait du texte et largeur de la barre
+' viennent de IGR_LIGNE_H, IGR_PAD_X et IGR_BARRE_L, dans modInterv_Theme. Les
+' trois tableaux du classeur bougent donc ensemble, et aucun ne peut dériver.
+'
+' Seuls le bandeau de titre et la ligne des totaux sont propres à ce
+' formulaire : le tableau des interventions n'en a pas.
 Public Const FA_TITRE_HAUT As Single = 20       ' bandeau de titre d'un tableau
 Public Const FA_ENTETE_HAUT As Single = 20
-Public Const FA_LIGNE_H As Single = 12.75
-Public Const FA_BARRE_L As Single = 16
-Public Const FA_PAD_X As Single = 4.5
 Public Const FA_TOTAUX_HAUT As Single = 18
 
 '--- Contrôles de la barre de filtrage ----------------------------------------
@@ -119,13 +127,18 @@ Public Function ZFSection() As StyleTexte
 End Function
 
 '--- En-tête de colonne, commun aux deux grilles ------------------------------
+' DÉLÉGUÉ au tableau des interventions plutôt que redéfini : c'est la même
+' configuration, elle ne doit donc exister qu'une fois. Changer Z5Entete
+' change les trois en-têtes du classeur d'un coup.
 Public Function ZFEntete() As StyleTexte
-    ZFEntete = StyleF(POLICE_ENTETE, 9, False, COUL_GRILLE_ENTETE)
+    ZFEntete = Z5Entete()
 End Function
 
 '--- Intérieur des grilles ----------------------------------------------------
+' Délégué de même à Z6Case : famille, taille, graisse et couleur des cases
+' viennent du tableau des interventions.
 Public Function ZFCase() As StyleTexte
-    ZFCase = StyleF(POLICE, 9, False, COUL_GRILLE_TXT)
+    ZFCase = Z6Case()
 End Function
 
 '--- Ligne des totaux, sous le tableau des travaux ----------------------------
