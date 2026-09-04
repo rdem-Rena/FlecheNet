@@ -270,8 +270,8 @@ Private Sub ConstruireSZone4(dsg As Object)
     CaseS c, "Forfait"
     Set c = AjS(zone, "Forms.CheckBox.1", "chkSFacture", ST_F_FACT, y + 1, ST_F_FACT_L, ST_CTL_HAUT)
     CaseS c, "Facturé"
-    c.ControlTipText = "Grisée : toutes. Cochée : les facturées. Décochée : celles qui " & _
-                       "n'ont pas de numéro."
+    c.ControlTipText = "Décochée : toutes les lignes. Cochée : seulement les " & _
+                       "interventions déjà facturées."
 
     Set c = AjS(zone, "Forms.CommandButton.1", "btnSRaz", ST_F_RAZ, y - 1, _
                 ST_F_RAZ_L, ST_CTL_HAUT + 2)

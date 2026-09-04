@@ -177,13 +177,13 @@ End Sub
 ' TABLEAU DU BAS — les travaux du client choisi
 '==============================================================================
 Public Sub Fact_RafraichirTravaux(f As Object)
-    Dim clientNo As String
+    Dim ligneClient As Long
 
-    If mSelC >= 1 And mSelC <= FNb(mLignesC) Then
-        clientNo = EnTexte(Interv_Valeur(CLng(mLignesC(mSelC)), IC_CLIENT))
-    End If
+    ' la LIGNE retenue par la liste du haut, et non son N° de client : c'est sa
+    ' clé complète qui réunit les travaux, voir Fact_CleClient
+    If mSelC >= 1 And mSelC <= FNb(mLignesC) Then ligneClient = CLng(mLignesC(mSelC))
 
-    mLignesT = Fact_TravauxDuClient(clientNo, FCochee(f, "chkFToutes"), FMoisChoisi(f))
+    mLignesT = Fact_TravauxDuClient(ligneClient, FCochee(f, "chkFToutes"), FMoisChoisi(f))
     If mSelT > FNb(mLignesT) Then mSelT = 0
     If mPremierT > FNb(mLignesT) Then mPremierT = 1
     PeindreTravaux f

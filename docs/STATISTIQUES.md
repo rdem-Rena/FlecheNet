@@ -64,7 +64,7 @@ Toutes portent sur les lignes **affichées** : elles suivent donc les filtres.
 
 - La **barre d'objectif** compare le CA affiché à la cellule nommée **`?`**. Si elle manque, la barre reste vide et le dit.
 
-- **TVA**, **Forfait** et **Facturé** sont des cases à **trois états** : grisée elle ne filtre pas, cochée elle ne garde que les lignes vraies, décochée que les fausses.
+- **TVA**, **Forfait** et **Facturé** sont des cases à **deux états** : décochée elle ne filtre pas, cochée elle ne garde que les lignes vraies. Le tableau s'ouvre donc complet.
 
 - **Entreprise**, **Nom** et **N° facture** cherchent une sous-chaîne, sans distinction de casse : taper `aeb` retrouve Aebi.
 

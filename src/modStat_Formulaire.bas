@@ -470,18 +470,14 @@ End Function
 Private Function STriEtat(f As Object, ByVal nom As String) As Long
     Dim c As Object
 
-    STriEtat = TRI_FAUX
+    STriEtat = TRI_INDIFFERENT
     Set c = SCtl(f, nom)
     If c Is Nothing Then Exit Function
 
+    ' Null ne peut plus se produire — les cases n'ont que deux états — mais la
+    ' comparaison le supporte : Null = True vaut Null, et If Null Then est faux.
     On Error Resume Next
-    If IsNull(c.Value) Then
-        STriEtat = TRI_FAUX
-    ElseIf c.Value = True Then
-        STriEtat = TRI_VRAI
-    Else
-        STriEtat = TRI_FAUX
-    End If
+    If c.Value = True Then STriEtat = TRI_VRAI
     On Error GoTo 0
 End Function
 

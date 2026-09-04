@@ -61,6 +61,7 @@ Fenêtre de **960 × 636 points** de surface utile (≈ 1280 × 848 pixels à 96
 - Le tableau du haut ne montre que les lignes **sans numéro de facture**, dédoublonnées : deux interventions d'un même client n'y font qu'une entrée.
 
 - Choisir un client remplit le tableau du bas avec ses travaux non facturés. La case **Toutes les opérations** y ajoute ceux déjà facturés ; le menu **Mois** restreint à un mois.
+- Les deux tableaux désignent un client de la même façon : par les **cinq colonnes** de la liste du haut, et non par le seul `Client_No`. Ce champ n'étant rempli qu'en choisissant une entreprise ou un nom dans la fiche d'intervention, une ligne saisie sans lui apparaissait sinon en haut sans jamais montrer le moindre travail.
 
 - La colonne **Select.** n'existe pas dans `TblInterv` : elle se coche à l'écran, d'un clic dans la case, et décide des lignes qu'Enregistrer met à jour.
 

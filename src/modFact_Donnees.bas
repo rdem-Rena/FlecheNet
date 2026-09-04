@@ -28,20 +28,15 @@ Option Explicit
 '   renvoie : un tableau d'index de lignes, vide si rien n'est à facturer
 '==============================================================================
 Public Function Fact_ClientsNonFactures() As Variant
-    Dim cols As Variant, vus As Object, res() As Long, n As Long
-    Dim i As Long, j As Long, cle As String
+    Dim vus As Object, res() As Long, n As Long, i As Long, cle As String
 
-    cols = FClientsColonnes()
     Set vus = CreateObject("Scripting.Dictionary")
     vus.CompareMode = 1
     ReDim res(1 To WorksheetFunctionMax(Interv_NbLignes(), 1))
 
     For i = 1 To Interv_NbLignes()
         If Not Fact_EstFacturee(i) Then
-            cle = vbNullString
-            For j = LBound(cols) To UBound(cols)
-                cle = cle & EnTexte(Interv_Valeur(i, CStr(cols(j)))) & vbTab
-            Next j
+            cle = Fact_CleClient(i)
             If Not vus.Exists(cle) Then
                 vus.Add cle, i
                 n = n + 1
@@ -59,26 +54,49 @@ Public Function Fact_ClientsNonFactures() As Variant
 End Function
 
 '==============================================================================
+' LA CLÉ D'UN CLIENT : les cinq colonnes du tableau du haut, mises bout à bout.
+'
+' C'est elle qui réunit les lignes d'un même client dans la liste du haut, ET
+' c'est elle qui retrouve ses travaux dans le tableau du bas. UNE SEULE
+' DÉFINITION POUR LES DEUX : le bas visait auparavant le seul N° de client, et
+' ce champ n'est rempli que lorsqu'on choisit une entreprise ou un nom dans la
+' fiche d'intervention. Une ligne saisie sans lui figurait donc bien dans la
+' liste des clients — qui, elle, groupe sur les cinq colonnes — mais n'avait
+' jamais aucun travail à montrer quand on cliquait dessus.
+'==============================================================================
+Public Function Fact_CleClient(ByVal ligne As Long) As String
+    Dim cols As Variant, j As Long, cle As String
+
+    cols = FClientsColonnes()
+    For j = LBound(cols) To UBound(cols)
+        cle = cle & EnTexte(Interv_Valeur(ligne, CStr(cols(j)))) & vbTab
+    Next j
+    Fact_CleClient = cle
+End Function
+
+'==============================================================================
 ' Les travaux d'un client.
 '------------------------------------------------------------------------------
-'   clientNo : le numéro de client, tel qu'il figure dans TblInterv
-'   toutes   : True pour montrer aussi les interventions déjà facturées
-'   mois     : 1 à 12, ou 0 pour ne pas filtrer sur le mois
+'   ligneClient : une ligne quelconque de ce client — celle que la liste du
+'                 haut a retenue ; c'est sa clé qui sert, pas son index
+'   toutes      : True pour montrer aussi les interventions déjà facturées
+'   mois        : 1 à 12, ou 0 pour ne pas filtrer sur le mois
 '
 '   renvoie : un tableau d'index de lignes, vide si le client n'a rien
 '==============================================================================
-Public Function Fact_TravauxDuClient(ByVal clientNo As String, ByVal toutes As Boolean, _
+Public Function Fact_TravauxDuClient(ByVal ligneClient As Long, ByVal toutes As Boolean, _
                                      ByVal mois As Long) As Variant
-    Dim res() As Long, n As Long, i As Long
+    Dim res() As Long, n As Long, i As Long, cle As String
 
-    If Len(clientNo) = 0 Then
+    If ligneClient < 1 Or ligneClient > Interv_NbLignes() Then
         Fact_TravauxDuClient = Array()
         Exit Function
     End If
 
+    cle = Fact_CleClient(ligneClient)
     ReDim res(1 To WorksheetFunctionMax(Interv_NbLignes(), 1))
     For i = 1 To Interv_NbLignes()
-        If StrComp(EnTexte(Interv_Valeur(i, IC_CLIENT)), clientNo, vbTextCompare) = 0 Then
+        If StrComp(Fact_CleClient(i), cle, vbTextCompare) = 0 Then
             If toutes Or Not Fact_EstFacturee(i) Then
                 If mois = 0 Or Fact_MoisDeLaLigne(i) = mois Then
                     n = n + 1
