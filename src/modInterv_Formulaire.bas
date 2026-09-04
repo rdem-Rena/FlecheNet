@@ -1292,7 +1292,7 @@ End Function
 '==============================================================================
 ' HABILLAGE
 '==============================================================================
-Public Sub Interv_Survol(f As Object, ByVal nomControle As String)
+Public Sub Interv_Survol(f As Object, ByVal nomCtrl As String)
     Dim boutons As Variant, i As Long, b As Object, lb As Object
 
     boutons = Array("btnIAjouter", "btnIModifier", "btnISupprimer", "btnIEffacer", _
@@ -1301,15 +1301,15 @@ Public Sub Interv_Survol(f As Object, ByVal nomControle As String)
         Set b = ICtl(f, CStr(boutons(i)))
         If Not b Is Nothing Then
             If b.Enabled Then
-                CouleurFondSi b, ICouleurBouton(CStr(boutons(i)), CStr(boutons(i)) = nomControle)
+                CouleurFondSi b, ICouleurBouton(CStr(boutons(i)), CStr(boutons(i)) = nomCtrl)
             End If
         End If
     Next i
 
     Set lb = ICtl(f, "lblResetFiltreI")
     If Not lb Is Nothing Then
-        If lb.ForeColor <> IIf(nomControle = "lblResetFiltreI", COUL_LIEN_H, COUL_LIEN) Then
-            lb.ForeColor = IIf(nomControle = "lblResetFiltreI", COUL_LIEN_H, COUL_LIEN)
+        If lb.ForeColor <> IIf(nomCtrl = "lblResetFiltreI", COUL_LIEN_H, COUL_LIEN) Then
+            lb.ForeColor = IIf(nomCtrl = "lblResetFiltreI", COUL_LIEN_H, COUL_LIEN)
         End If
     End If
 End Sub
@@ -1325,9 +1325,9 @@ End Sub
 '------------------------------------------------------------------------------
 ' Souligne le champ actif : filet bleu à l'entrée, filet gris à la sortie.
 '------------------------------------------------------------------------------
-Public Sub Interv_FocusChamp(f As Object, ByVal nomControle As String, ByVal actif As Boolean)
+Public Sub Interv_FocusChamp(f As Object, ByVal nomCtrl As String, ByVal actif As Boolean)
     Dim c As Object
-    Set c = ICtl(f, nomControle)
+    Set c = ICtl(f, nomCtrl)
     If c Is Nothing Then Exit Sub
     On Error Resume Next
     c.BorderColor = IIf(actif, COUL_CHAMP_FOCUS, COUL_CHAMP_BORD)

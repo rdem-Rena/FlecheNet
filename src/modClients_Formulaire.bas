@@ -875,13 +875,13 @@ End Sub
 '==============================================================================
 '------------------------------------------------------------------------------
 ' Met à jour l'effet de survol.
-'   nomControle : contrôle sous la souris, chaîne vide si la souris est ailleurs
+'   nomCtrl : contrôle sous la souris, chaîne vide si la souris est ailleurs
 '
 ' Un seul point d'entrée pour tous les contrôles survolables : chacun est remis
 ' dans son état normal sauf celui qui est nommé. C'est ce qui remet un bouton à
 ' sa couleur quand la souris le quitte, MSForms ne signalant pas la sortie.
 '------------------------------------------------------------------------------
-Public Sub Clients_Survol(f As Object, ByVal nomControle As String)
+Public Sub Clients_Survol(f As Object, ByVal nomCtrl As String)
     Dim boutons As Variant, i As Long, b As Object, lb As Object
 
     boutons = Array("btnAjouter", "btnModifier", "btnSupprimer", "btnEffacer", "btnQuitter")
@@ -889,14 +889,14 @@ Public Sub Clients_Survol(f As Object, ByVal nomControle As String)
         Set b = Ctl(f, CStr(boutons(i)))
         If Not b Is Nothing Then
             If b.Enabled Then
-                CouleurSi b, CouleurBouton(CStr(boutons(i)), CStr(boutons(i)) = nomControle)
+                CouleurSi b, CouleurBouton(CStr(boutons(i)), CStr(boutons(i)) = nomCtrl)
             End If
         End If
     Next i
 
     Set lb = Ctl(f, "lblFermer")
     If Not lb Is Nothing Then
-        If nomControle = "lblFermer" Then
+        If nomCtrl = "lblFermer" Then
             If lb.BackStyle <> MSF_BackStyleOpaque Then lb.BackStyle = MSF_BackStyleOpaque
             CouleurSi lb, COUL_FERMER_H
         Else
@@ -906,7 +906,7 @@ Public Sub Clients_Survol(f As Object, ByVal nomControle As String)
 
     Set lb = Ctl(f, "lblResetFiltre")
     If Not lb Is Nothing Then
-        CouleurTexteSi lb, IIf(nomControle = "lblResetFiltre", COUL_LIEN_H, COUL_LIEN)
+        CouleurTexteSi lb, IIf(nomCtrl = "lblResetFiltre", COUL_LIEN_H, COUL_LIEN)
     End If
 End Sub
 
@@ -928,9 +928,9 @@ End Sub
 '------------------------------------------------------------------------------
 ' Souligne le champ actif : filet bleu à l'entrée, filet gris à la sortie.
 '------------------------------------------------------------------------------
-Public Sub Clients_FocusChamp(f As Object, ByVal nomControle As String, ByVal actif As Boolean)
+Public Sub Clients_FocusChamp(f As Object, ByVal nomCtrl As String, ByVal actif As Boolean)
     Dim c As Object
-    Set c = Ctl(f, nomControle)
+    Set c = Ctl(f, nomCtrl)
     If c Is Nothing Then Exit Sub
     On Error Resume Next
     c.BorderColor = IIf(actif, COUL_CHAMP_FOCUS, COUL_CHAMP_BORD)

@@ -387,17 +387,17 @@ End Function
 ' deux décalages ox et oy retranchés plus bas : les positions écrites restent
 ' celles du formulaire, lisibles à côté du reste de la mise en page.
 '
-' Sans cadre, zone vaut le formulaire lui-même et les décalages sont nuls :
+' Sans cadre, conteneur vaut le formulaire lui-même et les décalages sont nuls :
 ' une seule série de lignes sert aux deux chemins.
 '------------------------------------------------------------------------------
 Private Sub ConstruireFiche1(dsg As Object)
-    Dim c As Object, zone As Object, ox As Single, oy As Single
+    Dim c As Object, conteneur As Object, ox As Single, oy As Single
 
     If F1_EN_CADRE Then
-        Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte1(), _
+        Set conteneur = AjCtrl(dsg, "Forms.Frame.1", NomCarte1(), _
                           I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
-        CadreI zone
-        EnBandeauI zone
+        CadreI conteneur
+        EnBandeauI conteneur
         ox = I_MARGE
         oy = F1_TOP
     Else
@@ -405,18 +405,18 @@ Private Sub ConstruireFiche1(dsg As Object)
                        I_MARGE, F1_TOP, I_CARTE_LARG, F1_HAUT)
         CarteI c
         EnBandeauI c
-        Set zone = dsg
+        Set conteneur = dsg
     End If
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblTitreGlobal", _
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblTitreGlobal", _
                    30 - ox, F1_TOP + 7 - oy, 560, 21)
     Texte c, vbNullString, Z1Titre(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblEtatI", _
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblEtatI", _
                    30 - ox, F1_TOP + 28 - oy, 620, 13)
     Texte c, vbNullString, Z1Etat(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblAnnee", _
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblAnnee", _
                    700 - ox, F1_TOP + 8 - oy, 230, 30)
     Texte c, vbNullString, Z1Annee(), MSF_TextAlignRight
 End Sub
@@ -431,30 +431,30 @@ End Sub
 Private Sub ConstruireFiche2(dsg As Object)
     Dim c As Object, tuiles As Variant, i As Long, x As Single, y As Single
     Dim col As Long, lig As Long, yCap As Single
-    Dim zone As Object, ox As Single, oy As Single
+    Dim conteneur As Object, ox As Single, oy As Single
 
     If F2_EN_CADRE Then
-        Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte2(), _
+        Set conteneur = AjCtrl(dsg, "Forms.Frame.1", NomCarte2(), _
                           I_MARGE, F2_TOP, I_CARTE_LARG, F2_HAUT)
-        CadreI zone
+        CadreI conteneur
         ox = I_MARGE
         oy = F2_TOP
     Else
         Set c = AjCtrl(dsg, "Forms.Label.1", NomCarte2(), _
                        I_MARGE, F2_TOP, I_CARTE_LARG, F2_HAUT)
         CarteI c
-        Set zone = dsg
+        Set conteneur = dsg
     End If
 
     ' large : ce libellé accueille aussi, le cas échéant, la raison pour laquelle
     ' le graphique ne s'affiche pas
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblSectionStats", _
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblSectionStats", _
                    30 - ox, F2_TOP + 6 - oy, 700, 13)
     Texte c, "STATISTIQUES", Z2Section(), MSF_TextAlignLeft
 
     ' GrOrigineX / GrOrigineY tiennent compte du cadre : c'est la MÊME origine
     ' que celle dont Graph_Tracer repart pour placer les barres.
-    ConstruireGraphique zone, GrOrigineX(), GrOrigineY()
+    ConstruireGraphique conteneur, GrOrigineX(), GrOrigineY()
 
     tuiles = TuilesStatistiques()
     For i = LBound(tuiles) To UBound(tuiles)
@@ -463,7 +463,7 @@ Private Sub ConstruireFiche2(dsg As Object)
         x = F2TuilesX() - ox + col * (F2_TUILE_LARG + F2_TUILE_GX)
         y = F2_TOP + 24 - oy + lig * (F2_TUILE_HAUT + F2_TUILE_GY)
 
-        Set c = AjCtrl(zone, "Forms.Image.1", "imgTuile_" & CStr(i + 1), x, y, _
+        Set c = AjCtrl(conteneur, "Forms.Image.1", "imgTuile_" & CStr(i + 1), x, y, _
                        F2_TUILE_LARG, F2_TUILE_HAUT)
         With c
             .SpecialEffect = MSF_SpecialEffectFlat
@@ -477,13 +477,13 @@ Private Sub ConstruireFiche2(dsg As Object)
         ' bloc « libellé + montant » centré verticalement dans la tuile
         yCap = y + (F2_TUILE_HAUT - (F2_TUILE_CAP_HAUT + F2_TUILE_ECART + F2_TUILE_VAL_HAUT)) / 2
 
-        Set c = AjCtrl(zone, "Forms.Label.1", "lblStatCap_" & CStr(i + 1), _
+        Set c = AjCtrl(conteneur, "Forms.Label.1", "lblStatCap_" & CStr(i + 1), _
                        x + F2_TUILE_INSET, yCap, _
                        F2_TUILE_LARG - 2 * F2_TUILE_INSET, F2_TUILE_CAP_HAUT)
         Texte c, UCase$(CStr(tuiles(i)(0))), Z2TuileCap(), MSF_TextAlignCenter
         FondTuile c
 
-        Set c = AjCtrl(zone, "Forms.Label.1", "lblStatVal_" & CStr(i + 1), _
+        Set c = AjCtrl(conteneur, "Forms.Label.1", "lblStatVal_" & CStr(i + 1), _
                        x + F2_TUILE_INSET, yCap + F2_TUILE_CAP_HAUT + F2_TUILE_ECART, _
                        F2_TUILE_LARG - 2 * F2_TUILE_INSET, F2_TUILE_VAL_HAUT)
         Texte c, vbNullString, Z2TuileVal(), MSF_TextAlignCenter
@@ -519,21 +519,21 @@ End Sub
 ' seul le sommet de l'échelle est écrit — les autres montants se lisent au
 ' survol, plutôt que d'imprimer un nombre sur chaque barre.
 '------------------------------------------------------------------------------
-Private Sub ConstruireGraphique(zone As Object, ByVal ox As Single, ByVal oy As Single)
+Private Sub ConstruireGraphique(conteneur As Object, ByVal ox As Single, ByVal oy As Single)
     Dim c As Object, i As Long, y As Single, largeur As Single
 
     largeur = F2_GRAPH_LARG - GR_MARGE_G
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblGrLegende", ox, oy, F2_GRAPH_LARG, GR_LEGENDE_HAUT)
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblGrLegende", ox, oy, F2_GRAPH_LARG, GR_LEGENDE_HAUT)
     Texte c, "Chiffre d'affaires par mois", Z2GraphTitre(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblGrMax", ox, oy + GR_TRACE_TOP - 5, GR_MARGE_G - 8, 11)
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblGrMax", ox, oy + GR_TRACE_TOP - 5, GR_MARGE_G - 8, 11)
     Texte c, vbNullString, Z2GraphAxe(), MSF_TextAlignRight
 
     ' trois repères : le sommet de l'échelle, la moitié, la ligne de base
     For i = 1 To 3
         y = oy + GR_TRACE_TOP + (i - 1) * (GR_TRACE_HAUT / 2)
-        Set c = AjCtrl(zone, "Forms.Label.1", "lblGrGrille_" & CStr(i), _
+        Set c = AjCtrl(conteneur, "Forms.Label.1", "lblGrGrille_" & CStr(i), _
                        ox + GR_MARGE_G, y, largeur, 1)
         Fond c, IIf(i = 3, COUL_GR_BASE, COUL_GR_GRILLE), _
                 IIf(i = 3, COUL_GR_BASE, COUL_GR_GRILLE)
@@ -541,11 +541,11 @@ Private Sub ConstruireGraphique(zone As Object, ByVal ox As Single, ByVal oy As 
 
     ' barres et noms de mois : créés ici, placés par Graph_Tracer
     For i = 1 To GR_NB_MOIS
-        Set c = AjCtrl(zone, "Forms.Label.1", "lblGrBarre_" & CStr(i), _
+        Set c = AjCtrl(conteneur, "Forms.Label.1", "lblGrBarre_" & CStr(i), _
                        ox + GR_MARGE_G, oy + GR_TRACE_TOP, GR_BARRE_LARG, 1)
         Fond c, COUL_GR_BARRE, COUL_GR_BARRE
 
-        Set c = AjCtrl(zone, "Forms.Label.1", "lblGrMois_" & CStr(i), _
+        Set c = AjCtrl(conteneur, "Forms.Label.1", "lblGrMois_" & CStr(i), _
                        ox + GR_MARGE_G, oy + GR_TRACE_TOP + GR_TRACE_HAUT + 3, _
                        GR_BARRE_LARG, GR_MOIS_HAUT)
         Texte c, vbNullString, Z2GraphAxe(), MSF_TextAlignCenter
@@ -558,22 +558,22 @@ End Sub
 Private Sub ConstruireFiche3(dsg As Object)
     Dim c As Object, ch() As ChampInterv, i As Long
     Dim x As Single, y As Single, larg As Single, haut As Single, ordre As Long
-    Dim zone As Object, ox As Single, oy As Single, cZoneDate As Object
+    Dim conteneur As Object, ox As Single, oy As Single, cZoneDate As Object
 
     If F3_EN_CADRE Then
-        Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarte3(), _
+        Set conteneur = AjCtrl(dsg, "Forms.Frame.1", NomCarte3(), _
                           I_MARGE, F3_TOP, I_CARTE_LARG, F3_HAUT)
-        CadreI zone
+        CadreI conteneur
         ox = I_MARGE
         oy = F3_TOP
     Else
         Set c = AjCtrl(dsg, "Forms.Label.1", NomCarte3(), _
                        I_MARGE, F3_TOP, I_CARTE_LARG, F3_HAUT)
         CarteI c
-        Set zone = dsg
+        Set conteneur = dsg
     End If
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblSectionSaisieI", _
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblSectionSaisieI", _
                    30 - ox, F3_TOP + 6 - oy, 300, 13)
     Texte c, "FICHE INTERVENTION", Z3Section(), MSF_TextAlignLeft
 
@@ -600,20 +600,20 @@ Private Sub ConstruireFiche3(dsg As Object)
 
         If ch(i).TypeCtrl = ITYPE_CASE Then
             EnCours "création de la case " & INomControle(ch(i))
-            Set c = AjCtrl(zone, "Forms.CheckBox.1", INomControle(ch(i)), _
+            Set c = AjCtrl(conteneur, "Forms.CheckBox.1", INomControle(ch(i)), _
                            x, y + ICH_LBL_HAUT + 1, larg, ICH_CTL_HAUT)
             EnCours "habillage de la case " & INomControle(ch(i))
             Case_ c, ch(i).Libelle
         Else
             EnCours "création du libellé " & INomLibelle(ch(i))
-            Set c = AjCtrl(zone, "Forms.Label.1", INomLibelle(ch(i)), x, y, larg, ICH_LBL_HAUT)
+            Set c = AjCtrl(conteneur, "Forms.Label.1", INomLibelle(ch(i)), x, y, larg, ICH_LBL_HAUT)
             EnCours "habillage du libellé " & INomLibelle(ch(i))
             Texte c, UCase$(ch(i).Libelle), Z3Libelle(), MSF_TextAlignLeft
 
             Select Case ch(i).TypeCtrl
                 Case ITYPE_LISTE, ITYPE_AUTO
                     EnCours "création de la liste " & INomControle(ch(i))
-                    Set c = AjCtrl(zone, "Forms.ComboBox.1", INomControle(ch(i)), _
+                    Set c = AjCtrl(conteneur, "Forms.ComboBox.1", INomControle(ch(i)), _
                                    x, y + ICH_LBL_HAUT + 1, larg, haut)
                     EnCours "habillage de la liste " & INomControle(ch(i))
                     Liste c, (ch(i).TypeCtrl = ITYPE_AUTO)
@@ -628,13 +628,13 @@ Private Sub ConstruireFiche3(dsg As Object)
                     ' l'objet évite la question, et c'était de toute façon un
                     ' détour : on venait de le créer.
                     EnCours "création de la zone de date " & INomControle(ch(i))
-                    Set cZoneDate = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
+                    Set cZoneDate = AjCtrl(conteneur, "Forms.TextBox.1", INomControle(ch(i)), _
                                        x, y + ICH_LBL_HAUT + 1, larg - 20, haut)
                     EnCours "habillage de la zone de date " & INomControle(ch(i))
                     Zone cZoneDate, False
 
                     EnCours "création du chevron du calendrier"
-                    Set c = AjCtrl(zone, "Forms.Label.1", "lblCalendrier", _
+                    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblCalendrier", _
                                    x + larg - 18, y + ICH_LBL_HAUT + 1, 18, haut)
                     EnCours "habillage du chevron du calendrier"
                     Texte c, ChrW(9662), Z3Chevron(), MSF_TextAlignCenter
@@ -651,7 +651,7 @@ Private Sub ConstruireFiche3(dsg As Object)
 
                 Case Else
                     EnCours "création de la zone " & INomControle(ch(i))
-                    Set c = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
+                    Set c = AjCtrl(conteneur, "Forms.TextBox.1", INomControle(ch(i)), _
                                    x, y + ICH_LBL_HAUT + 1, larg, haut)
                     EnCours "habillage de la zone " & INomControle(ch(i))
                     Zone c, ch(i).Verrouille
@@ -680,7 +680,7 @@ Private Sub ConstruireFiche3(dsg As Object)
 
     ' libellé commun aux deux cases à cocher, qui n'en ont pas d'individuel :
     ' il occupe la ligne de libellés que TVA et Forfait laissent vide
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblI_Facturation", _
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblI_Facturation", _
                    IGrilleX(3) - ox, IGrilleY(4) - oy, IG_BLOC, ICH_LBL_HAUT)
     Texte c, "FACTURATION", Z3Libelle(), MSF_TextAlignLeft
 End Sub
@@ -690,53 +690,53 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub ConstruireFiltre(dsg As Object)
     Dim c As Object, y As Single
-    Dim zone As Object, ox As Single, oy As Single
+    Dim conteneur As Object, ox As Single, oy As Single
 
     If F4_EN_CADRE Then
-        Set zone = AjCtrl(dsg, "Forms.Frame.1", NomCarteFiltre(), _
+        Set conteneur = AjCtrl(dsg, "Forms.Frame.1", NomCarteFiltre(), _
                           I_MARGE, IF_TOP, I_CARTE_LARG, IF_HAUT)
-        CadreI zone
+        CadreI conteneur
         ox = I_MARGE
         oy = IF_TOP
     Else
         Set c = AjCtrl(dsg, "Forms.Label.1", NomCarteFiltre(), _
                        I_MARGE, IF_TOP, I_CARTE_LARG, IF_HAUT)
         CarteI c
-        Set zone = dsg
+        Set conteneur = dsg
     End If
 
     ' toutes les abscisses de la barre passent par ici : une seule soustraction
     y = IF_TOP + 10 - oy
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblFiltreTitreI", IFB_TITRE_X - ox, y + 2, 62, 14)
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblFiltreTitreI", IFB_TITRE_X - ox, y + 2, 62, 14)
     Texte c, "Filtrer sur", Z4Libelle(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(zone, "Forms.ComboBox.1", "cboChampFiltreI", IFB_CHAMP_X - ox, y, _
+    Set c = AjCtrl(conteneur, "Forms.ComboBox.1", "cboChampFiltreI", IFB_CHAMP_X - ox, y, _
                    IFB_CHAMP_L, ICH_CTL_HAUT)
     Liste c, False
     c.Style = MSF_StyleDropDownList
     c.ControlTipText = "Colonne du tableau sur laquelle porte le filtre"
 
-    Set c = AjCtrl(zone, "Forms.TextBox.1", "txtFiltreI", IFB_TEXTE_X - ox, y, _
+    Set c = AjCtrl(conteneur, "Forms.TextBox.1", "txtFiltreI", IFB_TEXTE_X - ox, y, _
                    IFB_TEXTE_L, ICH_CTL_HAUT)
     Zone c, False
     c.ControlTipText = "Texte à rechercher (accents et majuscules sont ignorés)"
 
     ' --- second filtre, sur le mois de la date --------------------------------
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblMoisFiltreI", IFB_MOIS_LBL_X - ox, y + 2, 28, 14)
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblMoisFiltreI", IFB_MOIS_LBL_X - ox, y + 2, 28, 14)
     Texte c, "Mois", Z4Libelle(), MSF_TextAlignLeft
 
-    Set c = AjCtrl(zone, "Forms.ComboBox.1", "cboMoisI", IFB_MOIS_X - ox, y, _
+    Set c = AjCtrl(conteneur, "Forms.ComboBox.1", "cboMoisI", IFB_MOIS_X - ox, y, _
                    IFB_MOIS_L, ICH_CTL_HAUT)
     Liste c, False
     c.Style = MSF_StyleDropDownList
     c.ControlTipText = "N'afficher que les interventions d'un mois"
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblResetFiltreI", IFB_RESET_X - ox, y + 2, 80, 14)
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblResetFiltreI", IFB_RESET_X - ox, y + 2, 80, 14)
     Texte c, "Réinitialiser", Z4Lien(), MSF_TextAlignLeft
     c.ControlTipText = "Effacer les deux filtres et réafficher toutes les interventions"
 
-    Set c = AjCtrl(zone, "Forms.Label.1", "lblCompteurI", _
+    Set c = AjCtrl(conteneur, "Forms.Label.1", "lblCompteurI", _
                    I_MARGE + I_CARTE_LARG - F2_PADDING - IFB_COMPTEUR_L - ox, y + 2, _
                    IFB_COMPTEUR_L, 14)
     Texte c, vbNullString, Z4Compteur(), MSF_TextAlignRight
@@ -1176,6 +1176,13 @@ End Sub
 '------------------------------------------------------------------------------
 ' Zone de saisie. Locked plutôt qu'Enabled = False pour un champ géré par le
 ' programme : il reste lisible et son contenu copiable.
+'
+' AUCUNE VARIABLE DE CE MODULE NE DOIT S'APPELER « zone ». Une locale de ce nom
+' MASQUE cette procédure : VBA ne dit rien à la compilation, il transforme
+' « Zone c, x » en appel tardif sur l'objet, et MSForms répond à l'exécution
+' « propriété ou méthode non gérée par cet objet » — une erreur 438 sur une
+' ligne d'apparence irréprochable. Les cadres des fiches s'appellent donc
+' conteneur, et check_vba.py refuse tout retour en arrière.
 '------------------------------------------------------------------------------
 Private Sub Zone(c As Object, ByVal verrouille As Boolean)
     PoserPolice c, POLICE, TAILLE_CHAMP, False
