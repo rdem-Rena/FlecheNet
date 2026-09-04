@@ -152,12 +152,15 @@ SansPolice:
 End Function
 
 '------------------------------------------------------------------------------
-' Où écrire le détail : à côté du classeur, ou dans le dossier temporaire si
-' le classeur n'a pas encore été enregistré.
+' Où écrire le détail : à côté du classeur, ou dans le dossier temporaire si le
+' classeur n'a pas encore été enregistré — ou s'il vit sur OneDrive sans copie
+' synchronisée, auquel cas DossierClasseur ne rend rien et Open échouerait sur
+' une adresse web.
 '------------------------------------------------------------------------------
 Private Function CheminDiag() As String
     Dim dossier As String
-    dossier = ThisWorkbook.Path
+
+    dossier = DossierClasseur()
     If Len(dossier) = 0 Then dossier = Environ$("TEMP")
     CheminDiag = dossier & Application.PathSeparator & "Polices_UF_Interventions.txt"
 End Function

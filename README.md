@@ -188,6 +188,22 @@ Plan, palette et réglages : [`docs/ACCUEIL.md`](docs/ACCUEIL.md).
 
 ---
 
+## Dossier partagé OneDrive
+
+Le classeur fonctionne dans un dossier synchronisé par OneDrive ou SharePoint,
+à condition de l'ouvrir **depuis l'Explorateur** et non depuis le site web.
+
+Dans un tel dossier, `ThisWorkbook.Path` rend une adresse web et non un chemin ;
+`Dir$`, `Open` et `LoadPicture` ne savent pas la lire, et l'image de fond des
+tuiles restait introuvable sans que rien ne le signale. Le module
+[`modChemins`](src/modChemins.bas) retrouve le chemin local à partir de cette
+adresse, et tout le code passe par lui. En cas de doute :
+**`DiagnostiquerChemins`**.
+
+Détails et dépannage : [`docs/INSTALLATION.md`](docs/INSTALLATION.md).
+
+---
+
 ## Encodage des fichiers
 
 Les fichiers `.bas` sont enregistrés en **Windows-1252 / CRLF**, l'encodage

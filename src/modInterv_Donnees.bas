@@ -579,15 +579,21 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Chemin de l'image de fond des tuiles de statistiques.
+'
+' Le dossier vient de DossierClasseur (modChemins) et NON de ThisWorkbook.Path :
+' dans un dossier synchronisé par OneDrive, ce dernier rend une adresse web, que
+' ni Dir$ ni LoadPicture ne savent lire. L'image était alors introuvable sans
+' que rien ne le dise.
+'
 '   renvoie : le chemin si le fichier existe, une chaîne vide sinon
 '------------------------------------------------------------------------------
 Public Function Interv_CheminImageTuile() As String
-    Dim chemin As String
-    On Error Resume Next
-    ' un classeur jamais enregistré n'a pas de dossier : rien à chercher
-    If Len(ThisWorkbook.Path) = 0 Then Exit Function
-    chemin = ThisWorkbook.Path & Application.PathSeparator & DOSSIER_IMAGES & _
+    Dim dossier As String, chemin As String
+
+    dossier = DossierClasseur()
+    If Len(dossier) = 0 Then Exit Function
+
+    chemin = dossier & Application.PathSeparator & DOSSIER_IMAGES & _
              Application.PathSeparator & IMAGE_TUILE
-    If Len(Dir$(chemin)) > 0 Then Interv_CheminImageTuile = chemin
-    On Error GoTo 0
+    If FichierExiste(chemin) Then Interv_CheminImageTuile = chemin
 End Function

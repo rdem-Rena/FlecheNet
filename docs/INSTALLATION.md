@@ -82,6 +82,39 @@ les macros). Le formulaire et les modules y sont conservés : la génération n'
 
 ---
 
+## Le classeur dans un dossier OneDrive ou SharePoint
+
+Le classeur fonctionne dans un dossier partagé et synchronisé, à une condition :
+**l'ouvrir depuis l'Explorateur**, dans le dossier synchronisé, et non depuis le
+site web ou depuis Excel en ligne.
+
+Pourquoi cette condition : dans un dossier synchronisé, `ThisWorkbook.Path` ne
+rend pas un chemin mais une adresse web —
+`https://contoso.sharepoint.com/sites/Equipe/Documents partagés/Flèche` — que ni
+`Dir$`, ni `Open`, ni `LoadPicture` ne savent lire. Le module **`modChemins`**
+retrouve le chemin local correspondant en confrontant la fin de cette adresse
+aux racines de synchronisation du poste, puis tout le reste du code passe par
+lui. C'est notamment ce qui permet à l'image de fond des tuiles, dans
+`Images\CartePremium.jpg`, de s'afficher.
+
+Si une image ne s'affiche toujours pas, lancer **`DiagnostiquerChemins`**
+(module `modChemins`) : le message dit ce que le classeur croit être son
+dossier, ce que le programme en a tiré, et si l'image s'y trouve.
+
+Trois causes possibles quand le dossier local reste introuvable :
+
+- le classeur a été ouvert depuis le navigateur — le rouvrir depuis
+  l'Explorateur ;
+- le dossier n'est pas synchronisé sur ce poste — cliquer **Synchroniser** dans
+  la bibliothèque SharePoint ;
+- le client OneDrive n'est pas installé — les variables d'environnement
+  `OneDrive` et `OneDriveCommercial` sont alors absentes, et il n'y a aucune
+  racine où chercher.
+
+Le dossier `Images` doit rester **à côté du classeur**, comme en local.
+
+---
+
 ## Dépannage
 
 **« Excel refuse l'accès au projet VBA »**
