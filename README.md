@@ -3,13 +3,17 @@
 Procédures VBA qui **génèrent** et font fonctionner les formulaires de saisie du
 classeur `FlecheNettoyageSA2026.xlsm` :
 
-| Formulaire | Tableau | Onglet | Documentation |
+| Écran | Tableau | Ouvert par | Documentation |
 |---|---|---|---|
-| `UF_Clients` | `TblClients` | Clients | [`docs/STRUCTURE.md`](docs/STRUCTURE.md) |
-| `UF_Interventions` + `UF_Calendrier` | `TblInterv` | Interventions | [`docs/INTERVENTIONS.md`](docs/INTERVENTIONS.md) |
+| Feuille `Accueil` | — | l'ouverture du classeur | [`docs/ACCUEIL.md`](docs/ACCUEIL.md) |
+| `UF_Clients` | `TblClients` | carte **Clients** | [`docs/STRUCTURE.md`](docs/STRUCTURE.md) |
+| `UF_Interventions` + `UF_Calendrier` | `TblInterv` | carte **Interventions** | [`docs/INTERVENTIONS.md`](docs/INTERVENTIONS.md) |
+| `UF_Facture` | `TblInterv` | carte **Facturation**, ou le bouton *Facturer* | [`docs/FACTURATION.md`](docs/FACTURATION.md) |
+| `UF_Statistiques` | `TblInterv` | carte **Statistiques**, ou le bouton *Info* | [`docs/STATISTIQUES.md`](docs/STATISTIQUES.md) |
 
-Les deux partagent une seule charte graphique et les mêmes utilitaires : les
-modules `modInterv_*` s'ajoutent aux `modClients_*`, ils ne les remplacent pas.
+Tous partagent une seule charte graphique et les mêmes utilitaires : les modules
+`modInterv_*`, `modFact_*`, `modStat_*` et `modAccueil_*` s'ajoutent aux
+`modClients_*`, ils ne les remplacent pas.
 
 ---
 
@@ -28,11 +32,13 @@ zone de saisie dans le formulaire à la régénération suivante.
    → cocher **« Accès approuvé au modèle d'objet du projet VBA »**, puis fermer
    et rouvrir le classeur.
 2. **Alt + F11** pour ouvrir l'éditeur VBA, puis **Fichier ▸ Importer un
-   fichier…** pour importer les modules du dossier [`src/`](src) : les sept
-   `modClients_*` pour le formulaire des clients, les sept `modInterv_*` pour
-   celui des interventions — ces derniers ont besoin des premiers.
-3. Lancer **`GenererFormulaireClients`** et **`GenererFormulaireInterventions`**.
-4. Lancer **`OuvrirGestionClients`** ou **`OuvrirGestionInterventions`**.
+   fichier…** pour importer **tous** les modules du dossier [`src/`](src). Les
+   `modClients_*` viennent en premier : tous les autres s'appuient sur leur
+   palette et leurs utilitaires.
+3. Lancer **`GenererFormulaireClients`**, **`GenererFormulaireInterventions`**,
+   **`GenererFormulaireFacture`**, **`GenererFormulaireStatistiques`** et
+   **`GenererAccueil`**.
+4. Aller sur la feuille **Accueil** et cliquer sur une carte.
 
 Détails et dépannage : [`docs/INSTALLATION.md`](docs/INSTALLATION.md).
 
@@ -153,11 +159,32 @@ Deux écarts avec la demande, l'un imposé, l'autre corrigé :
   déjà employée par « CA mois actuel ». C'est **`CATotalMoisActuelNonFacture`**
   qui est lue, la cellule effectivement définie dans le classeur.
 
-Les boutons **Facturer** et **Info** sont en place ; leurs formulaires restent à
-définir, les points de branchement sont prêts.
+Les boutons **Facturer** et **Info** ouvrent `UF_Facture` et `UF_Statistiques`.
 
 Plan complet, carte des champs et réglages :
 [`docs/INTERVENTIONS.md`](docs/INTERVENTIONS.md).
+
+---
+
+## Menu d'accueil
+
+La feuille **`Accueil`** est le menu du classeur : quatre cartes, une par
+module, un clic ouvre le formulaire correspondant.
+
+Elle n'est pas dessinée à la main mais **par code**, comme les formulaires :
+`GenererAccueil` la crée, l'efface et la redessine autant de fois qu'on veut.
+Le choix d'une feuille plutôt que d'un cinquième UserForm est délibéré —
+MSForms ne sait ni arrondir un coin, ni dégrader un fond, ni porter une ombre.
+
+Pour que le classeur s'ouvre dessus, dans le module `ThisWorkbook` :
+
+```vba
+Private Sub Workbook_Open()
+    AfficherAccueil
+End Sub
+```
+
+Plan, palette et réglages : [`docs/ACCUEIL.md`](docs/ACCUEIL.md).
 
 ---
 
