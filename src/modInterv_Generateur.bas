@@ -217,41 +217,27 @@ End Function
 '------------------------------------------------------------------------------
 ' VIDE un formulaire existant de tous ses contrôles.
 '
-' Un parcours par index ne convient pas depuis qu'une zone peut être un CADRE :
-' le supprimer emporte ses enfants, la collection rétrécit de plusieurs éléments
-' d'un coup, et les index suivants ne désignent plus ce qu'on croit. On retire
-' donc UN contrôle par tour, en repartant du début à chaque fois.
+' CE QUE LE CONCEPTEUR ACCEPTE, ET CE QU'IL REFUSE. La collection Controls du
+' formulaire est PLATE : elle montre aussi les contrôles posés dans un cadre.
+' Mais elle ne les RETIRE pas — un enfant ne se supprime que depuis la
+' collection de son cadre — et un cadre qui a encore des enfants ne part pas
+' non plus. Un vidage qui ne s'adresse qu'au formulaire ne retire donc RIEN
+' d'un formulaire à cadres : c'est ce qui bloquait la regénération, avec
+' cinquante-sept contrôles qui « refusaient » d'être supprimés.
 '
-' UN CONTRÔLE QUI RÉSISTE N'ARRÊTE PLUS LE VIDAGE : on essaie le suivant, et on
-' ne renonce qu'après un tour complet sans le moindre retrait. La version
-' précédente abandonnait au premier refus et laissait la génération se
-' poursuivre sur un formulaire à MOITIÉ PLEIN — le premier nom déjà pris faisait
-' alors échouer la construction très loin de là, sans rapport visible avec la
-' cause. C'est aussi pourquoi un formulaire déjà généré se comportait autrement
-' qu'un formulaire créé de zéro.
+' D'où la marche à suivre : chaque cadre est vidé PAR SA PROPRE COLLECTION,
+' d'abord, et ne s'enlève qu'ensuite, une fois vide. On parcourt à l'envers,
+' les index qui précèdent ne bougeant pas, et on recommence tant qu'un tour a
+' retiré quelque chose — supprimer un cadre fait disparaître ses enfants d'un
+' coup, et les index d'après ne désignent plus ce qu'on croit.
 '
 ' Et si le vidage échoue pour de bon, on le DIT, avec la marche à suivre : mieux
 ' vaut une consigne claire qu'une erreur MSForms au milieu d'une fiche.
 '------------------------------------------------------------------------------
 Private Sub ViderDesigner(dsg As Object, ByVal nom As String)
-    Dim avant As Long, i As Long, nomCtrl As String, restants As String
+    Dim i As Long, nomCtrl As String, restants As String
 
-    Do
-        avant = dsg.Controls.Count
-        If avant = 0 Then Exit Do
-
-        For i = 0 To avant - 1
-            If i > dsg.Controls.Count - 1 Then Exit For
-            nomCtrl = vbNullString
-            On Error Resume Next
-            nomCtrl = dsg.Controls(i).Name
-            If Len(nomCtrl) > 0 Then dsg.Controls.Remove nomCtrl
-            On Error GoTo 0
-            ' un retrait a eu lieu : on repart du début, les index ont bougé
-            If dsg.Controls.Count < avant Then Exit For
-        Next i
-    Loop While dsg.Controls.Count < avant
-
+    RetirerTout dsg
     If dsg.Controls.Count = 0 Then Exit Sub
 
     ' les récalcitrants, nommés : sans eux le message n'apprendrait rien
@@ -277,6 +263,60 @@ Private Sub ViderDesigner(dsg As Object, ByVal nom As String)
         "À FAIRE : enregistrez, fermez puis rouvrez le classeur, et relancez " & _
         "la génération."
 End Sub
+
+'------------------------------------------------------------------------------
+' Retire d'un conteneur — formulaire ou cadre — tout ce qu'on peut en retirer.
+'
+' Un CADRE est vidé avant d'être enlevé, par un appel sur lui-même : c'est la
+' seule collection qui accepte de lâcher ses enfants.
+'
+' Le nom d'abord, l'index en second recours : selon les versions, la collection
+' d'un cadre ne reconnaît pas toujours le nom d'un contrôle du concepteur.
+'------------------------------------------------------------------------------
+Private Sub RetirerTout(cont As Object)
+    Dim i As Long, c As Object, nomCtrl As String, avant As Long, nb As Long
+
+    Do
+        avant = cont.Controls.Count
+        If avant = 0 Then Exit Sub
+
+        For i = avant - 1 To 0 Step -1
+            ' la collection a pu rétrécir de plusieurs éléments d'un coup
+            If i <= cont.Controls.Count - 1 Then
+                Set c = Nothing
+                nomCtrl = vbNullString
+                On Error Resume Next
+                Set c = cont.Controls(i)
+                nomCtrl = c.Name
+                On Error GoTo 0
+
+                If Not c Is Nothing Then
+                    If EstConteneur(c) Then RetirerTout c
+
+                    nb = cont.Controls.Count
+                    On Error Resume Next
+                    cont.Controls.Remove nomCtrl
+                    If cont.Controls.Count = nb Then cont.Controls.Remove i
+                    On Error GoTo 0
+                End If
+            End If
+        Next i
+    Loop While cont.Controls.Count < avant
+End Sub
+
+'------------------------------------------------------------------------------
+' Un cadre a une collection Controls ; un libellé, non. C'est tout ce qui les
+' distingue ici, et il n'y a pas besoin d'en savoir plus.
+'------------------------------------------------------------------------------
+Private Function EstConteneur(c As Object) As Boolean
+    Dim n As Long
+
+    n = -1
+    On Error Resume Next
+    n = c.Controls.Count
+    On Error GoTo 0
+    EstConteneur = (n >= 0)
+End Function
 
 '------------------------------------------------------------------------------
 ' Pose une propriété du formulaire.
