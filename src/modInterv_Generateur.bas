@@ -30,15 +30,29 @@ Private Const CT_MSFORM As Long = 3         ' vbext_ct_MSForm
 ' à la main pendant la session : ce n'est pas une panne, c'est une manoeuvre à
 ' faire, et le message doit le dire au lieu d'afficher une erreur VBA brute.
 Private Const ERR_NOM_OCCUPE As Long = vbObjectError + 513
+
+' Le formulaire existant qui refuse d'être vidé : même esprit, même traitement.
+' Ce n'est pas une panne du générateur, c'est une consigne à suivre.
+Private Const ERR_FORM_NON_VIDE As Long = vbObjectError + 514
+
 Private Const SIG_SOURIS As String = "(ByVal Button As Integer, ByVal Shift As Integer, " & _
                                      "ByVal X As Single, ByVal Y As Single)"
 
 Private mCode As String
 
-' L'ÉTAPE EN COURS, pour que le message d'erreur dise OÙ la génération a
-' échoué. Une erreur MSForms ne nomme jamais le contrôle fautif : sans cela,
-' « propriété non gérée par cet objet » laisse chercher dans mille lignes.
+' LA TRACE DE GÉNÉRATION, en trois mots posés au fil des manoeuvres et relus
+' par le message d'erreur. MSForms ne nomme jamais ce qu'il refuse : « propriété
+' non gérée par cet objet » laisse chercher dans mille lignes, et sans Excel
+' sous la main c'est la seule façon de savoir laquelle.
+'
+'   mEtape    la région du formulaire  : « fiche 3 (saisie), champ Date »
+'   mDetail   ce qu'on y faisait       : « habillage de la zone txtDate »
+'   mProp     la propriété qu'on posait: « EnterKeyBehavior »
+'
+' Les trois ensemble désignent UNE instruction, et une seule.
 Private mEtape As String
+Private mDetail As String
+Private mProp As String
 
 '==============================================================================
 ' POINT D'ENTRÉE
@@ -95,12 +109,15 @@ Public Sub GenererFormulaireInterventions()
 Erreur:
     ' Le nom retenu par un formulaire supprimé à la main n'est pas une panne :
     ' la marche à suivre est dans le message, inutile de l'habiller en erreur.
-    If Err.Number = ERR_NOM_OCCUPE Then
+    If Err.Number = ERR_NOM_OCCUPE Or Err.Number = ERR_FORM_NON_VIDE Then
         MsgBox Err.Description, vbExclamation, "Génération du formulaire"
     Else
         MsgBox "La génération a échoué :" & vbCrLf & vbCrLf & _
                Err.Number & " - " & Err.Description & vbCrLf & vbCrLf & _
-               IIf(Len(mEtape) > 0, "Étape : " & mEtape & vbCrLf & vbCrLf, "") & _
+               IIf(Len(mEtape) > 0, "Étape : " & mEtape & vbCrLf, "") & _
+               IIf(Len(mDetail) > 0, "Opération : " & mDetail & vbCrLf, "") & _
+               IIf(Len(mProp) > 0, "Propriété : " & mProp & vbCrLf, "") & _
+               IIf(Len(mEtape) > 0, vbCrLf, "") & _
                "Si le problème persiste : fermez puis rouvrez le classeur, lancez " & _
                "NettoyerFormulairesOrphelins, et relancez la génération.", _
                vbCritical, "Génération du formulaire"
@@ -187,26 +204,79 @@ Public Function PreparerForm(vbProj As Object, ByVal nom As String) As Object
     Next i
     On Error GoTo 0
 
-    ' VIDAGE. Un parcours par index à l'envers ne convient plus depuis qu'une
-    ' zone peut être un CADRE : ses enfants partent avec lui, la collection
-    ' rétrécit de plusieurs éléments d'un coup, et les index suivants ne
-    ' désignent plus ce qu'on croit. On retire donc toujours le PREMIER, tant
-    ' qu'il en reste, et on s'arrête dès qu'un tour ne retire plus rien —
-    ' sinon un contrôle impossible à supprimer ferait tourner sans fin.
     Set dsg = vbComp.Designer
-    On Error Resume Next
-    Do While dsg.Controls.Count > 0
-        i = dsg.Controls.Count
-        dsg.Controls.Remove dsg.Controls(0).Name
-        If dsg.Controls.Count >= i Then Exit Do
-    Loop
-    On Error GoTo 0
+    ViderDesigner dsg, nom
+
     With vbComp.CodeModule
         If .CountOfLines > 0 Then .DeleteLines 1, .CountOfLines
     End With
 
     Set PreparerForm = vbComp
 End Function
+
+'------------------------------------------------------------------------------
+' VIDE un formulaire existant de tous ses contrôles.
+'
+' Un parcours par index ne convient pas depuis qu'une zone peut être un CADRE :
+' le supprimer emporte ses enfants, la collection rétrécit de plusieurs éléments
+' d'un coup, et les index suivants ne désignent plus ce qu'on croit. On retire
+' donc UN contrôle par tour, en repartant du début à chaque fois.
+'
+' UN CONTRÔLE QUI RÉSISTE N'ARRÊTE PLUS LE VIDAGE : on essaie le suivant, et on
+' ne renonce qu'après un tour complet sans le moindre retrait. La version
+' précédente abandonnait au premier refus et laissait la génération se
+' poursuivre sur un formulaire à MOITIÉ PLEIN — le premier nom déjà pris faisait
+' alors échouer la construction très loin de là, sans rapport visible avec la
+' cause. C'est aussi pourquoi un formulaire déjà généré se comportait autrement
+' qu'un formulaire créé de zéro.
+'
+' Et si le vidage échoue pour de bon, on le DIT, avec la marche à suivre : mieux
+' vaut une consigne claire qu'une erreur MSForms au milieu d'une fiche.
+'------------------------------------------------------------------------------
+Private Sub ViderDesigner(dsg As Object, ByVal nom As String)
+    Dim avant As Long, i As Long, nomCtrl As String, restants As String
+
+    Do
+        avant = dsg.Controls.Count
+        If avant = 0 Then Exit Do
+
+        For i = 0 To avant - 1
+            If i > dsg.Controls.Count - 1 Then Exit For
+            nomCtrl = vbNullString
+            On Error Resume Next
+            nomCtrl = dsg.Controls(i).Name
+            If Len(nomCtrl) > 0 Then dsg.Controls.Remove nomCtrl
+            On Error GoTo 0
+            ' un retrait a eu lieu : on repart du début, les index ont bougé
+            If dsg.Controls.Count < avant Then Exit For
+        Next i
+    Loop While dsg.Controls.Count < avant
+
+    If dsg.Controls.Count = 0 Then Exit Sub
+
+    ' les récalcitrants, nommés : sans eux le message n'apprendrait rien
+    For i = 0 To dsg.Controls.Count - 1
+        If i > 8 Then
+            restants = restants & ", ..."
+            Exit For
+        End If
+        nomCtrl = vbNullString
+        On Error Resume Next
+        nomCtrl = dsg.Controls(i).Name
+        On Error GoTo 0
+        restants = restants & IIf(Len(restants) > 0, ", ", "") & nomCtrl
+    Next i
+
+    Err.Raise ERR_FORM_NON_VIDE, "ViderDesigner", _
+        "Le formulaire " & nom & " n'a pas pu être vidé." & vbCrLf & vbCrLf & _
+        dsg.Controls.Count & " contrôle(s) refusent d'être supprimés : " & _
+        restants & "." & vbCrLf & vbCrLf & _
+        "La génération s'arrête ici : la poursuivre sur un formulaire à moitié " & _
+        "plein produirait, bien plus loin, une erreur sans rapport avec la " & _
+        "cause." & vbCrLf & vbCrLf & _
+        "À FAIRE : enregistrez, fermez puis rouvrez le classeur, et relancez " & _
+        "la génération."
+End Sub
 
 '------------------------------------------------------------------------------
 ' Pose une propriété du formulaire.
@@ -241,19 +311,19 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     PropForm vbComp, "ShowModal", True
     PoliceParDefaut dsg
 
-    mEtape = "fiche 1 (intitulé)"
+    Etape "fiche 1 (intitulé)"
     ConstruireFiche1 dsg
-    mEtape = "fiche 2 (statistiques)"
+    Etape "fiche 2 (statistiques)"
     ConstruireFiche2 dsg
-    mEtape = "fiche 3 (saisie)"
+    Etape "fiche 3 (saisie)"
     ConstruireFiche3 dsg
-    mEtape = "barre de filtrage"
+    Etape "barre de filtrage"
     ConstruireFiltre dsg
-    mEtape = "fiche 4 (tableau)"
+    Etape "fiche 4 (tableau)"
     ConstruireFiche4 dsg
-    mEtape = "boutons"
+    Etape "boutons"
     ConstruireBoutonsInterv dsg
-    mEtape = "ordre de plan"
+    Etape "ordre de plan"
     ' Un cadre n'a rien à faire ici : ses enfants sont devant lui par
     ' construction. Les deux premières cartes y figurent tout de même, sous le
     ' nom que leur donne le thème — inoffensif pour un cadre, indispensable
@@ -261,9 +331,9 @@ Private Function ConstruireFormulairePrincipal(vbProj As Object) As Long
     ReculerFonds dsg, Array("lblEnteteTableI", "lblCarte4", NomCarteFiltre(), _
                             NomCarte3(), NomCarte2(), NomCarte1())
 
-    mEtape = "module de code"
+    Etape "module de code"
     vbComp.CodeModule.AddFromString CodeFormulairePrincipal()
-    mEtape = vbNullString
+    Etape vbNullString
     ConstruireFormulairePrincipal = dsg.Controls.Count
 End Function
 
@@ -473,7 +543,8 @@ Private Sub ConstruireFiche3(dsg As Object)
     For i = LBound(ch) To UBound(ch)
         ' l'étape nomme le champ : une erreur MSForms ne dit jamais sur quel
         ' contrôle elle s'est produite
-        mEtape = "fiche 3 (saisie), champ " & ch(i).Colonne
+        Etape "fiche 3 (saisie), champ " & ch(i).Colonne
+        EnCours "calcul de la position"
         x = IGrilleX(ch(i).Col) - ox
         y = IGrilleY(ch(i).Ligne) - oy
         larg = ILargeurBlocs(ch(i).Blocs)
@@ -488,17 +559,23 @@ Private Sub ConstruireFiche3(dsg As Object)
         End If
 
         If ch(i).TypeCtrl = ITYPE_CASE Then
+            EnCours "création de la case " & INomControle(ch(i))
             Set c = AjCtrl(zone, "Forms.CheckBox.1", INomControle(ch(i)), _
                            x, y + ICH_LBL_HAUT + 1, larg, ICH_CTL_HAUT)
+            EnCours "habillage de la case " & INomControle(ch(i))
             Case_ c, ch(i).Libelle
         Else
+            EnCours "création du libellé " & INomLibelle(ch(i))
             Set c = AjCtrl(zone, "Forms.Label.1", INomLibelle(ch(i)), x, y, larg, ICH_LBL_HAUT)
+            EnCours "habillage du libellé " & INomLibelle(ch(i))
             Texte c, UCase$(ch(i).Libelle), Z3Libelle(), MSF_TextAlignLeft
 
             Select Case ch(i).TypeCtrl
                 Case ITYPE_LISTE, ITYPE_AUTO
+                    EnCours "création de la liste " & INomControle(ch(i))
                     Set c = AjCtrl(zone, "Forms.ComboBox.1", INomControle(ch(i)), _
                                    x, y + ICH_LBL_HAUT + 1, larg, haut)
+                    EnCours "habillage de la liste " & INomControle(ch(i))
                     Liste c, (ch(i).TypeCtrl = ITYPE_AUTO)
 
                 Case ITYPE_DATE
@@ -510,15 +587,22 @@ Private Sub ConstruireFiche3(dsg As Object)
                     ' toujours — d'où une erreur 438 à la génération. Garder
                     ' l'objet évite la question, et c'était de toute façon un
                     ' détour : on venait de le créer.
+                    EnCours "création de la zone de date " & INomControle(ch(i))
                     Set cZoneDate = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
                                        x, y + ICH_LBL_HAUT + 1, larg - 20, haut)
+                    EnCours "habillage de la zone de date " & INomControle(ch(i))
                     Zone cZoneDate, False
 
+                    EnCours "création du chevron du calendrier"
                     Set c = AjCtrl(zone, "Forms.Label.1", "lblCalendrier", _
                                    x + larg - 18, y + ICH_LBL_HAUT + 1, 18, haut)
+                    EnCours "habillage du chevron du calendrier"
                     Texte c, ChrW(9662), Z3Chevron(), MSF_TextAlignCenter
+                    Propriete "BackStyle"
                     c.BackStyle = MSF_BackStyleOpaque
+                    Propriete "BackColor"
                     c.BackColor = COUL_MODIFIER
+                    Propriete "ControlTipText"
                     c.ControlTipText = "Ouvrir le calendrier"
 
                     ' la suite du tour porte sur la zone de date, pas sur le
@@ -526,22 +610,29 @@ Private Sub ConstruireFiche3(dsg As Object)
                     Set c = cZoneDate
 
                 Case Else
+                    EnCours "création de la zone " & INomControle(ch(i))
                     Set c = AjCtrl(zone, "Forms.TextBox.1", INomControle(ch(i)), _
                                    x, y + ICH_LBL_HAUT + 1, larg, haut)
+                    EnCours "habillage de la zone " & INomControle(ch(i))
                     Zone c, ch(i).Verrouille
                     ' une zone haute de plusieurs lignes accueille du texte long :
                     ' le retour à la ligne et l'ascenseur y deviennent utiles.
                     ' Zone a laissé EnterKeyBehavior à False : Entrée valide la
                     ' fiche, Ctrl+Entrée va à la ligne.
                     If ch(i).NbLignes > 1 Then
+                        EnCours "zone multiligne " & INomControle(ch(i))
+                        Propriete "MultiLine"
                         c.MultiLine = True
+                        Propriete "ScrollBars"
                         c.ScrollBars = MSF_ScrollBarsVertical
                     End If
             End Select
         End If
 
+        EnCours "info-bulle du champ " & ch(i).Colonne
         c.ControlTipText = ch(i).Aide
         If Not ch(i).Verrouille Then
+            EnCours "ordre de tabulation du champ " & ch(i).Colonne
             c.TabIndex = ordre
             ordre = ordre + 1
         End If
@@ -765,7 +856,7 @@ Private Function ConstruireCalendrier(vbProj As Object) As Long
     Dim vbComp As Object, dsg As Object, c As Object, i As Long
     Dim col As Long, lig As Long
 
-    mEtape = "calendrier"
+    Etape "calendrier"
     Set vbComp = PreparerForm(vbProj, NOM_FORM_CALENDRIER)
     Set dsg = vbComp.Designer
 
@@ -860,6 +951,25 @@ Private Sub PoliceParDefaut(dsg As Object)
     On Error GoTo 0
 End Sub
 
+'------------------------------------------------------------------------------
+' Les trois marqueurs de la trace. Changer de région efface l'opération, qui n'a
+' de sens que dans la sienne ; changer d'opération efface la propriété.
+'------------------------------------------------------------------------------
+Private Sub Etape(ByVal quoi As String)
+    mEtape = quoi
+    mDetail = vbNullString
+    mProp = vbNullString
+End Sub
+
+Private Sub EnCours(ByVal quoi As String)
+    mDetail = quoi
+    mProp = vbNullString
+End Sub
+
+Private Sub Propriete(ByVal nom As String)
+    mProp = nom
+End Sub
+
 ' Le premier argument est un CONTENEUR, pas forcément le formulaire : un cadre
 ' expose la même collection Controls, et y ajouter un contrôle l'y place. Les
 ' coordonnées comptent alors depuis le coin du conteneur.
@@ -867,11 +977,17 @@ Private Function AjCtrl(conteneur As Object, ByVal progId As String, ByVal nom A
                         ByVal gauche As Single, ByVal haut As Single, _
                         ByVal largeur As Single, ByVal hauteur As Single) As Object
     Dim c As Object
+    Propriete "Controls.Add " & progId
     Set c = conteneur.Controls.Add(progId, nom, True)
+    Propriete "Left"
     c.Left = gauche
+    Propriete "Top"
     c.Top = haut
+    Propriete "Width"
     c.Width = largeur
+    Propriete "Height"
     c.Height = hauteur
+    Propriete vbNullString
     Set AjCtrl = c
 End Function
 
@@ -945,12 +1061,19 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub Texte(c As Object, ByVal texte As String, ByRef st As StyleTexte, _
                   ByVal alignement As Long)
+    Propriete "Caption"
     c.Caption = texte
+    Propriete "BackStyle"
     c.BackStyle = MSF_BackStyleTransparent
+    Propriete "SpecialEffect"
     c.SpecialEffect = MSF_SpecialEffectFlat
+    Propriete "BorderStyle"
     c.BorderStyle = MSF_BorderStyleNone
+    Propriete "TextAlign"
     c.TextAlign = alignement
+    Propriete "WordWrap"
     c.WordWrap = False
+    Propriete "AutoSize"
     c.AutoSize = False
     PoserStyle c, st
 End Sub
@@ -965,6 +1088,7 @@ End Sub
 ' fond de la grille — qui portent la police de leur zone sans rien afficher.
 '------------------------------------------------------------------------------
 Private Sub PoserStyle(c As Object, ByRef st As StyleTexte)
+    Propriete "ForeColor"
     c.ForeColor = st.Couleur
     PoserPolice c, st.Police, st.Taille, st.Gras
 End Sub
@@ -997,12 +1121,16 @@ End Sub
 ' assignations étant la seule chose qui empêche la taille d'emporter la graisse.
 Public Sub PoserPolice(c As Object, ByVal police As String, _
                        ByVal taille As Single, ByVal gras As Boolean)
+    Propriete "Font.Name"
     c.Font.Name = police
+    Propriete "Font.Bold"
     c.Font.Bold = gras
     On Error Resume Next
     c.Font.Weight = IIf(gras, 700, 400)
     On Error GoTo 0
+    Propriete "Font.Size"
     c.Font.Size = taille
+    Propriete vbNullString
 End Sub
 
 '------------------------------------------------------------------------------
@@ -1011,20 +1139,32 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub Zone(c As Object, ByVal verrouille As Boolean)
     PoserPolice c, POLICE, TAILLE_CHAMP, False
+    Propriete "SpecialEffect"
     c.SpecialEffect = MSF_SpecialEffectFlat
+    Propriete "BorderStyle"
     c.BorderStyle = MSF_BorderStyleSingle
+    Propriete "BorderColor"
     c.BorderColor = COUL_CHAMP_BORD
+    Propriete "TextAlign"
     c.TextAlign = MSF_TextAlignLeft
+    Propriete "EnterKeyBehavior"
     c.EnterKeyBehavior = False
     If verrouille Then
+        Propriete "Locked"
         c.Locked = True
+        Propriete "TabStop"
         c.TabStop = False
+        Propriete "BackColor"
         c.BackColor = COUL_VERROU_FOND
+        Propriete "ForeColor"
         c.ForeColor = COUL_VERROU_TXT
     Else
+        Propriete "BackColor"
         c.BackColor = COUL_CHAMP_FOND
+        Propriete "ForeColor"
         c.ForeColor = COUL_TEXTE
     End If
+    Propriete vbNullString
 End Sub
 
 '------------------------------------------------------------------------------
