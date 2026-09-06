@@ -94,16 +94,34 @@ Public Const CARTE_LARG As Single = 808
 ' Bandeau de titre
 Public Const BAND_HAUT As Single = 48
 
-' Carte "Fiche client" : grille de saisie 4 colonnes x 5 lignes
+' Carte "Fiche client" : TROIS blocs de cinq lignes.
+'
+' Une ligne d'un bloc porte un à trois champs. Ceux qui annoncent un nombre de
+' CARACTÈRES prennent la largeur qu'il faut ; les autres se partagent également
+' ce qui reste. Le schéma dit « Adresse, puis No sur six caractères », et rien
+' d'autre n'est à calculer.
+'
+'   3 x 250,5 + 2 x 16,5 = 784 points, de GR_X à la marge droite de la carte.
+Public Const NB_BLOCS As Long = 3
+Public Const NB_LIGNES_FICHE As Long = 5
+
 Public Const CS_TOP As Single = 58
 Public Const CS_HAUT As Single = 200
-Public Const GR_X As Single = 28            ' abscisse de la 1re colonne
-Public Const GR_Y As Single = 86            ' ordonnée de la 1re ligne
-Public Const GR_BLOC As Single = 184        ' largeur d'un bloc "libellé + champ"
-Public Const GR_GOUTTIERE As Single = 16    ' espace entre deux blocs
-Public Const GR_LIGNE As Single = 32        ' pas vertical entre deux lignes
-Public Const CH_LBL_HAUT As Single = 11     ' hauteur du libellé
-Public Const CH_CTL_HAUT As Single = 18     ' hauteur de la zone de saisie
+Public Const GR_X As Single = 28              ' abscisse du 1er bloc
+Public Const GR_Y As Single = 86              ' ordonnée de la 1re ligne
+Public Const GR_BLOC As Single = 250.5        ' largeur d'un bloc
+Public Const GR_GOUTTIERE As Single = 16.5    ' espace entre deux blocs
+Public Const GR_LIGNE As Single = 32          ' pas vertical entre deux lignes
+Public Const CH_LBL_HAUT As Single = 11       ' hauteur du libellé
+Public Const CH_CTL_HAUT As Single = 18       ' hauteur de la zone de saisie
+
+' Ce qui sert à dimensionner un champ à l'intérieur d'une ligne.
+Public Const GR_ENTRE_CHAMPS As Single = 8    ' entre deux champs d'une ligne
+Public Const GR_LARG_CAR As Single = 5.5      ' largeur moyenne d'un caractère
+Public Const GR_MARGE_TEXTE As Single = 10    ' marges intérieures d'une zone
+Public Const GR_MARGE_LISTE As Single = 26    ' idem, plus la flèche du menu
+Public Const GR_MARGE_CASE As Single = 20     ' idem, plus la case à cocher
+Public Const GR_MIN_CHAMP As Single = 40      ' un champ ne descend pas plus bas
 
 ' Carte de filtrage
 Public Const CF_TOP As Single = 266
@@ -124,17 +142,37 @@ Public Const BT_GOUTTIERE As Single = 6
 ' Position d'un bloc de la grille de saisie
 '==============================================================================
 '------------------------------------------------------------------------------
-' Abscisse du bloc « libellé + zone de saisie » d'une colonne de la grille.
-'   colonne : 1 à 4, de gauche à droite
+' Abscisse du bord gauche d'un bloc.
+'   bloc    : 1 à NB_BLOCS, de gauche à droite
 '   renvoie : la position en points, mesurée depuis le bord gauche du formulaire
 '------------------------------------------------------------------------------
-Public Function GrilleX(ByVal colonne As Long) As Single
-    GrilleX = GR_X + (colonne - 1) * (GR_BLOC + GR_GOUTTIERE)
+Public Function GrilleX(ByVal bloc As Long) As Single
+    GrilleX = GR_X + (bloc - 1) * (GR_BLOC + GR_GOUTTIERE)
+End Function
+
+'------------------------------------------------------------------------------
+' Largeur d'un champ dimensionné en CARACTÈRES.
+'
+' Un champ qui annonce « 8 caractères » doit en tenir huit, et pas davantage :
+' la largeur du caractère à la taille des zones de saisie, plus ce que le
+' contrôle ajoute autour — ses marges intérieures, et la flèche d'un menu
+' déroulant ou la case d'une case à cocher.
+'------------------------------------------------------------------------------
+Public Function LargeurCars(ByVal cars As Long, ByVal typeCtrl As String) As Single
+    Dim marge As Single
+
+    Select Case typeCtrl
+        Case TYPE_LISTE: marge = GR_MARGE_LISTE
+        Case TYPE_CASE:  marge = GR_MARGE_CASE
+        Case Else:       marge = GR_MARGE_TEXTE
+    End Select
+
+    LargeurCars = cars * GR_LARG_CAR + marge
 End Function
 
 '------------------------------------------------------------------------------
 ' Ordonnée du bloc « libellé + zone de saisie » d'une ligne de la grille.
-'   ligne   : 1 à 5, de haut en bas
+'   ligne   : 1 à NB_LIGNES_FICHE, de haut en bas
 '   renvoie : la position en points, mesurée depuis le haut du formulaire
 ' Le libellé occupe CH_LBL_HAUT points, la zone de saisie commence juste dessous.
 '------------------------------------------------------------------------------

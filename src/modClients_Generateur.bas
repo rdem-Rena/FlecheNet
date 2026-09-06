@@ -473,6 +473,7 @@ End Sub
 Private Sub ConstruireCarteSaisie(dsg As Object)
     Dim c As Object, ch() As ChampClient, i As Long
     Dim x As Single, y As Single, larg As Single, ordreTab As Long
+    Dim iTVA As Long, iTaux As Long, xTaux As Single, largTaux As Single
 
     Set c = AjouterControle(dsg, "Forms.Label.1", "lblCarteSaisie", MARGE, CS_TOP, CARTE_LARG, CS_HAUT)
     Carte c
@@ -484,18 +485,8 @@ Private Sub ConstruireCarteSaisie(dsg As Object)
     ordreTab = 1
 
     For i = LBound(ch) To UBound(ch)
-        x = GrilleX(ch(i).Col)
+        PlaceChamp ch, i, x, larg
         y = GrilleY(ch(i).Ligne)
-        larg = GR_BLOC
-
-        ' Deux champs peuvent partager un bloc — les cases TVA et Forfait :
-        ' chacun prend la moitié de la largeur, moins 8 points de gouttière.
-        If ch(i).Moitie = 1 Then
-            larg = (GR_BLOC - 8) / 2
-        ElseIf ch(i).Moitie = 2 Then
-            larg = (GR_BLOC - 8) / 2
-            x = x + larg + 8
-        End If
 
         If ch(i).TypeCtrl = TYPE_CASE Then
             ' une case à cocher porte son propre libellé
@@ -514,6 +505,9 @@ Private Sub ConstruireCarteSaisie(dsg As Object)
                 Set c = AjouterControle(dsg, "Forms.TextBox.1", NomControle(ch(i)), _
                                         x, y + CH_LBL_HAUT + 1, larg, CH_CTL_HAUT)
                 ZoneTexte c, ch(i).Verrouille
+                ' un champ dimensionné en caractères l'est aussi à la saisie :
+                ' une case de huit caractères n'en accepte pas neuf
+                If ch(i).Cars > 0 Then c.MaxLength = ch(i).Cars
             End If
         End If
 
@@ -524,11 +518,111 @@ Private Sub ConstruireCarteSaisie(dsg As Object)
         End If
     Next i
 
-    ' les deux cases à cocher partagent un même libellé de bloc
-    Set c = AjouterControle(dsg, "Forms.Label.1", "lblChamp_Facturation", _
-                            GrilleX(2), GrilleY(5), GR_BLOC, CH_LBL_HAUT)
-    TexteLabel c, "FACTURATION", TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+    ' LE PAYS. Figé à « Suisse », dans une case verrouillée qui ressemble à
+    ' celle de la clef BD. Il ne figure pas au schéma : aucune colonne de
+    ' TblClients ne lui correspond, et le formulaire n'écrit dans le tableau que
+    ' ce que le schéma décrit. Il ne risque donc ni d'être effacé, ni d'être
+    ' enregistré.
+    Set c = AjouterControle(dsg, "Forms.Label.1", "lblChamp_Pays", _
+                            GrilleX(2), GrilleY(4), GR_BLOC, CH_LBL_HAUT)
+    TexteLabel c, "PAYS", TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+
+    Set c = AjouterControle(dsg, "Forms.TextBox.1", "txtPays", _
+                            GrilleX(2), GrilleY(4) + CH_LBL_HAUT + 1, GR_BLOC, CH_CTL_HAUT)
+    ZoneTexte c, True
+    ' Text et Value désignent la même chose ; selon les versions, le concepteur
+    ' n'expose que l'une des deux.
+    On Error Resume Next
+    c.Text = PAYS_PAR_DEFAUT
+    c.Value = PAYS_PAR_DEFAUT
+    On Error GoTo 0
+    c.ControlTipText = "Le pays ne se saisit pas : toutes les fiches sont suisses."
+
+    ' Les deux cases à cocher portent leur propre légende : la ligne de libellés
+    ' resterait vide au-dessus d'elles. On y met leur titre commun, large de ce
+    ' qu'elles occupent — mesuré, et non écrit en dur.
+    iTVA = IndexChamp(ch, "TVA")
+    iTaux = IndexChamp(ch, COL_TAUX)
+    If iTVA > 0 And iTaux > 0 Then
+        PlaceChamp ch, iTVA, x, larg
+        PlaceChamp ch, iTaux, xTaux, largTaux
+        Set c = AjouterControle(dsg, "Forms.Label.1", "lblChamp_Facturation", _
+                                x, GrilleY(ch(iTVA).Ligne), _
+                                xTaux - x - GR_ENTRE_CHAMPS, CH_LBL_HAUT)
+        TexteLabel c, "FACTURATION", TAILLE_LIBELLE, True, COUL_TEXTE_DOUX, MSF_TextAlignLeft
+    End If
 End Sub
+
+'------------------------------------------------------------------------------
+' PLACE UN CHAMP SUR SA LIGNE : abscisse et largeur.
+'
+' Une ligne d'un bloc porte un à trois champs. Ceux qui annoncent un nombre de
+' CARACTÈRES prennent la largeur qu'il faut ; les autres se partagent également
+' ce qui reste, gouttières déduites. C'est ce qui permet d'écrire au schéma
+' « Adresse, puis No sur six caractères » sans calculer une seule position.
+'
+' Deux parcours plutôt qu'un : le premier mesure la ligne entière — on ne peut
+' pas savoir ce qui reste à partager avant de l'avoir vue en entier — le second
+' cumule ce qui précède le champ cherché.
+'------------------------------------------------------------------------------
+Private Sub PlaceChamp(ByRef ch() As ChampClient, ByVal i As Long, _
+                       ByRef x As Single, ByRef larg As Single)
+    Dim k As Long, fixes As Single, nbFlex As Long, nbCh As Long
+    Dim flex As Single, cumul As Single
+
+    For k = LBound(ch) To UBound(ch)
+        If MemeLigne(ch, k, i) Then
+            nbCh = nbCh + 1
+            If ch(k).Cars > 0 Then
+                fixes = fixes + LargeurCars(ch(k).Cars, ch(k).TypeCtrl)
+            Else
+                nbFlex = nbFlex + 1
+            End If
+        End If
+    Next k
+
+    If nbFlex > 0 Then
+        flex = (GR_BLOC - fixes - (nbCh - 1) * GR_ENTRE_CHAMPS) / nbFlex
+        If flex < GR_MIN_CHAMP Then flex = GR_MIN_CHAMP
+    End If
+
+    For k = LBound(ch) To UBound(ch)
+        If MemeLigne(ch, k, i) Then
+            If ch(k).Rang < ch(i).Rang Then
+                cumul = cumul + LargeurUn(ch(k), flex) + GR_ENTRE_CHAMPS
+            End If
+        End If
+    Next k
+
+    x = GrilleX(ch(i).Bloc) + cumul
+    larg = LargeurUn(ch(i), flex)
+End Sub
+
+Private Function MemeLigne(ByRef ch() As ChampClient, ByVal a As Long, ByVal b As Long) As Boolean
+    MemeLigne = (ch(a).Bloc = ch(b).Bloc) And (ch(a).Ligne = ch(b).Ligne)
+End Function
+
+Private Function LargeurUn(ByRef c As ChampClient, ByVal flex As Single) As Single
+    If c.Cars > 0 Then
+        LargeurUn = LargeurCars(c.Cars, c.TypeCtrl)
+    Else
+        LargeurUn = flex
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Rang d'un champ dans le schéma, d'après sa colonne ; 0 s'il n'y est pas.
+'------------------------------------------------------------------------------
+Private Function IndexChamp(ByRef ch() As ChampClient, ByVal colonne As String) As Long
+    Dim k As Long
+
+    For k = LBound(ch) To UBound(ch)
+        If StrComp(ch(k).Colonne, colonne, vbTextCompare) = 0 Then
+            IndexChamp = k
+            Exit Function
+        End If
+    Next k
+End Function
 
 '------------------------------------------------------------------------------
 ' Zone 3 : barre de filtrage — libellé, choix de la colonne, zone de

@@ -103,8 +103,8 @@ Les couleurs s'écrivent en hexadécimal VBA, c'est-à-dire `&HBBGGRR&` — bleu
 | `CS_HAUT` | 200 pt | hauteur de la carte « fiche client » |
 | `GR_X` | 28 pt | abscisse de la 1ʳᵉ colonne de la grille |
 | `GR_Y` | 86 pt | ordonnée de la 1ʳᵉ ligne de la grille |
-| `GR_BLOC` | 184 pt | largeur d'un bloc « libellé + champ » |
-| `GR_GOUTTIERE` | 16 pt | espace horizontal entre deux blocs |
+| `GR_BLOC` | 250.5 pt | largeur d'un bloc « libellé + champ » |
+| `GR_GOUTTIERE` | 16.5 pt | espace horizontal entre deux blocs |
 | `GR_LIGNE` | 32 pt | pas vertical entre deux lignes de la grille |
 | `CH_LBL_HAUT` | 11 pt | hauteur du libellé au-dessus d'un champ |
 | `CH_CTL_HAUT` | 18 pt | hauteur d'une zone de saisie |
@@ -139,46 +139,44 @@ Les champs de la fiche ne sont positionnés nulle part en dur : leurs coordonné
 
 | Contrôle | Type | Case | Gauche | Haut | Largeur | Hauteur |
 |---|---|---|---|---|---|---|
-| `txtClef_BD` | TextBox | L1 C1 | 28 | 98 | 184 | 18 |
-| `lblChamp_Clef_BD` | Label | L1 C1 | 28 | 86 | 184 | 11 |
-| `txtDate_Crea` | TextBox | L1 C2 | 228 | 98 | 184 | 18 |
-| `lblChamp_Date_Crea` | Label | L1 C2 | 228 | 86 | 184 | 11 |
-| `txtID_Cresus` | TextBox | L1 C3 | 428 | 98 | 184 | 18 |
-| `lblChamp_ID_Cresus` | Label | L1 C3 | 428 | 86 | 184 | 11 |
-| `txtEntreprise` | TextBox | L1 C4 | 628 | 98 | 184 | 18 |
-| `lblChamp_Entreprise` | Label | L1 C4 | 628 | 86 | 184 | 11 |
-| `cboTitre` | ComboBox | L2 C1 | 28 | 130 | 184 | 18 |
-| `lblChamp_Titre` | Label | L2 C1 | 28 | 118 | 184 | 11 |
-| `txtNom` | TextBox | L2 C2 | 228 | 130 | 184 | 18 |
-| `lblChamp_Nom` | Label | L2 C2 | 228 | 118 | 184 | 11 |
-| `txtPrenom` | TextBox | L2 C3 | 428 | 130 | 184 | 18 |
-| `lblChamp_Prenom` | Label | L2 C3 | 428 | 118 | 184 | 11 |
-| `txtEmail` | TextBox | L2 C4 | 628 | 130 | 184 | 18 |
-| `lblChamp_Email` | Label | L2 C4 | 628 | 118 | 184 | 11 |
-| `cboAdresse` | ComboBox | L3 C1 | 28 | 162 | 184 | 18 |
-| `lblChamp_Adresse` | Label | L3 C1 | 28 | 150 | 184 | 11 |
-| `txtNo` | TextBox | L3 C2 | 228 | 162 | 184 | 18 |
-| `lblChamp_No` | Label | L3 C2 | 228 | 150 | 184 | 11 |
-| `cboNoPost` | ComboBox | L3 C3 | 428 | 162 | 184 | 18 |
-| `lblChamp_NoPost` | Label | L3 C3 | 428 | 150 | 184 | 11 |
-| `txtVille` | TextBox | L3 C4 | 628 | 162 | 184 | 18 |
-| `lblChamp_Ville` | Label | L3 C4 | 628 | 150 | 184 | 11 |
-| `txtCant` | TextBox | L4 C1 | 28 | 194 | 184 | 18 |
-| `lblChamp_Cant` | Label | L4 C1 | 28 | 182 | 184 | 11 |
-| `txtTel_Prive` | TextBox | L4 C2 | 228 | 194 | 184 | 18 |
-| `lblChamp_Tel_Prive` | Label | L4 C2 | 228 | 182 | 184 | 11 |
-| `txtTel_Pro` | TextBox | L4 C3 | 428 | 194 | 184 | 18 |
-| `lblChamp_Tel_Pro` | Label | L4 C3 | 428 | 182 | 184 | 11 |
-| `txtNatel` | TextBox | L4 C4 | 628 | 194 | 184 | 18 |
-| `lblChamp_Natel` | Label | L4 C4 | 628 | 182 | 184 | 11 |
-| `txtTx_hrs_Forf` | TextBox | L5 C1 | 28 | 226 | 184 | 18 |
-| `lblChamp_Tx_hrs_Forf` | Label | L5 C1 | 28 | 214 | 184 | 11 |
-| `chkTVA` | CheckBox | L5 C2 gauche | 228 | 226 | 88 | 18 |
-| `chkForfait` | CheckBox | L5 C2 droite | 324 | 226 | 88 | 18 |
-| `cboTexte_Facture` | ComboBox | L5 C3 | 428 | 226 | 184 | 18 |
-| `lblChamp_Texte_Facture` | Label | L5 C3 | 428 | 214 | 184 | 11 |
-| `txtNote_Interne` | TextBox | L5 C4 | 628 | 226 | 184 | 18 |
-| `lblChamp_Note_Interne` | Label | L5 C4 | 628 | 214 | 184 | 11 |
+| `txtClef_BD` | TextBox | B1 L1 r1 · 8 car. | 28 | 98 | 54 | 18 |
+| `lblChamp_Clef_BD` | Label | B1 L1 r1 · 8 car. | 28 | 86 | 54 | 11 |
+| `txtDate_Crea` | TextBox | B1 L1 r2 | 90 | 98 | 126.5 | 18 |
+| `lblChamp_Date_Crea` | Label | B1 L1 r2 | 90 | 86 | 126.5 | 11 |
+| `txtID_Cresus` | TextBox | B1 L1 r3 · 8 car. | 224.5 | 98 | 54 | 18 |
+| `lblChamp_ID_Cresus` | Label | B1 L1 r3 · 8 car. | 224.5 | 86 | 54 | 11 |
+| `txtEntreprise` | TextBox | B1 L2 r1 | 28 | 130 | 250.5 | 18 |
+| `lblChamp_Entreprise` | Label | B1 L2 r1 | 28 | 118 | 250.5 | 11 |
+| `cboTitre` | ComboBox | B1 L3 r1 | 28 | 162 | 250.5 | 18 |
+| `lblChamp_Titre` | Label | B1 L3 r1 | 28 | 150 | 250.5 | 11 |
+| `txtNom` | TextBox | B1 L4 r1 | 28 | 194 | 250.5 | 18 |
+| `lblChamp_Nom` | Label | B1 L4 r1 | 28 | 182 | 250.5 | 11 |
+| `txtPrenom` | TextBox | B1 L5 r1 | 28 | 226 | 250.5 | 18 |
+| `lblChamp_Prenom` | Label | B1 L5 r1 | 28 | 214 | 250.5 | 11 |
+| `cboAdresse` | ComboBox | B2 L1 r1 | 295 | 98 | 199.5 | 18 |
+| `lblChamp_Adresse` | Label | B2 L1 r1 | 295 | 86 | 199.5 | 11 |
+| `txtNo` | TextBox | B2 L1 r2 · 6 car. | 502.5 | 98 | 43 | 18 |
+| `lblChamp_No` | Label | B2 L1 r2 · 6 car. | 502.5 | 86 | 43 | 11 |
+| `cboNoPost` | ComboBox | B2 L2 r1 · 8 car. | 295 | 130 | 70 | 18 |
+| `lblChamp_NoPost` | Label | B2 L2 r1 · 8 car. | 295 | 118 | 70 | 11 |
+| `txtVille` | TextBox | B2 L2 r2 | 373 | 130 | 172.5 | 18 |
+| `lblChamp_Ville` | Label | B2 L2 r2 | 373 | 118 | 172.5 | 11 |
+| `txtCant` | TextBox | B2 L3 r1 | 295 | 162 | 250.5 | 18 |
+| `lblChamp_Cant` | Label | B2 L3 r1 | 295 | 150 | 250.5 | 11 |
+| `chkTVA` | CheckBox | B2 L5 r1 · 3 car. | 295 | 226 | 36.5 | 18 |
+| `chkForfait` | CheckBox | B2 L5 r2 · 7 car. | 339.5 | 226 | 58.5 | 18 |
+| `txtTx_hrs_Forf` | TextBox | B2 L5 r3 | 406 | 226 | 139.5 | 18 |
+| `lblChamp_Tx_hrs_Forf` | Label | B2 L5 r3 | 406 | 214 | 139.5 | 11 |
+| `txtNatel` | TextBox | B3 L1 r1 | 562 | 98 | 250.5 | 18 |
+| `lblChamp_Natel` | Label | B3 L1 r1 | 562 | 86 | 250.5 | 11 |
+| `txtTel_Pro` | TextBox | B3 L2 r1 | 562 | 130 | 250.5 | 18 |
+| `lblChamp_Tel_Pro` | Label | B3 L2 r1 | 562 | 118 | 250.5 | 11 |
+| `txtEmail` | TextBox | B3 L3 r1 | 562 | 162 | 250.5 | 18 |
+| `lblChamp_Email` | Label | B3 L3 r1 | 562 | 150 | 250.5 | 11 |
+| `cboTexte_Facture` | ComboBox | B3 L4 r1 | 562 | 194 | 250.5 | 18 |
+| `lblChamp_Texte_Facture` | Label | B3 L4 r1 | 562 | 182 | 250.5 | 11 |
+| `txtNote_Interne` | TextBox | B3 L5 r1 | 562 | 226 | 250.5 | 18 |
+| `lblChamp_Note_Interne` | Label | B3 L5 r1 | 562 | 214 | 250.5 | 11 |
 
 ### Habillage et commandes — positions écrites dans le générateur
 
@@ -190,7 +188,9 @@ Les champs de la fiche ne sont positionnés nulle part en dur : leurs coordonné
 | `lblFermer` | Label | `ConstruireBandeau` | 800 | 11 | 26 | 26 |
 | `lblCarteSaisie` | Label | `ConstruireCarteSaisie` | 16 | 58 | 808 | 200 |
 | `lblSectionSaisie` | Label | `ConstruireCarteSaisie` | 28 | 66 | 400 | 14 |
-| `lblChamp_Facturation` | Label | `ConstruireCarteSaisie` | 228 | 214 | 184 | 11 |
+| `lblChamp_Pays` | Label | `ConstruireCarteSaisie` | 295 | 182 | 250.5 | 11 |
+| `txtPays` | TextBox | `ConstruireCarteSaisie` | 295 | 194 | 250.5 | 18 |
+| `lblChamp_Facturation` | Label | `ConstruireCarteSaisie` | — | — | — | 11 |
 | `lblCarteFiltre` | Label | `ConstruireCarteFiltre` | 16 | 266 | 808 | 40 |
 | `lblFiltreTitre` | Label | `ConstruireCarteFiltre` | 28 | 279 | 62 | 14 |
 | `cboChampFiltre` | ComboBox | `ConstruireCarteFiltre` | 100 | 277 | 124 | 18 |
@@ -258,7 +258,7 @@ Une ligne `DefChamp` par champ, dans `ConstruireSchema`. Les arguments, dans l'o
 
 ```
 DefChamp mChamps, n°, "Colonne_Excel", "Libellé", TYPE_x, verrouillé, _
-         ligne, colonne, moitié, NUM_x, "info-bulle"
+         ligne, bloc, rang, caractères, NUM_x, "info-bulle"
 ```
 | Argument | Valeurs possibles | Effet |
 |---|---|---|
@@ -267,37 +267,37 @@ DefChamp mChamps, n°, "Colonne_Excel", "Libellé", TYPE_x, verrouillé, _
 | Libellé | texte libre | affiché en majuscules au-dessus du champ |
 | TYPE_x | `TYPE_TEXTE`, `TYPE_LISTE`, `TYPE_CASE` | zone de texte, menu déroulant, case à cocher |
 | verrouillé | `True` / `False` | `True` = visible mais non saisissable, hors tabulation |
-| ligne | 1 à 5 | ligne de la grille |
-| colonne | 1 à 4 | colonne de la grille |
-| moitié | `0`, `1`, `2` | `0` = bloc entier ; `1` et `2` = deux champs se partagent le bloc |
+| ligne | 1 à `NB_LIGNES_FICHE` | ligne, à l'intérieur du bloc |
+| bloc | 1 à `NB_BLOCS` | bloc, de gauche à droite |
+| rang | 1, 2, 3 | place sur la ligne, de gauche à droite |
+| caractères | 0 ou un nombre | largeur en caractères ; `0` = prend ce qui reste de la ligne |
 | NUM_x | `NUM_NON`, `NUM_ENTIER`, `NUM_DECIMAL` | filtre les frappes non numériques |
 | info-bulle | texte libre | s'affiche au survol |
 
 ### État actuel
 
-| n° | Colonne | Libellé | Type | Verrouillé | Case | Saisie |
-|---|---|---|---|---|---|---|
-| 1 | `Clef_BD` | Clef BD | TextBox | oui | L1 C1 | libre |
-| 2 | `Date_Crea` | Date de création | TextBox | oui | L1 C2 | libre |
-| 3 | `ID_Cresus` | ID Crésus | TextBox | — | L1 C3 | chiffres |
-| 4 | `Entreprise` | Entreprise | TextBox | — | L1 C4 | libre |
-| 5 | `Titre` | Titre | ComboBox | — | L2 C1 | libre |
-| 6 | `Nom` | Nom | TextBox | — | L2 C2 | libre |
-| 7 | `Prenom` | Prénom | TextBox | — | L2 C3 | libre |
-| 8 | `Email` | Courriel | TextBox | — | L2 C4 | libre |
-| 9 | `Adresse` | Adresse (rue) | ComboBox | — | L3 C1 | libre |
-| 10 | `No` | No | TextBox | — | L3 C2 | libre |
-| 11 | `NoPost` | NPA | ComboBox | — | L3 C3 | libre |
-| 12 | `Ville` | Ville | TextBox | — | L3 C4 | libre |
-| 13 | `Cant` | Canton | TextBox | — | L4 C1 | libre |
-| 14 | `Tel_Prive` | Téléphone privé | TextBox | — | L4 C2 | libre |
-| 15 | `Tel_Pro` | Téléphone pro. | TextBox | — | L4 C3 | libre |
-| 16 | `Natel` | Natel | TextBox | — | L4 C4 | libre |
-| 17 | `Tx_hrs_Forf` | Taux horaire / forfait | TextBox | — | L5 C1 | chiffres + décimales |
-| 18 | `TVA` | TVA | CheckBox | — | L5 C2 ½g | libre |
-| 19 | `Forfait` | Forfait | CheckBox | — | L5 C2 ½d | libre |
-| 20 | `Texte_Facture` | Texte de facture | ComboBox | — | L5 C3 | libre |
-| 21 | `Note_Interne` | Note interne | TextBox | — | L5 C4 | libre |
+| n° | Colonne | Libellé | Type | Verrouillé | Place | Largeur | Saisie |
+|---|---|---|---|---|---|---|---|
+| 1 | `Clef_BD` | Clef BD | TextBox | oui | B1 L1 r1 | 8 car. | libre |
+| 2 | `Date_Crea` | Date de création | TextBox | oui | B1 L1 r2 | souple | libre |
+| 3 | `ID_Cresus` | ID Crésus | TextBox | — | B1 L1 r3 | 8 car. | chiffres |
+| 4 | `Entreprise` | Entreprise | TextBox | — | B1 L2 r1 | souple | libre |
+| 5 | `Titre` | Titre | ComboBox | — | B1 L3 r1 | souple | libre |
+| 6 | `Nom` | Nom | TextBox | — | B1 L4 r1 | souple | libre |
+| 7 | `Prenom` | Prénom | TextBox | — | B1 L5 r1 | souple | libre |
+| 8 | `Adresse` | Adresse (rue) | ComboBox | — | B2 L1 r1 | souple | libre |
+| 9 | `No` | No | TextBox | — | B2 L1 r2 | 6 car. | libre |
+| 10 | `NoPost` | NPA | ComboBox | — | B2 L2 r1 | 8 car. | libre |
+| 11 | `Ville` | Ville | TextBox | — | B2 L2 r2 | souple | libre |
+| 12 | `Cant` | Canton | TextBox | — | B2 L3 r1 | souple | libre |
+| 13 | `TVA` | TVA | CheckBox | — | B2 L5 r1 | 3 car. | libre |
+| 14 | `Forfait` | Forfait | CheckBox | — | B2 L5 r2 | 7 car. | libre |
+| 15 | `Tx_hrs_Forf` | Taux horaire / forfait | TextBox | — | B2 L5 r3 | souple | chiffres + décimales |
+| 16 | `Natel` | Natel | TextBox | — | B3 L1 r1 | souple | libre |
+| 17 | `Tel_Pro` | Téléphone pro. | TextBox | — | B3 L2 r1 | souple | libre |
+| 18 | `Email` | Courriel | TextBox | — | B3 L3 r1 | souple | libre |
+| 19 | `Texte_Facture` | Texte de facture | ComboBox | — | B3 L4 r1 | souple | libre |
+| 20 | `Note_Interne` | Note interne | TextBox | — | B3 L5 r1 | souple | libre |
 
 ---
 
@@ -305,7 +305,7 @@ DefChamp mChamps, n°, "Colonne_Excel", "Libellé", TYPE_x, verrouillé, _
 
 ### Élargir la fenêtre de 60 points
 
-Dans `modClients_Theme` : `F_LARGEUR` de 840 à 900 et `CARTE_LARG` de 808 à 868 (garder `F_LARGEUR - 2 × MARGE`). Les cartes, la barre de filtrage, le tableau et le bouton Quitter suivent automatiquement. Restent à ajuster à la main : `GR_BLOC` — passer de 184 à 199 donne 15 points de plus par colonne de saisie — et `LargeursListe`, dont la somme peut monter d'autant.
+Dans `modClients_Theme` : `F_LARGEUR` de 840 à 900 et `CARTE_LARG` de 808 à 868 (garder `F_LARGEUR - 2 × MARGE`). Les cartes, la barre de filtrage, le tableau et le bouton Quitter suivent automatiquement. Restent à ajuster à la main : `GR_BLOC` — passer de 250.5 à 265.5 donne 15 points de plus par colonne de saisie — et `LargeursListe`, dont la somme peut monter d'autant.
 
 ### Ajouter une 6ᵉ ligne de champs
 

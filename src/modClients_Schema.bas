@@ -43,7 +43,11 @@ Public Const NUM_NON As Long = 0
 Public Const NUM_ENTIER As Long = 1
 Public Const NUM_DECIMAL As Long = 2
 
-Public Const NB_CHAMPS As Long = 21
+Public Const NB_CHAMPS As Long = 20
+
+' Le pays, figé : toutes les fiches sont suisses. Affiché dans une case
+' verrouillée du bloc 2, sans colonne correspondante dans TblClients.
+Public Const PAYS_PAR_DEFAUT As String = "Suisse"
 
 '==============================================================================
 ' Définition d'un champ du formulaire
@@ -53,9 +57,10 @@ Public Type ChampClient
     Libelle As String       ' libellé affiche au-dessus de la zone de saisie
     TypeCtrl As String      ' TYPE_TEXTE / TYPE_LISTE / TYPE_CASE
     Verrouille As Boolean   ' True = géré par le programme, non saisissable
-    Ligne As Long           ' ligne dans la grille (1 à 5)
-    Col As Long             ' colonne dans la grille (1 à 4)
-    Moitie As Long          ' 0 = bloc entier, 1 = moitie gauche, 2 = moitie droite
+    Ligne As Long           ' ligne dans le bloc (1 à NB_LIGNES_FICHE)
+    Bloc As Long            ' bloc, de gauche à droite (1 à NB_BLOCS)
+    Rang As Long            ' place sur la ligne, de gauche à droite (1, 2, 3)
+    Cars As Long            ' largeur en CARACTÈRES ; 0 = prend ce qui reste
     Numerique As Long       ' NUM_NON / NUM_ENTIER / NUM_DECIMAL
     Aide As String          ' info-bulle
 End Type
@@ -89,52 +94,61 @@ End Function
 Private Sub ConstruireSchema()
     ReDim mChamps(1 To NB_CHAMPS)
 
-    '           idx  colonne          libellé                type         verr.  lig col moit  num          info-bulle
-    DefChamp mChamps, 1, COL_CLEF, "Clef BD", TYPE_TEXTE, True, 1, 1, 0, NUM_NON, _
+    ' Trois blocs de cinq lignes. Une ligne porte un à trois champs : ceux qui
+    ' annoncent un nombre de CARACTÈRES prennent la largeur qu'il faut, les
+    ' autres se partagent ce qui reste. Rien à calculer à la main.
+    '
+    '  idx  colonne        libellé              type    verr. lig bloc rang car  num
+
+    '--- bloc 1 : l'identité --------------------------------------------------
+    DefChamp mChamps, 1, COL_CLEF, "Clef BD", TYPE_TEXTE, True, 1, 1, 1, 8, NUM_NON, _
         "Index du tableau, attribué automatiquement par le programme"
-    DefChamp mChamps, 2, COL_DATE, "Date de création", TYPE_TEXTE, True, 1, 2, 0, NUM_NON, _
+    DefChamp mChamps, 2, COL_DATE, "Date de création", TYPE_TEXTE, True, 1, 1, 2, 0, NUM_NON, _
         "Date de création de la fiche, attribuée automatiquement"
-    DefChamp mChamps, 3, COL_ID_CRESUS, "ID Crésus", TYPE_TEXTE, False, 1, 3, 0, NUM_ENTIER, _
+    DefChamp mChamps, 3, COL_ID_CRESUS, "ID Crésus", TYPE_TEXTE, False, 1, 1, 3, 8, NUM_ENTIER, _
         "Identifiant du client dans Crésus (référence des interventions)"
-    DefChamp mChamps, 4, "Entreprise", "Entreprise", TYPE_TEXTE, False, 1, 4, 0, NUM_NON, _
+    DefChamp mChamps, 4, "Entreprise", "Entreprise", TYPE_TEXTE, False, 2, 1, 1, 0, NUM_NON, _
         "Raison sociale, si le client est une entreprise"
-
-    DefChamp mChamps, 5, "Titre", "Titre", TYPE_LISTE, False, 2, 1, 0, NUM_NON, _
+    DefChamp mChamps, 5, "Titre", "Titre", TYPE_LISTE, False, 3, 1, 1, 0, NUM_NON, _
         "Civilité du client"
-    DefChamp mChamps, 6, "Nom", "Nom", TYPE_TEXTE, False, 2, 2, 0, NUM_NON, _
+    DefChamp mChamps, 6, "Nom", "Nom", TYPE_TEXTE, False, 4, 1, 1, 0, NUM_NON, _
         "Nom de famille du client"
-    DefChamp mChamps, 7, "Prenom", "Prénom", TYPE_TEXTE, False, 2, 3, 0, NUM_NON, _
+    DefChamp mChamps, 7, "Prenom", "Prénom", TYPE_TEXTE, False, 5, 1, 1, 0, NUM_NON, _
         "Prénom du client"
-    DefChamp mChamps, 8, "Email", "Courriel", TYPE_TEXTE, False, 2, 4, 0, NUM_NON, _
-        "Adresse de courriel"
 
-    DefChamp mChamps, 9, COL_ADRESSE, "Adresse (rue)", TYPE_LISTE, False, 3, 1, 0, NUM_NON, _
+    '--- bloc 2 : l'adresse et la facturation ---------------------------------
+    DefChamp mChamps, 8, COL_ADRESSE, "Adresse (rue)", TYPE_LISTE, False, 1, 2, 1, 0, NUM_NON, _
         "Rue : la liste provient de l'onglet Adresses. Le NPA, la ville et le canton se remplissent automatiquement."
-    DefChamp mChamps, 10, "No", "No", TYPE_TEXTE, False, 3, 2, 0, NUM_NON, _
+    DefChamp mChamps, 9, "No", "No", TYPE_TEXTE, False, 1, 2, 2, 6, NUM_NON, _
         "Numéro dans la rue (peut contenir une lettre, ex. 34B)"
-    DefChamp mChamps, 11, COL_NPA, "NPA", TYPE_LISTE, False, 3, 3, 0, NUM_NON, _
+    DefChamp mChamps, 10, COL_NPA, "NPA", TYPE_LISTE, False, 2, 2, 1, 8, NUM_NON, _
         "Numéro postal : renseigne la ville et le canton"
-    DefChamp mChamps, 12, COL_VILLE, "Ville", TYPE_TEXTE, False, 3, 4, 0, NUM_NON, _
+    DefChamp mChamps, 11, COL_VILLE, "Ville", TYPE_TEXTE, False, 2, 2, 2, 0, NUM_NON, _
         "Localité, renseignée automatiquement depuis le NPA"
-
-    DefChamp mChamps, 13, COL_CANTON, "Canton", TYPE_TEXTE, False, 4, 1, 0, NUM_NON, _
+    DefChamp mChamps, 12, COL_CANTON, "Canton", TYPE_TEXTE, False, 3, 2, 1, 0, NUM_NON, _
         "Canton, renseigné automatiquement depuis le NPA"
-    DefChamp mChamps, 14, "Tel_Prive", "Téléphone privé", TYPE_TEXTE, False, 4, 2, 0, NUM_NON, _
-        "Téléphone privé"
-    DefChamp mChamps, 15, "Tel_Pro", "Téléphone pro.", TYPE_TEXTE, False, 4, 3, 0, NUM_NON, _
-        "Téléphone professionnel"
-    DefChamp mChamps, 16, "Natel", "Natel", TYPE_TEXTE, False, 4, 4, 0, NUM_NON, _
-        "Téléphone mobile"
 
-    DefChamp mChamps, 17, COL_TAUX, "Taux horaire / forfait", TYPE_TEXTE, False, 5, 1, 0, NUM_DECIMAL, _
-        "Taux horaire ou montant forfaitaire, en CHF"
-    DefChamp mChamps, 18, "TVA", "TVA", TYPE_CASE, False, 5, 2, 1, NUM_NON, _
+    ' La ligne 4 du bloc 2 porte le pays, figé à « Suisse ». Il n'est pas ici :
+    ' aucune colonne de TblClients ne lui correspond, et le schéma ne décrit que
+    ' des colonnes. C'est le générateur qui le pose, avec l'habillage.
+
+    DefChamp mChamps, 13, "TVA", "TVA", TYPE_CASE, False, 5, 2, 1, 3, NUM_NON, _
         "Le client est assujetti à la TVA"
-    DefChamp mChamps, 19, "Forfait", "Forfait", TYPE_CASE, False, 5, 2, 2, NUM_NON, _
+    DefChamp mChamps, 14, "Forfait", "Forfait", TYPE_CASE, False, 5, 2, 2, 7, NUM_NON, _
         "La facturation se fait au forfait"
-    DefChamp mChamps, 20, COL_TEXTE_FACTURE, "Texte de facture", TYPE_LISTE, False, 5, 3, 0, NUM_NON, _
+    DefChamp mChamps, 15, COL_TAUX, "Taux horaire / forfait", TYPE_TEXTE, False, 5, 2, 3, 0, NUM_DECIMAL, _
+        "Taux horaire ou montant forfaitaire, en CHF"
+
+    '--- bloc 3 : joindre le client, et ce qu'on écrit sur ses factures -------
+    DefChamp mChamps, 16, "Natel", "Natel", TYPE_TEXTE, False, 1, 3, 1, 0, NUM_NON, _
+        "Téléphone mobile"
+    DefChamp mChamps, 17, "Tel_Pro", "Téléphone pro.", TYPE_TEXTE, False, 2, 3, 1, 0, NUM_NON, _
+        "Téléphone professionnel"
+    DefChamp mChamps, 18, "Email", "Courriel", TYPE_TEXTE, False, 3, 3, 1, 0, NUM_NON, _
+        "Adresse de courriel"
+    DefChamp mChamps, 19, COL_TEXTE_FACTURE, "Texte de facture", TYPE_LISTE, False, 4, 3, 1, 0, NUM_NON, _
         "Texte standard repris sur les factures (onglet Parametres)"
-    DefChamp mChamps, 21, "Note_Interne", "Note interne", TYPE_TEXTE, False, 5, 4, 0, NUM_NON, _
+    DefChamp mChamps, 20, "Note_Interne", "Note interne", TYPE_TEXTE, False, 5, 3, 1, 0, NUM_NON, _
         "Remarque interne, non imprimée"
 
     mCharges = True
@@ -146,15 +160,16 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub DefChamp(ByRef tb() As ChampClient, ByVal idx As Long, ByVal colonne As String, _
                 ByVal libelle As String, ByVal typeCtrl As String, ByVal verrouille As Boolean, _
-                ByVal ligne As Long, ByVal col As Long, ByVal moitie As Long, _
+                ByVal ligne As Long, ByVal bloc As Long, ByVal rang As Long, ByVal cars As Long, _
                 ByVal numerique As Long, ByVal aide As String)
     tb(idx).Colonne = colonne
     tb(idx).Libelle = libelle
     tb(idx).TypeCtrl = typeCtrl
     tb(idx).Verrouille = verrouille
     tb(idx).Ligne = ligne
-    tb(idx).Col = col
-    tb(idx).Moitie = moitie
+    tb(idx).Bloc = bloc
+    tb(idx).Rang = rang
+    tb(idx).Cars = cars
     tb(idx).Numerique = numerique
     tb(idx).Aide = aide
 End Sub

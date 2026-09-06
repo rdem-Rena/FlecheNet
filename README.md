@@ -46,8 +46,10 @@ Détails et dépannage : [`docs/INSTALLATION.md`](docs/INSTALLATION.md).
 
 ## Ce que fait le formulaire
 
-**En haut** — la fiche client : les 21 colonnes de `TblClients`, réparties sur une
-grille de 4 colonnes × 5 lignes.
+**En haut** — la fiche client : vingt colonnes de `TblClients`, réparties en
+**trois blocs de cinq lignes**. Une ligne porte un à trois champs ; ceux qui
+annoncent un nombre de caractères prennent la largeur qu'il faut, les autres se
+partagent ce qui reste.
 
 - `Clef_BD` et `Date_Crea` sont **visibles mais non saisissables** : le programme
   attribue la clef (`CL1`, `CL2`, … `CL` + plus grand numéro existant + 1) et la
@@ -94,7 +96,7 @@ signale les interventions de `TblInterv` qui référencent le client.
 
 | Module | Rôle |
 |---|---|
-| [`modClients_Schema`](src/modClients_Schema.bas) | Description des 21 champs : colonne, libellé, type de contrôle, position, contraintes. **Source de vérité du formulaire.** |
+| [`modClients_Schema`](src/modClients_Schema.bas) | Description des 20 champs : colonne, libellé, type de contrôle, place dans les trois blocs, largeur, contraintes. **Source de vérité du formulaire.** |
 | [`modClients_Theme`](src/modClients_Theme.bas) | Charte graphique : palette, typographie, géométrie. |
 | [`modClients_Generateur`](src/modClients_Generateur.bas) | Crée le UserForm, ses 71 contrôles et son module de code. Aussi : `NettoyerFormulairesOrphelins`. |
 | [`modClients_Donnees`](src/modClients_Donnees.bas) | Lecture / écriture de `TblClients`, clefs, contrôles d'intégrité. |

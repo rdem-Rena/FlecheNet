@@ -12,11 +12,11 @@ sur la fenêtre Excel.
 ├────────────────────────────────────────────────────────────────────┤
 │ ┌────────────────────────────────────────────────────────────────┐ │
 │ │ FICHE CLIENT                                                   │ │
-│ │  Clef BD   │ Date créat. │ ID Cresus  │ Entreprise             │ │  carte de
-│ │  Titre     │ Nom         │ Prénom     │ Courriel               │ │  saisie
-│ │  Adresse   │ No          │ NPA        │ Ville                  │ │  200 pt
-│ │  Canton    │ Tél. privé  │ Tél. pro.  │ Natel                  │ │
-│ │  Taux/forf.│ ☐TVA ☐Forf. │ Texte fact.│ Note interne           │ │
+│ │ Clef BD│Date créat.│ID Cr.│ Adresse           │No│ Natel        │ │  carte de
+│ │ Entreprise               │ NPA │ Ville        │ Téléphone pro.  │ │  saisie
+│ │ Titre                    │ Canton             │ Courriel        │ │  200 pt
+│ │ Nom                      │ Pays  ( Suisse )   │ Texte facture   │ │
+│ │ Prénom                   │ ☐TVA ☐Forf.│Taux   │ Note interne    │ │
 │ └────────────────────────────────────────────────────────────────┘ │
 │ ┌────────────────────────────────────────────────────────────────┐ │
 │ │ Filtrer sur [Nom ▾] [__________]  Réinitialiser   n/N fiches   │ │  filtre 40 pt
@@ -32,29 +32,40 @@ sur la fenêtre Excel.
 
 ## Colonnes de `TblClients` et contrôles correspondants
 
-| # | Colonne | Contrôle | Type | Ligne / colonne | Particularité |
-|---|---|---|---|---|---|
-| 1 | `Clef_BD` | `txtClef_BD` | TextBox | 1 / 1 | verrouillé — `CL` + n° suivant |
-| 2 | `Date_Crea` | `txtDate_Crea` | TextBox | 1 / 2 | verrouillé — date du jour à l'ajout |
-| 3 | `ID_Cresus` | `txtID_Cresus` | TextBox | 1 / 3 | entier ; doublon signalé |
-| 4 | `Entreprise` | `txtEntreprise` | TextBox | 1 / 4 | filtrable |
-| 5 | `Titre` | `cboTitre` | ComboBox | 2 / 1 | liste fermée : Monsieur, Madame (+ existants) |
-| 6 | `Nom` | `txtNom` | TextBox | 2 / 2 | filtrable |
-| 7 | `Prenom` | `txtPrenom` | TextBox | 2 / 3 | |
-| 8 | `Email` | `txtEmail` | TextBox | 2 / 4 | format contrôlé |
-| 9 | `Adresse` | `cboAdresse` | ComboBox | 3 / 1 | liste = `Tabl_Adresses`; filtrable |
-| 10 | `No` | `txtNo` | TextBox | 3 / 2 | texte (ex. `34B`) |
-| 11 | `NoPost` | `cboNoPost` | ComboBox | 3 / 3 | 4 chiffres ; renseigne Ville et Cant |
-| 12 | `Ville` | `txtVille` | TextBox | 3 / 4 | rempli automatiquement |
-| 13 | `Cant` | `txtCant` | TextBox | 4 / 1 | rempli automatiquement |
-| 14 | `Tel_Prive` | `txtTel_Prive` | TextBox | 4 / 2 | |
-| 15 | `Tel_Pro` | `txtTel_Pro` | TextBox | 4 / 3 | |
-| 16 | `Natel` | `txtNatel` | TextBox | 4 / 4 | |
-| 17 | `Tx_hrs_Forf` | `txtTx_hrs_Forf` | TextBox | 5 / 1 | décimal, affiché à 2 décimales |
-| 18 | `TVA` | `chkTVA` | CheckBox | 5 / 2 gauche | booléen |
-| 19 | `Forfait` | `chkForfait` | CheckBox | 5 / 2 droite | booléen |
-| 20 | `Texte_Facture` | `cboTexte_Facture` | ComboBox | 5 / 3 | liste = `TblTxtStd` |
-| 21 | `Note_Interne` | `txtNote_Interne` | TextBox | 5 / 4 | |
+La fiche compte **trois blocs de cinq lignes**. Une ligne porte un à trois
+champs : `bloc / ligne / rang`. Ceux qui annoncent un nombre de **caractères**
+prennent la largeur qu'il faut, les autres se partagent ce qui reste.
+
+| # | Colonne | Contrôle | Type | Bloc / ligne / rang | Largeur | Particularité |
+|---|---|---|---|---|---|---|
+| 1 | `Clef_BD` | `txtClef_BD` | TextBox | 1 / 1 / 1 | 8 car. | verrouillé — `CL` + n° suivant |
+| 2 | `Date_Crea` | `txtDate_Crea` | TextBox | 1 / 1 / 2 | souple | verrouillé — date du jour à l'ajout |
+| 3 | `ID_Cresus` | `txtID_Cresus` | TextBox | 1 / 1 / 3 | 8 car. | entier ; doublon signalé |
+| 4 | `Entreprise` | `txtEntreprise` | TextBox | 1 / 2 / 1 | souple | filtrable |
+| 5 | `Titre` | `cboTitre` | ComboBox | 1 / 3 / 1 | souple | liste fermée : Monsieur, Madame (+ existants) |
+| 6 | `Nom` | `txtNom` | TextBox | 1 / 4 / 1 | souple | filtrable |
+| 7 | `Prenom` | `txtPrenom` | TextBox | 1 / 5 / 1 | souple | |
+| 8 | `Adresse` | `cboAdresse` | ComboBox | 2 / 1 / 1 | souple | liste = `Tabl_Adresses`; filtrable |
+| 9 | `No` | `txtNo` | TextBox | 2 / 1 / 2 | 6 car. | texte (ex. `34B`) |
+| 10 | `NoPost` | `cboNoPost` | ComboBox | 2 / 2 / 1 | 8 car. | 4 chiffres ; renseigne Ville et Cant |
+| 11 | `Ville` | `txtVille` | TextBox | 2 / 2 / 2 | souple | rempli automatiquement |
+| 12 | `Cant` | `txtCant` | TextBox | 2 / 3 / 1 | souple | rempli automatiquement |
+| — | *(aucune)* | `txtPays` | TextBox | 2 / 4 / 1 | souple | verrouillé, figé à « Suisse » — **hors schéma** |
+| 13 | `TVA` | `chkTVA` | CheckBox | 2 / 5 / 1 | 3 car. | booléen |
+| 14 | `Forfait` | `chkForfait` | CheckBox | 2 / 5 / 2 | 7 car. | booléen |
+| 15 | `Tx_hrs_Forf` | `txtTx_hrs_Forf` | TextBox | 2 / 5 / 3 | souple | décimal, affiché à 2 décimales |
+| 16 | `Natel` | `txtNatel` | TextBox | 3 / 1 / 1 | souple | |
+| 17 | `Tel_Pro` | `txtTel_Pro` | TextBox | 3 / 2 / 1 | souple | |
+| 18 | `Email` | `txtEmail` | TextBox | 3 / 3 / 1 | souple | format contrôlé |
+| 19 | `Texte_Facture` | `cboTexte_Facture` | ComboBox | 3 / 4 / 1 | souple | liste = `TblTxtStd` |
+| 20 | `Note_Interne` | `txtNote_Interne` | TextBox | 3 / 5 / 1 | souple | |
+
+**`Tel_Prive` n'est plus dans la fiche.** La colonne reste dans `TblClients` —
+rien n'y est effacé — mais elle n'est ni affichée ni saisissable. La génération
+la signale, avec les autres colonnes non couvertes.
+
+Un champ dimensionné en caractères l'est aussi **à la saisie** : une case de
+huit caractères n'en accepte pas neuf.
 
 Le nom du contrôle est toujours `txt` / `cbo` / `chk` suivi du nom exact de la
 colonne : c'est ce qui permet à `modClients_Formulaire` de faire la
