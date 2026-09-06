@@ -82,6 +82,29 @@ les macros). Le formulaire et les modules y sont conservés : la génération n'
 
 ---
 
+## Réimporter un module
+
+**VBA ne remplace jamais un module à l'import.** Si `modChemins` existe déjà et
+qu'on réimporte `modChemins.bas`, l'éditeur ne le met pas à jour : il ajoute un
+**second** module, `modChemins1`, avec les mêmes procédures publiques. Le projet
+ne compile alors plus :
+
+> *Nom ambigu détecté : DossierClasseur*
+
+La marche à suivre, à chaque réimport :
+
+1. **Alt + F11**, puis dans l'explorateur de projet, sous **Modules**, clic droit
+   sur le module à remplacer → **Supprimer** → **Non** (ne pas exporter).
+2. **Fichier ▸ Importer un fichier…** et choisir le `.bas`.
+3. **Débogage ▸ Compiler VBAProject** pour vérifier.
+
+Si le message est déjà apparu : cherchez dans la liste des modules **deux noms
+qui ne diffèrent que par un chiffre final** — `modChemins` et `modChemins1` —
+et supprimez celui qui porte le chiffre. Un projet qui ne compile pas ne peut
+lancer aucune macro : cette suppression se fait forcément à la main.
+
+---
+
 ## Le classeur dans un dossier OneDrive ou SharePoint
 
 Le classeur fonctionne dans un dossier partagé et synchronisé, à une condition :
