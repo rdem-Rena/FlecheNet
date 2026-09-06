@@ -82,7 +82,14 @@ Public Sub AfficherAccueil()
     End If
 
     ws.Activate
+
+    ' SOUS On Error : la feuille est PROTÉGÉE et sa sélection interdite dès
+    ' qu'elle a été générée. Select y déclenche alors l'erreur 1004, qui
+    ' remontait jusqu'à Workbook_Open et empêchait le verrouillage de partir —
+    ' le classeur s'ouvrait avec ses onglets et son ruban.
+    On Error Resume Next
     ws.Range("A1").Select
+    On Error GoTo 0
 End Sub
 
 '==============================================================================

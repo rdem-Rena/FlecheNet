@@ -31,6 +31,11 @@ Option Explicit
 ' L'état courant, pour ne pas verrouiller deux fois ni restaurer dans le vide.
 Private mVerrouille As Boolean
 
+' vbext_pk_Proc : une procédure ordinaire, par opposition à un accesseur de
+' propriété. Déclarée ici pour ne dépendre d'aucune référence, comme les
+' constantes MSF_* et MSO_* du reste du classeur.
+Private Const PROC_NORMALE As Long = 0
+
 '==============================================================================
 ' LES DEUX POINTS D'ENTRÉE DU CLASSEUR
 '------------------------------------------------------------------------------
@@ -41,10 +46,24 @@ Private mVerrouille As Boolean
 ' À l'ouverture : la feuille d'accueil, puis le verrou si AC_KIOSQUE le veut.
 '------------------------------------------------------------------------------
 Public Sub Accueil_Demarrer()
+    On Error GoTo Erreur
+
     If FeuilleAccueilManquante() Then Exit Sub
 
     AfficherAccueil
     If AC_KIOSQUE Then Accueil_Verrouiller
+    Exit Sub
+
+Erreur:
+    ' Une erreur ici laisserait le classeur ouvert SANS verrou et sans rien
+    ' dire : l'utilisateur verrait ses onglets et croirait le verrou inactif.
+    ' On rend d'abord l'interface, puis on explique.
+    PoserInterface True
+    MsgBox "Le verrouillage n'a pas pu se faire :" & vbCrLf & vbCrLf & _
+           Err.Number & " - " & Err.Description & vbCrLf & vbCrLf & _
+           "Le classeur reste ouvert normalement. Lancez DiagnostiquerVerrou " & _
+           "(module modAccueil_Verrou) pour savoir ce qui manque.", _
+           vbExclamation, "Verrouillage"
 End Sub
 
 '------------------------------------------------------------------------------
@@ -183,6 +202,8 @@ End Sub
 ' raison d'interrompre l'ouverture du classeur.
 '------------------------------------------------------------------------------
 Private Sub PoserInterface(ByVal visible As Boolean)
+    Dim fen As Object
+
     On Error Resume Next
 
     Application.DisplayFormulaBar = visible
@@ -190,11 +211,15 @@ Private Sub PoserInterface(ByVal visible As Boolean)
     Application.ExecuteExcel4Macro "SHOW.TOOLBAR(""Ribbon""," & _
                                    IIf(visible, "True", "False") & ")"
 
-    ActiveWindow.DisplayWorkbookTabs = visible
-    ActiveWindow.DisplayHorizontalScrollBar = visible
-    ActiveWindow.DisplayVerticalScrollBar = visible
-    ActiveWindow.DisplayHeadings = visible
-    ActiveWindow.DisplayGridlines = visible
+    ' LA FENÊTRE DU CLASSEUR, et non ActiveWindow : à l'ouverture, quand Excel
+    ' tournait déjà, la fenêtre active peut encore être celle d'un autre
+    ' classeur — on lui cacherait ses onglets, et pas les nôtres.
+    Set fen = ThisWorkbook.Windows(1)
+    fen.DisplayWorkbookTabs = visible
+    fen.DisplayHorizontalScrollBar = visible
+    fen.DisplayVerticalScrollBar = visible
+    fen.DisplayHeadings = visible
+    fen.DisplayGridlines = visible
 
     On Error GoTo 0
 End Sub
@@ -271,37 +296,19 @@ End Function
 ' AfficherAccueil, par exemple — elle le laisse et dit la ligne à y ajouter.
 '==============================================================================
 Public Sub InstallerDemarrage()
-    Dim vbComp As Object, code As Object, txt As String, msg As String
+    Dim vbComp As Object, code As Object, msg As String
 
     On Error GoTo Erreur
 
     Set vbComp = ThisWorkbook.VBProject.VBComponents(ThisWorkbook.CodeName)
     Set code = vbComp.CodeModule
-    If code.CountOfLines > 0 Then txt = code.Lines(1, code.CountOfLines)
 
-    If InStr(1, txt, "Workbook_Open", vbTextCompare) = 0 Then
-        code.AddFromString _
-            "Private Sub Workbook_Open()" & vbCrLf & _
-            "    Accueil_Demarrer" & vbCrLf & _
-            "End Sub"
-        msg = msg & "[pose] Workbook_Open appelle Accueil_Demarrer" & vbCrLf
-    Else
-        msg = msg & "[a faire] Workbook_Open existe deja : ajoutez-y la ligne" & _
-              vbCrLf & "          Accueil_Demarrer" & vbCrLf
-    End If
+    msg = AjouterAppel(code, "Workbook_Open", "Accueil_Demarrer", _
+                       "Private Sub Workbook_Open()") & vbCrLf
+    msg = msg & AjouterAppel(code, "Workbook_BeforeClose", "Accueil_Arreter", _
+                             "Private Sub Workbook_BeforeClose(Cancel As Boolean)")
 
-    If InStr(1, txt, "Workbook_BeforeClose", vbTextCompare) = 0 Then
-        code.AddFromString _
-            "Private Sub Workbook_BeforeClose(Cancel As Boolean)" & vbCrLf & _
-            "    Accueil_Arreter" & vbCrLf & _
-            "End Sub"
-        msg = msg & "[pose] Workbook_BeforeClose appelle Accueil_Arreter" & vbCrLf
-    Else
-        msg = msg & "[a faire] Workbook_BeforeClose existe deja : ajoutez-y la " & _
-              "ligne" & vbCrLf & "          Accueil_Arreter" & vbCrLf
-    End If
-
-    MsgBox Replace$(msg, "[pose]", ChrW(10003)) & vbCrLf & _
+    MsgBox msg & vbCrLf & vbCrLf & _
            "Enregistrez, fermez puis rouvrez le classeur pour voir le verrou " & _
            "agir.", vbInformation, "Demarrage du classeur"
     Exit Sub
@@ -313,3 +320,88 @@ Erreur:
            "au modèle d'objet du projet VBA » dans les paramètres des macros, " & _
            "puis rouvrez le classeur.", vbCritical, "Demarrage du classeur"
 End Sub
+
+'------------------------------------------------------------------------------
+' Fait en sorte qu'une procédure événementielle de ThisWorkbook appelle une de
+' nos procédures — en la créant si elle manque, en GLISSANT L'APPEL DANS LA
+' SIENNE si elle existe déjà.
+'
+' C'est ce dernier cas qui compte : Workbook_Open existait presque sûrement,
+' pour appeler AfficherAccueil. L'ancienne version se contentait alors de dire
+' la ligne à ajouter — un message qu'on lit une fois sur deux, et le verrou ne
+' partait jamais.
+'
+'   renvoie : la ligne de compte rendu à afficher
+'------------------------------------------------------------------------------
+Private Function AjouterAppel(code As Object, ByVal proc As String, _
+                              ByVal appel As String, ByVal signature As String) As String
+    Dim txt As String, ligne As Long, vu As String
+
+    vu = ChrW(10003) & " "
+    If code.CountOfLines > 0 Then txt = code.Lines(1, code.CountOfLines)
+
+    If InStr(1, txt, appel, vbTextCompare) > 0 Then
+        AjouterAppel = vu & proc & " appelait déjà " & appel
+        Exit Function
+    End If
+
+    If InStr(1, txt, proc, vbTextCompare) = 0 Then
+        code.AddFromString signature & vbCrLf & "    " & appel & vbCrLf & "End Sub"
+        AjouterAppel = vu & proc & " créée, elle appelle " & appel
+        Exit Function
+    End If
+
+    ' PROC_NORMALE : la procédure existe, on insère l'appel juste sous sa
+    ' signature. Ni Workbook_Open ni Workbook_BeforeClose n'ont de signature
+    ' coupée en deux, la ligne suivante est donc bien le début du corps.
+    ligne = 0
+    On Error Resume Next
+    ligne = code.ProcBodyLine(proc, PROC_NORMALE)
+    On Error GoTo 0
+
+    If ligne = 0 Then
+        AjouterAppel = "! " & proc & " existe mais reste introuvable : " & _
+                       "ajoutez-y à la main la ligne   " & appel
+        Exit Function
+    End If
+
+    code.InsertLines ligne + 1, "    " & appel
+    AjouterAppel = vu & appel & " ajouté à " & proc & ", qui existait déjà"
+End Function
+
+'==============================================================================
+' DIAGNOSTIC
+'------------------------------------------------------------------------------
+' À lancer si le classeur s'ouvre encore avec ses onglets : le message dit
+' laquelle des quatre conditions n'est pas remplie.
+'==============================================================================
+Public Sub DiagnostiquerVerrou()
+    Dim code As Object, txt As String, msg As String, ws As Worksheet
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets(NOM_FEUILLE_ACCUEIL)
+    Set code = ThisWorkbook.VBProject.VBComponents(ThisWorkbook.CodeName).CodeModule
+    If Not code Is Nothing Then
+        If code.CountOfLines > 0 Then txt = code.Lines(1, code.CountOfLines)
+    End If
+    On Error GoTo 0
+
+    msg = Etat(Not ws Is Nothing, "la feuille " & NOM_FEUILLE_ACCUEIL & " existe") & vbCrLf
+    msg = msg & Etat(AC_KIOSQUE, "AC_KIOSQUE vaut True (modAccueil_Theme)") & vbCrLf
+    msg = msg & Etat(Not code Is Nothing, "le module ThisWorkbook est lisible") & vbCrLf
+    msg = msg & Etat(InStr(1, txt, "Accueil_Demarrer", vbTextCompare) > 0, _
+                     "Workbook_Open appelle Accueil_Demarrer") & vbCrLf
+    msg = msg & Etat(InStr(1, txt, "Accueil_Arreter", vbTextCompare) > 0, _
+                     "Workbook_BeforeClose appelle Accueil_Arreter") & vbCrLf
+    msg = msg & Etat(Len(MotDePasse()) > 0, _
+                     "la cellule " & CEL_MOT_DE_PASSE & " porte un mot de passe")
+
+    MsgBox msg & vbCrLf & vbCrLf & _
+           "Une croix sur les deux appels : lancez InstallerDemarrage." & vbCrLf & _
+           "Une croix sur le mot de passe : le bouton Unlock ne demandera rien.", _
+           vbInformation, "Verrouillage : etat"
+End Sub
+
+Private Function Etat(ByVal ok As Boolean, ByVal quoi As String) As String
+    Etat = IIf(ok, ChrW(10003), ChrW(215)) & "  " & quoi
+End Function

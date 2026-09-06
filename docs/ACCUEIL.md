@@ -130,7 +130,16 @@ End Sub
 ```
 
 Elle **n'écrase rien** : si un gestionnaire existe déjà — celui qui appelait
-`AfficherAccueil`, par exemple — elle le laisse et dit la ligne à y ajouter.
+`AfficherAccueil`, par exemple — elle glisse simplement l'appel sous sa
+signature, et ne fait rien du tout s'il y est déjà.
+
+### Si le classeur s'ouvre encore avec ses onglets
+
+Lancez **`DiagnostiquerVerrou`** (module `modAccueil_Verrou`). Il coche ou barre
+les six conditions : la feuille d'accueil existe, `AC_KIOSQUE` vaut `True`, le
+module `ThisWorkbook` est lisible, `Workbook_Open` appelle `Accueil_Demarrer`,
+`Workbook_BeforeClose` appelle `Accueil_Arreter`, et la cellule `Mot_de_passe`
+porte quelque chose.
 
 ---
 
