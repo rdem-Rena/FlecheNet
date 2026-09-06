@@ -112,12 +112,12 @@ End Function
 ' croit être son dossier, ce qu'on en a tiré, et si l'image y est.
 '==============================================================================
 Public Sub DiagnostiquerChemins()
-    Dim brut As String, local As String, img As String, msg As String
+    Dim brut As String, dossier As String, img As String, msg As String
     Dim rac As Variant, i As Long, n As Long
 
     brut = ThisWorkbook.Path
     OublierDossierClasseur
-    local = DossierClasseur()
+    dossier = DossierClasseur()
 
     msg = "Ce que le classeur annonce :" & vbCrLf & _
           IIf(Len(brut) > 0, brut, "(classeur jamais enregistré)") & vbCrLf & vbCrLf
@@ -125,13 +125,13 @@ Public Sub DiagnostiquerChemins()
                                   "adresse web (OneDrive ou SharePoint)", _
                                   "chemin local") & vbCrLf & vbCrLf
     msg = msg & "Dossier local retenu :" & vbCrLf & _
-          IIf(Len(local) > 0, local, "(introuvable)") & vbCrLf & vbCrLf
+          IIf(Len(dossier) > 0, dossier, "(introuvable)") & vbCrLf & vbCrLf
 
-    If Len(local) > 0 Then
-        img = local & Application.PathSeparator & "Images" & _
+    If Len(dossier) > 0 Then
+        img = dossier & Application.PathSeparator & "Images" & _
               Application.PathSeparator & "CartePremium.jpg"
         msg = msg & "Image des tuiles : " & _
-              IIf(FichierExiste(img), "trouvée.", "ABSENTE de " & local & "\Images.")
+              IIf(FichierExiste(img), "trouvée.", "ABSENTE de " & dossier & "\Images.")
     Else
         rac = Split(RacinesCandidates(), vbTab)
         For i = LBound(rac) To UBound(rac)
