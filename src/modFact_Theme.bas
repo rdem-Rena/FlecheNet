@@ -26,9 +26,14 @@ Public Const FA_HAUTEUR As Single = 636         ' surface UTILE, hors barre de t
 ' InsideHeight — la réserve n'a pas besoin d'être exacte, seulement suffisante.
 Public Const FA_RESERVE_TITRE As Single = 24
 
-' Ce qu'une case encadrée perd en hauteur, pour que deux filets voisins ne se
-' rejoignent pas : deux pixels.
-Public Const FA_FILET_RETRAIT As Single = 1.5
+' Le petit carré encadré des cases à cocher de la colonne « Select. ».
+'
+' Sa largeur vaut environ trois caractères de la police du tableau : de quoi
+' entourer le « vu » sans transformer la colonne en case géante. Il perd deux
+' pixels de hauteur, faute de quoi deux carrés voisins se rejoindraient en un
+' trait continu.
+Public Const FA_FILET_LARG As Single = 18       ' 24 px, ~3 caractères à 9 pt
+Public Const FA_FILET_RETRAIT As Single = 1.5   ' 2 px
 Public Const FA_MARGE As Single = 16
 Public Const FA_CARTE_LARG As Single = 928      ' FA_LARGEUR - 2 * FA_MARGE
 Public Const FA_PADDING As Single = 14

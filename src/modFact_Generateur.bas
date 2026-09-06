@@ -314,12 +314,19 @@ Private Sub ConstruireGrilleF(zone As Object, ByVal prefixe As String, _
 
         x = gauche + IGR_PAD_X
         For i = 0 To nbCol - 1
+            ' Le filet AVANT la case, donc DERRIÈRE elle : la case garde toute
+            ' la largeur de la colonne, et donc toute la zone cliquable, tandis
+            ' que le filet ne dessine qu'un petit carré au milieu.
+            If i + 1 = colEncadree Then
+                EncadrerF zone, "lblF" & prefixe & "B_" & CStr(r), _
+                          x, y, CSng(larg(i)) - 2 * IGR_PAD_X
+            End If
+
             Set c = AjF(zone, "Forms.Label.1", _
                         "lblF" & prefixe & "_" & CStr(r) & "_" & CStr(i + 1), _
                         AuPixel(x), AuPixel(y), _
                         AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
             TexteF c, vbNullString, ZFCase(), CLng(ali(i))
-            If i + 1 = colEncadree Then EncadrerF c
             x = x + CSng(larg(i))
         Next i
     Next r
@@ -405,22 +412,35 @@ Private Sub EnBandeauF(c As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Encadre une case de la grille d'un filet fin.
+' Le petit carré encadré d'une case à cocher, posé DERRIÈRE la case.
+'
+' UN CONTRÔLE À PART, et non un filet sur la case elle-même : la case garde
+' ainsi toute la largeur de la colonne — donc toute la zone cliquable — pendant
+' que le carré n'occupe que le milieu. Il est transparent : la couleur de la
+' ligne, y compris celle de la ligne choisie, se voit au travers.
+'
+' CENTRÉ SUR LA CASE, qui l'est elle-même sur la colonne : le carré se retrouve
+' donc sous le titre de colonne, quelle que soit la largeur de l'un ou l'autre.
 '
 ' LA HAUTEUR PERD DEUX PIXELS. Les lignes se touchent — leur pas est exactement
-' la hauteur d'une case — et deux filets bord à bord donneraient un trait double
-' et continu, une échelle plutôt que des cases distinctes. Le haut ne bouge pas :
-' le texte d'un libellé se pose en haut, et il ne doit pas se décaler par rapport
-' aux autres colonnes.
+' la hauteur d'une case — et deux carrés bord à bord donneraient un trait double
+' et continu, une échelle plutôt que des cases distinctes.
 '
 ' SpecialEffect avant BorderStyle, comme partout : MSForms refuse une bordure
 ' simple tant que le contrôle est en relief.
 '------------------------------------------------------------------------------
-Private Sub EncadrerF(c As Object)
+Private Sub EncadrerF(zone As Object, ByVal nom As String, ByVal gauche As Single, _
+                      ByVal haut As Single, ByVal largeurCase As Single)
+    Dim c As Object
+
+    Set c = AjF(zone, "Forms.Label.1", nom, _
+                AuPixel(gauche + (largeurCase - FA_FILET_LARG) / 2), AuPixel(haut), _
+                AuPixel(FA_FILET_LARG), AuPixel(IGR_LIGNE_H - FA_FILET_RETRAIT))
+    c.Caption = vbNullString
+    c.BackStyle = MSF_BackStyleTransparent
     c.SpecialEffect = MSF_SpecialEffectFlat
     c.BorderStyle = MSF_BorderStyleSingle
     c.BorderColor = COUL_CHAMP_BORD
-    c.Height = AuPixel(IGR_LIGNE_H - FA_FILET_RETRAIT)
 End Sub
 
 Private Sub FondF(c As Object, ByVal fond As Long, ByVal bordure As Long)

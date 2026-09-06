@@ -60,7 +60,7 @@ Fenêtre de **960 × 636 points** de surface utile (≈ 1280 × 848 pixels à 96
 
 - Le tableau du haut ne montre que les lignes **sans numéro de facture**, dédoublonnées : deux interventions d'un même client n'y font qu'une entrée.
 
-- Les cases de la colonne **Select.** portent chacune un **filet d'encadrement** : elles se lisent comme des cases à cocher, alors que ce sont des libellés. Elles perdent deux pixels de hauteur pour que deux filets voisins ne se rejoignent pas en un trait continu. Aucune autre colonne n'est encadrée.
+- Les cases de la colonne **Select.** sont surmontées d'un **petit carré encadré** — environ trois caractères de large, centré sous le titre de colonne — qui les fait lire comme des cases à cocher, alors que ce sont des libellés. Le carré est posé *derrière* la case : celle-ci garde toute la largeur de la colonne, donc toute la zone cliquable. Il perd deux pixels de hauteur pour que deux carrés voisins ne se rejoignent pas en un trait continu. Aucune autre colonne n'est encadrée ; la largeur se règle par `FA_FILET_LARG` (`modFact_Theme`).
 - Choisir un client remplit le tableau du bas avec ses travaux non facturés. La case **Toutes les opérations** y ajoute ceux déjà facturés ; le menu **Mois** restreint à un mois.
 
 - La colonne **Select.** n'existe pas dans `TblInterv` : elle se coche à l'écran, d'un clic dans la case, et décide des lignes qu'Enregistrer met à jour.
