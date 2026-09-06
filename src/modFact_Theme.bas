@@ -25,6 +25,10 @@ Public Const FA_HAUTEUR As Single = 636         ' surface UTILE, hors barre de t
 ' cette réserve, et Fact_Activer affine ensuite au point près en lisant
 ' InsideHeight — la réserve n'a pas besoin d'être exacte, seulement suffisante.
 Public Const FA_RESERVE_TITRE As Single = 24
+
+' Ce qu'une case encadrée perd en hauteur, pour que deux filets voisins ne se
+' rejoignent pas : deux pixels.
+Public Const FA_FILET_RETRAIT As Single = 1.5
 Public Const FA_MARGE As Single = 16
 Public Const FA_CARTE_LARG As Single = 928      ' FA_LARGEUR - 2 * FA_MARGE
 Public Const FA_PADDING As Single = 14

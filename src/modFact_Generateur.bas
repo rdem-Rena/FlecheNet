@@ -179,7 +179,8 @@ Private Sub ConstruireZone4(dsg As Object)
 
     BandeauF zone, "lblFSection4", "Liste des travaux non facturés"
     ConstruireGrilleF zone, "T", FTravauxLibelles(), FTravauxLargeurs(), _
-                      FTravauxAlignements(), FA_Z4_LIGNES, "sbFTravaux"
+                      FTravauxAlignements(), FA_Z4_LIGNES, "sbFTravaux", _
+                      FIndexTravaux(FC_SELECT)
 
     ' --- la ligne des totaux, sous les colonnes qu'elle additionne ------------
     larg = FTravauxLargeurs()
@@ -262,10 +263,18 @@ End Sub
 ' une case posée à cheval rend son texte décalé et plus épais. Les largeurs,
 ' elles, restent exactes — seul l'affichage est calé.
 '==============================================================================
+'------------------------------------------------------------------------------
+' Une grille : bande d'en-tête, titres de colonnes, lignes de cases, ascenseur.
+'
+'   colEncadree : numéro de la colonne dont chaque case reçoit un filet, 0 pour
+'                 aucune. Sert à la colonne « Select. », dont les cases se lisent
+'                 comme des cases à cocher et gagnent à être encadrées.
+'------------------------------------------------------------------------------
 Private Sub ConstruireGrilleF(zone As Object, ByVal prefixe As String, _
                               ByVal lib As Variant, ByVal larg As Variant, _
                               ByVal ali As Variant, ByVal nbLignes As Long, _
-                              ByVal nomBarre As String)
+                              ByVal nomBarre As String, _
+                              Optional ByVal colEncadree As Long = 0)
     Dim c As Object, i As Long, r As Long, nbCol As Long
     Dim x As Single, y As Single, gauche As Single, largeur As Single
 
@@ -310,6 +319,7 @@ Private Sub ConstruireGrilleF(zone As Object, ByVal prefixe As String, _
                         AuPixel(x), AuPixel(y), _
                         AuPixel(CSng(larg(i)) - 2 * IGR_PAD_X), AuPixel(IGR_LIGNE_H))
             TexteF c, vbNullString, ZFCase(), CLng(ali(i))
+            If i + 1 = colEncadree Then EncadrerF c
             x = x + CSng(larg(i))
         Next i
     Next r
@@ -392,6 +402,25 @@ End Sub
 Private Sub EnBandeauF(c As Object)
     c.BackColor = COUL_BANDEAU
     c.BorderColor = COUL_BANDEAU
+End Sub
+
+'------------------------------------------------------------------------------
+' Encadre une case de la grille d'un filet fin.
+'
+' LA HAUTEUR PERD DEUX PIXELS. Les lignes se touchent — leur pas est exactement
+' la hauteur d'une case — et deux filets bord à bord donneraient un trait double
+' et continu, une échelle plutôt que des cases distinctes. Le haut ne bouge pas :
+' le texte d'un libellé se pose en haut, et il ne doit pas se décaler par rapport
+' aux autres colonnes.
+'
+' SpecialEffect avant BorderStyle, comme partout : MSForms refuse une bordure
+' simple tant que le contrôle est en relief.
+'------------------------------------------------------------------------------
+Private Sub EncadrerF(c As Object)
+    c.SpecialEffect = MSF_SpecialEffectFlat
+    c.BorderStyle = MSF_BorderStyleSingle
+    c.BorderColor = COUL_CHAMP_BORD
+    c.Height = AuPixel(IGR_LIGNE_H - FA_FILET_RETRAIT)
 End Sub
 
 Private Sub FondF(c As Object, ByVal fond As Long, ByVal bordure As Long)
