@@ -65,8 +65,8 @@ Public Const CEL_MOT_DE_PASSE As String = "Mot_de_passe"
 ' fenêtre plus grande que l'écran mettrait le bouton Unlock hors de portée.
 '==============================================================================
 Public Const AC_KIOSQUE As Boolean = True
-Public Const AC_FEN_LARGEUR As Single = 1000
-Public Const AC_FEN_HAUTEUR As Single = 640
+Public Const AC_FEN_LARGEUR As Single = 960
+Public Const AC_FEN_HAUTEUR As Single = 740
 
 '==============================================================================
 ' GÉOMÉTRIE, EN POINTS
