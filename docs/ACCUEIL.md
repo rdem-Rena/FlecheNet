@@ -60,6 +60,80 @@ Les formes restent modifiables à la main dans Excel — mais la prochaine gén�
 
 ---
 
+## Le pied de page et ses deux boutons
+
+La ligne du bas porte le rappel « Cliquez sur une carte pour ouvrir le module »
+à gauche, et deux petits boutons calés à droite :
+
+| Bouton | Macro | Effet |
+|---|---|---|
+| **Quitter** | `Accueil_Quitter` | propose d'enregistrer, puis ferme le classeur — ou Excel s'il n'y a que lui |
+| **Unlock** | `Accueil_Deverrouiller` | demande le mot de passe et rend le classeur à Excel |
+
+Ils sont discrets par choix : ce n'est pas ce qu'on vient faire sur cette page.
+Leur taille se règle par `AC_BT_LARG`, `AC_BT_HAUT` et `AC_BT_GOUT`, et le
+simulateur refuse une largeur qui mangerait le texte du pied.
+
+---
+
+## Le mode kiosque
+
+Verrouillé, le classeur ne montre plus que la feuille d'accueil, dans une
+fenêtre de taille fixe : ni ruban, ni onglets, ni barre de formule, ni en-têtes,
+ni ascenseurs, et les autres feuilles **très masquées** — un état que le menu
+*Afficher* ne défait pas. L'utilisateur ne peut donc faire que ce que les quatre
+formulaires lui permettent.
+
+Tout cela vit dans `modAccueil_Verrou`, et se commande par **`AC_KIOSQUE`**
+(`modAccueil_Theme`) : à `False`, le classeur s'ouvre sur l'accueil sans rien
+cacher — l'état dans lequel travailler pour le modifier.
+
+### Ce que ce verrou est, et ce qu'il n'est pas
+
+Il met la maison en ordre, il ne la ferme pas à clef :
+
+- **macros désactivées à l'ouverture, et rien ne se verrouille.** C'est vrai de
+  tout verrou écrit en VBA ;
+- la protection de structure et un mot de passe de feuille se lèvent en quelques
+  minutes avec un utilitaire du commerce.
+
+Il empêche les fausses manoeuvres, pas la malveillance.
+
+### Le mot de passe
+
+Dans la cellule nommée **`Mot_de_passe`**. S'il n'y en a pas, le bouton *Unlock*
+déverrouille **sans rien demander** : un classeur dont on ne peut plus sortir
+serait pire que pas de verrou du tout.
+
+### Ce qui doit être rendu à Excel
+
+Le ruban caché, la barre de formule et les onglets sont des réglages de
+**l'application**, pas du classeur : un autre classeur ouvert dans la même
+instance d'Excel les trouverait cachés lui aussi. `Accueil_Arreter`, appelée à
+la fermeture, remet donc tout en place — et le simulateur vérifie que les trois
+sorties du verrou le font.
+
+### Installation
+
+Le verrou part à l'ouverture du classeur, ce qui demande deux gestionnaires dans
+le module `ThisWorkbook` — un module qui ne s'importe pas. **`InstallerDemarrage`**
+(module `modAccueil_Verrou`) les y écrit :
+
+```vba
+Private Sub Workbook_Open()
+    Accueil_Demarrer
+End Sub
+
+Private Sub Workbook_BeforeClose(Cancel As Boolean)
+    Accueil_Arreter
+End Sub
+```
+
+Elle **n'écrase rien** : si un gestionnaire existe déjà — celui qui appelait
+`AfficherAccueil`, par exemple — elle le laisse et dit la ligne à y ajouter.
+
+---
+
 ## Ouvrir le classeur sur l'accueil
 
 Dans le module **`ThisWorkbook`** du VBE :

@@ -280,19 +280,61 @@ End Function
 ' LE PIED DE PAGE
 '==============================================================================
 Private Sub DessinerPied(ws As Worksheet)
-    Dim sh As Object
+    Dim sh As Object, xUnlock As Single, xQuitter As Single
 
     Set sh = Forme(ws, MSO_RECT, "shAcFilet", AC_MARGE, AC_FILET_TOP, _
                    AC_LARGEUR - 2 * AC_MARGE, 1)
     sh.Fill.ForeColor.RGB = COUL_BORDURE
     sh.Line.Visible = MSO_FAUX
 
+    ' Unlock tout à droite, Quitter juste avant.
+    xUnlock = AC_LARGEUR - AC_MARGE - AC_BT_LARG
+    xQuitter = xUnlock - AC_BT_LARG - AC_BT_GOUT
+
+    ' le texte s'arrête avant les boutons, sans quoi il passerait dessous
     Etiquette ws, "lblAcPied", AC_MARGE, AC_PIED_TOP, _
-              AC_LARGEUR - 2 * AC_MARGE, 16, _
-              "Cliquez sur une carte pour ouvrir le module." & _
-              "     " & ChrW(183) & "     " & _
-              "Les formulaires se régénèrent par les modules Generateur.", _
+              xQuitter - AC_MARGE - AC_BT_GOUT, 16, _
+              "Cliquez sur une carte pour ouvrir le module.", _
               POLICE, AC_T_PIED, COUL_TEXTE_DOUX, MSO_ALIGN_GAUCHE, 0
+
+    BoutonPied ws, "mnuQuitter", xQuitter, "Quitter", "Accueil_Quitter"
+    BoutonPied ws, "mnuUnlock", xUnlock, "Unlock", "Accueil_Deverrouiller"
+End Sub
+
+'------------------------------------------------------------------------------
+' Un petit bouton du pied de page : cadre fin, texte gris, une macro au clic.
+'
+' Discret par choix : ces deux-là ne sont pas ce qu'on vient faire sur cette
+' page, ils doivent se trouver sans se voir.
+'
+' Deux formes groupées, comme les cartes : le groupe porte la macro, si bien que
+' le clic est pris sur le texte comme sur le cadre.
+'------------------------------------------------------------------------------
+Private Sub BoutonPied(ws As Worksheet, ByVal nom As String, ByVal gauche As Single, _
+                       ByVal texte As String, ByVal macro As String)
+    Dim sh As Object, grp As Object, noms(0 To 1) As Variant
+    Dim haut As Single
+
+    haut = AC_PIED_TOP - (AC_BT_HAUT - 16) / 2
+
+    Set sh = Forme(ws, MSO_RECT_ARRONDI, "sh" & nom, gauche, haut, _
+                   AC_BT_LARG, AC_BT_HAUT)
+    sh.Adjustments(1) = 0.22
+    sh.Fill.ForeColor.RGB = COUL_CARTE
+    sh.Line.ForeColor.RGB = COUL_BORDURE
+    sh.Line.Weight = 0.75
+    noms(0) = sh.Name
+
+    Set sh = Etiquette(ws, "lbl" & nom, gauche, haut, AC_BT_LARG, AC_BT_HAUT, _
+                       texte, POLICE_DEMI, AC_T_PIED, COUL_TEXTE_DOUX, _
+                       MSO_ALIGN_CENTRE, 0)
+    sh.TextFrame2.VerticalAnchor = MSO_ANCRE_MILIEU
+    noms(1) = sh.Name
+
+    Set grp = ws.Shapes.Range(noms).Group
+    grp.Name = nom
+    grp.Placement = XL_FLOTTANT
+    grp.OnAction = macro
 End Sub
 
 '==============================================================================

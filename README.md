@@ -178,15 +178,16 @@ Elle n'est pas dessinée à la main mais **par code**, comme les formulaires :
 Le choix d'une feuille plutôt que d'un cinquième UserForm est délibéré —
 MSForms ne sait ni arrondir un coin, ni dégrader un fond, ni porter une ombre.
 
-Pour que le classeur s'ouvre dessus, dans le module `ThisWorkbook` :
+Elle porte aussi le **mode kiosque** : verrouillé, le classeur ne montre plus
+qu'elle, dans une fenêtre de taille fixe, sans ruban ni onglets ni barre de
+formule, les autres feuilles très masquées. Deux petits boutons en pied de page
+— **Quitter** et **Unlock** — en sortent ; le mot de passe est dans la cellule
+nommée `Mot_de_passe`. Lancer **`InstallerDemarrage`** met le tout en route.
 
-```vba
-Private Sub Workbook_Open()
-    AfficherAccueil
-End Sub
-```
+Ce verrou empêche les fausses manoeuvres, pas la malveillance : macros
+désactivées à l'ouverture, et rien ne se verrouille.
 
-Plan, palette et réglages : [`docs/ACCUEIL.md`](docs/ACCUEIL.md).
+Plan, palette, réglages et détail du kiosque : [`docs/ACCUEIL.md`](docs/ACCUEIL.md).
 
 ---
 

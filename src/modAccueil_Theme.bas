@@ -50,6 +50,24 @@ Public Const XL_AUCUNE_SELECTION As Long = -4142 ' xlNoSelection
 '==============================================================================
 Public Const NOM_FEUILLE_ACCUEIL As String = "Accueil"
 
+' La cellule nommée qui porte le mot de passe du bouton « Unlock ». Vide ou
+' absente, le bouton déverrouille sans rien demander : mieux vaut un verrou
+' qu'on ouvre trop facilement qu'un classeur dont on ne peut plus sortir.
+Public Const CEL_MOT_DE_PASSE As String = "Mot_de_passe"
+
+'==============================================================================
+' LE MODE KIOSQUE
+'------------------------------------------------------------------------------
+' AC_KIOSQUE commande tout : à False, le classeur s'ouvre sur l'accueil sans
+' rien cacher — l'état dans lequel on veut travailler pour le modifier.
+'
+' La fenêtre est bornée à l'écran au moment de la poser : sur un portable, une
+' fenêtre plus grande que l'écran mettrait le bouton Unlock hors de portée.
+'==============================================================================
+Public Const AC_KIOSQUE As Boolean = True
+Public Const AC_FEN_LARGEUR As Single = 1000
+Public Const AC_FEN_HAUTEUR As Single = 640
+
 '==============================================================================
 ' GÉOMÉTRIE, EN POINTS
 '------------------------------------------------------------------------------
@@ -102,7 +120,10 @@ Public Const AC_DETAIL_TOP As Single = 126
 Public Const AC_DETAIL_HAUT As Single = 62
 Public Const AC_LIEN_TOP As Single = 192
 
-' Pied de page
+' Pied de page, et ses deux boutons calés à droite
+Public Const AC_BT_LARG As Single = 54
+Public Const AC_BT_HAUT As Single = 18
+Public Const AC_BT_GOUT As Single = 8
 Public Const AC_FILET_TOP As Single = 404
 Public Const AC_PIED_TOP As Single = 414
 Public Const AC_HAUTEUR As Single = 448         ' hauteur totale dessinée
