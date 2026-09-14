@@ -12,3 +12,7 @@
 *.xlsm
 *.xlsb
 *.csv
+
+# Sortie de l'interpreteur Python, refabriquee a chaque execution.
+__pycache__/
+*.pyc
