@@ -1,5 +1,11 @@
 # FlècheNet — Formulaires de gestion
 
+> Ce dépôt porte **deux projets indépendants**. Celui-ci, décrit ci-dessous, et
+> [**Pression Rena**](pression-rena/README.md) — un classeur de suivi de la
+> pression artérielle, dans le dossier [`pression-rena/`](pression-rena). Les
+> deux partagent une charte graphique et une façon de faire, pas une ligne de
+> code : chaque classeur fonctionne sans l'autre.
+
 Procédures VBA qui **génèrent** et font fonctionner les formulaires de saisie du
 classeur `FlecheNettoyageSA2026.xlsm` :
 
@@ -212,3 +218,24 @@ Détails et dépannage : [`docs/INSTALLATION.md`](docs/INSTALLATION.md).
 Les fichiers `.bas` sont enregistrés en **Windows-1252 / CRLF**, l'encodage
 attendu par l'éditeur VBA. Ne pas les convertir en UTF-8 : les accents des
 libellés et des messages seraient déformés à l'import.
+
+---
+
+## L'autre projet du dépôt : Pression Rena
+
+[`pression-rena/`](pression-rena) contient un second classeur, sans rapport avec
+FlècheNettoyage : un **suivi de la pression artérielle**, deux mesures par jour,
+avec une page de saisie et deux graphiques — les relevés bruts, et des moyennes
+lissées dessinées en bandes de couleur, dont l'intervalle de dates et la largeur
+du lissage se règlent depuis trois cellules.
+
+Il reprend la même charte graphique et la même façon de faire — un formulaire
+construit par code à partir d'un schéma — mais ses modules `modPression_*` sont
+**autonomes** : ils ne dépendent d'aucun module de `src/`, et le classeur
+fonctionne seul.
+
+Le classeur lui-même n'est **pas** dans le dépôt, qui est public : il porte des
+milliers de mesures nominatives. Il se refabrique par
+[`pression-rena/outils/construire_classeur.py`](pression-rena/outils/construire_classeur.py).
+
+Plan, réglages et installation : [`pression-rena/README.md`](pression-rena/README.md).

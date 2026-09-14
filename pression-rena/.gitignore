@@ -1,0 +1,14 @@
+# LES DONNEES NE SONT PAS DANS CE DEPOT, ET NE DOIVENT PAS Y ENTRER.
+#
+# Ce depot est PUBLIC. Le classeur porte des milliers de mesures de tension
+# nominatives, le poids, et des commentaires qui nomment des tiers : le
+# pousser ici le publierait pour de bon, l'historique de git gardant une copie
+# de tout ce qui y est entre une fois.
+#
+# Le classeur se REFABRIQUE a partir du fichier de releves, par
+# outils/construire_classeur.py : le code suffit, les donnees restent chez
+# leur auteur.
+*.xlsx
+*.xlsm
+*.xlsb
+*.csv
