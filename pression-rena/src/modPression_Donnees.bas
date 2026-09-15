@@ -72,14 +72,36 @@ End Function
 ' lectures au pire, contre 5368 pour un parcours complet.
 '------------------------------------------------------------------------------
 Public Function Pression_DernieresLignes(ByVal combien As Long) As Variant
-    Dim res() As Long, n As Long, ligne As Long
+    Dim ws As Worksheet, res() As Long, n As Long, ligne As Long, fin As Long
+    Dim v As Variant
+
+    Set ws = FeuilleDatas()
+    If ws Is Nothing Or combien < 1 Then
+        Pression_DernieresLignes = Array()
+        Exit Function
+    End If
+
+    ' LA BORNE EST RELEVÉE UNE FOIS. Cette boucle passait par
+    ' Pression_EstRemplie, donc par Pression_Valeur, qui rappelle
+    ' DerniereLigne — et DerniereLigne coûte un End(xlUp). Le calendrier étant
+    ' pré-rempli jusqu'en 2028, il y a un bon millier de lignes vides à
+    ' remonter avant la dernière mesure : autant de End(xlUp), et deux à trois
+    ' secondes à chaque ouverture du formulaire et à chaque enregistrement.
+    fin = DerniereLigne()
+    If fin < LIGNE_DEB Then
+        Pression_DernieresLignes = Array()
+        Exit Function
+    End If
 
     ReDim res(1 To combien)
-    For ligne = DerniereLigne() To LIGNE_DEB Step -1
-        If Pression_EstRemplie(ligne) Then
-            n = n + 1
-            res(n) = ligne
-            If n = combien Then Exit For
+    For ligne = fin To LIGNE_DEB Step -1
+        v = ws.Cells(ligne, PC_SYS).Value
+        If Not IsEmpty(v) Then
+            If IsNumeric(v) Then
+                n = n + 1
+                res(n) = ligne
+                If n = combien Then Exit For
+            End If
         End If
     Next ligne
 
@@ -99,6 +121,7 @@ End Function
 Public Function Pression_Activites() As Variant
     Dim ws As Worksheet, vues As Object, ligne As Long, v As Variant
     Dim liste() As String, n As Long, i As Long, j As Long, tampon As String
+    Dim fin As Long, bloc As Variant
 
     Set ws = FeuilleDatas()
     If ws Is Nothing Then
@@ -106,16 +129,28 @@ Public Function Pression_Activites() As Variant
         Exit Function
     End If
 
+    fin = DerniereLigne()
+    If fin < LIGNE_DEB Then
+        Pression_Activites = Array()
+        Exit Function
+    End If
+
+    ' LA COLONNE EST LUE D'UN SEUL COUP. Cinq mille et quelques accès
+    ' cellule par cellule se comptent en dixièmes de seconde ; un seul accès
+    ' à la plage entière rend le même contenu dans un tableau, tout de suite.
+    ' Une plage d'UNE cellule rendrait un scalaire et non un tableau — d'où le
+    ' IsArray, même si le calendrier n'est jamais aussi court.
+    bloc = ws.Range(ws.Cells(LIGNE_DEB, PC_ACTIVITE), ws.Cells(fin, PC_ACTIVITE)).Value
+
     Set vues = CreateObject("Scripting.Dictionary")
     vues.CompareMode = 1
-    For ligne = LIGNE_DEB To DerniereLigne()
-        v = ws.Cells(ligne, PC_ACTIVITE).Value
-        If Not IsEmpty(v) Then
-            If Len(Trim$(CStr(v))) > 0 Then
-                If Not vues.Exists(Trim$(CStr(v))) Then vues.Add Trim$(CStr(v)), True
-            End If
-        End If
-    Next ligne
+    If IsArray(bloc) Then
+        For ligne = LBound(bloc, 1) To UBound(bloc, 1)
+            AjouterActivite vues, bloc(ligne, 1)
+        Next ligne
+    Else
+        AjouterActivite vues, bloc
+    End If
 
     If vues.Count = 0 Then
         Pression_Activites = Array()
@@ -144,6 +179,19 @@ Public Function Pression_Activites() As Variant
 
     Pression_Activites = liste
 End Function
+
+'------------------------------------------------------------------------------
+' Range une activité dans le dictionnaire, si elle en est une.
+'------------------------------------------------------------------------------
+Private Sub AjouterActivite(ByVal vues As Object, ByVal v As Variant)
+    Dim texte As String
+
+    If IsEmpty(v) Then Exit Sub
+    If IsError(v) Then Exit Sub
+    texte = Trim$(CStr(v))
+    If Len(texte) = 0 Then Exit Sub
+    If Not vues.Exists(texte) Then vues.Add texte, True
+End Sub
 
 '==============================================================================
 ' ÉCRITURE

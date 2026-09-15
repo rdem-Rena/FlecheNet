@@ -14,6 +14,7 @@ Il verifie :
   2. que tout controle appele par le formulaire est bien cree par le generateur ;
   3. que toute procedure appelee par le code genere existe, et est publique ;
   4. qu'aucune variable locale ne masque une procedure du meme module ;
+  4bis. qu'aucun menu deroulant FERME ne recoit une affectation de .Text ;
   5. que la geometrie tient dans le formulaire ;
   6. que chaque fichier est bien en Windows-1252 / CRLF, l'encodage attendu par
      l'editeur VBA.
@@ -37,6 +38,7 @@ RE_CTRL_NOM = re.compile(r'f\.Controls\(\s*"([^"]+)"')
 RE_CTRL_CALC = re.compile(r'f\.Controls\(\s*"([A-Za-z_]+)_"')
 RE_PROC_EVT = re.compile(r'Proc\s+"[^"]*"\s*,\s*"([A-Za-z_]\w*)')
 RE_DIM = re.compile(r"^\s*Dim\s+([^\n]+)", re.M)
+RE_LISTE = re.compile(r"^\s*Liste\s+\w+\s*,\s*(True|False)\s*$")
 
 # Les membres du formulaire qui ne sont pas des controles.
 MEMBRES_FORM = {"Controls", "Show", "Hide", "Repaint", "Caption", "Name", "Tag"}
@@ -125,6 +127,33 @@ def main(argv):
                     fautes.append(
                         "%s : la variable « %s » masque la procédure du même nom"
                         % (nom, variable))
+
+    # --- 4bis. un menu ferme ne recoit jamais .Text -------------------------
+    # Un ComboBox en fmStyleDropDownList REFUSE l'affectation de .Text : MSForms
+    # repond « erreur 380, valeur de propriete non valide » des que la chaine ne
+    # figure pas dans la liste — et une chaine vide n'y figure jamais. Il faut
+    # passer par ListIndex, qui accepte -1 pour « rien de choisi ».
+    #
+    # Rien ne le signale a la compilation : la faute n'apparait qu'a
+    # l'ouverture du formulaire, sur une ligne d'apparence irreprochable.
+    fermes = set()
+    dernier = None
+    for ligne in generateur.splitlines():
+        trouve = RE_AJ.search(ligne)
+        if trouve:
+            dernier = trouve.group(1)
+        m = RE_LISTE.match(ligne)
+        if m and dernier:
+            if m.group(1) == "True":
+                fermes.add(dernier)
+            dernier = None
+    for nom in sorted(fermes):
+        controles += 1
+        for module, texte in sources.items():
+            if re.search(r"\bf\.%s\.Text\s*=" % re.escape(nom), texte):
+                fautes.append(
+                    "%s affecte .Text à « %s », un menu fermé : erreur 380 à "
+                    "l'exécution (passer par ListIndex)" % (module, nom))
 
     # --- 5. la geometrie ----------------------------------------------------
     fautes.extend(verifier_geometrie(sources))

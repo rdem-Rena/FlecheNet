@@ -83,6 +83,52 @@ Private Function EtatDuClasseur() As String
 End Function
 
 '==============================================================================
+' POSER UNE VALEUR DANS UN MENU DÉROULANT
+'------------------------------------------------------------------------------
+' UN MENU FERMÉ REFUSE .Text. Un ComboBox en fmStyleDropDownList — cboPDemi et
+' cboPChange — répond « erreur 380, valeur de propriété non valide » dès qu'on
+' lui affecte une chaîne, et la chaîne VIDE la déclenche à tous les coups :
+' pour MSForms, « rien » ne figure jamais dans la liste, même quand on y a
+' ajouté une entrée vide.
+'
+' Rien ne le signale à la compilation. La faute n'apparaît qu'à l'ouverture du
+' formulaire, sur une ligne d'apparence irréprochable — ici la reprise du
+' repère Change d'une demi-journée qui n'en porte pas, c'est-à-dire presque
+' toutes. verifier_vba.py refuse désormais tout retour en arrière.
+'
+' ListIndex, lui, accepte -1 pour « rien de choisi ».
+'------------------------------------------------------------------------------
+Private Sub PoserListe(c As Object, ByVal valeur As String)
+    Dim i As Long
+
+    ' Un menu OUVERT accepte n'importe quel texte, y compris vide : c'est tout
+    ' l'intérêt de cboPActivite, où une activité nouvelle se tape.
+    If c.Style = MSF_StyleDropDownCombo Then
+        c.Text = valeur
+        Exit Sub
+    End If
+
+    If Len(valeur) = 0 Then
+        c.ListIndex = -1
+        Exit Sub
+    End If
+
+    For i = 0 To c.ListCount - 1
+        If StrComp(CStr(c.List(i)), valeur, vbTextCompare) = 0 Then
+            c.ListIndex = i
+            Exit Sub
+        End If
+    Next i
+
+    ' La valeur vient du classeur et ne figure pas dans la liste proposée : on
+    ' l'ajoute plutôt que de la perdre. Un Change à 140 saisi à la main dans la
+    ' feuille reste ainsi visible dans le formulaire, et se réenregistre tel
+    ' quel.
+    c.AddItem valeur
+    c.ListIndex = c.ListCount - 1
+End Sub
+
+'==============================================================================
 ' DÉSIGNER UNE DEMI-JOURNÉE
 '==============================================================================
 '------------------------------------------------------------------------------
@@ -115,8 +161,12 @@ Public Sub Pression_Cibler(f As Object)
     ChargerLigne f, ligne
 End Sub
 
+' La LECTURE de .Text reste permise sur un menu fermé — c'est l'écriture qui ne
+' l'est pas. Mais ListIndex dit la même chose sans dépendre de l'orthographe
+' des deux entrées, et vaut -1 tant que rien n'est choisi : on prend alors le
+' matin, qui est le premier de la journée.
 Private Function DemiChoisie(f As Object) As Long
-    DemiChoisie = IIf(StrComp(f.cboPDemi.Text, "Soir", vbTextCompare) = 0, DEMI_SOIR, DEMI_MATIN)
+    DemiChoisie = IIf(f.cboPDemi.ListIndex = 1, DEMI_SOIR, DEMI_MATIN)
 End Function
 
 '------------------------------------------------------------------------------
@@ -129,12 +179,12 @@ Private Sub ChargerLigne(f As Object, ByVal ligne As Long)
                        Format$(JourDeLaLigne(ligne), "ddd dd.mm.yy") & " " & _
                        NomDemi(DemiDeLaLigne(ligne))
     f.txtPHeure.Text = Pression_Affichee(ligne, PC_HEURE)
-    f.cboPActivite.Text = Pression_Affichee(ligne, PC_ACTIVITE)
+    PoserListe f.cboPActivite, Pression_Affichee(ligne, PC_ACTIVITE)
     f.txtPSys.Text = Pression_Affichee(ligne, PC_SYS)
     f.txtPDia.Text = Pression_Affichee(ligne, PC_DIA)
     f.txtPPouls.Text = Pression_Affichee(ligne, PC_POULS)
     f.txtPPoids.Text = Pression_Affichee(ligne, PC_POIDS)
-    f.cboPChange.Text = Pression_Affichee(ligne, PC_CHANGE)
+    PoserListe f.cboPChange, Pression_Affichee(ligne, PC_CHANGE)
     f.txtPComment.Text = Pression_Affichee(ligne, PC_COMMENT)
 
     mEnCours = False
@@ -148,7 +198,7 @@ End Sub
 Public Sub Pression_Aujourdhui(f As Object)
     mEnCours = True
     f.txtPDate.Text = Format$(Date, "dd.mm.yy")
-    f.cboPDemi.Text = IIf(Hour(Now) < 12, "matin", "Soir")
+    PoserListe f.cboPDemi, IIf(Hour(Now) < 12, "matin", "Soir")
     mEnCours = False
 
     Pression_Cibler f
@@ -308,12 +358,12 @@ End Sub
 Public Sub Pression_Effacer(f As Object)
     mEnCours = True
     f.txtPHeure.Text = vbNullString
-    f.cboPActivite.Text = vbNullString
+    PoserListe f.cboPActivite, vbNullString
     f.txtPSys.Text = vbNullString
     f.txtPDia.Text = vbNullString
     f.txtPPouls.Text = vbNullString
     f.txtPPoids.Text = vbNullString
-    f.cboPChange.Text = vbNullString
+    PoserListe f.cboPChange, vbNullString
     f.txtPComment.Text = vbNullString
     f.lblPEtat.Caption = vbNullString
     mEnCours = False
@@ -364,7 +414,7 @@ Public Sub Pression_Reprendre(f As Object, ByVal rang As Long)
 
     mEnCours = True
     f.txtPDate.Text = Format$(JourDeLaLigne(ligne), "dd.mm.yy")
-    f.cboPDemi.Text = NomDemi(DemiDeLaLigne(ligne))
+    PoserListe f.cboPDemi, NomDemi(DemiDeLaLigne(ligne))
     mEnCours = False
 
     ChargerLigne f, ligne

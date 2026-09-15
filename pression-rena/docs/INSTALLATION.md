@@ -116,6 +116,20 @@ et sur la feuille `Saisie` : si une ligne a été insérée ou supprimée dans
 `Datas`, les deux graphiques sont décalés, et c'est le seul endroit où cela se
 voit.
 
+### « Erreur d'exécution 380 : impossible de définir la propriété Text »
+
+Un **menu déroulant fermé** — `cboPDemi`, `cboPChange` — refuse qu'on lui
+affecte `.Text`. MSForms répond 380 dès que la chaîne ne figure pas dans sa
+liste, et la chaîne **vide** la déclenche à tous les coups : pour lui, « rien »
+n'y figure jamais, même après y avoir ajouté une entrée vide.
+
+Rien ne le signale à la compilation, et la faute n'apparaît qu'à l'ouverture du
+formulaire. Il faut passer par `ListIndex`, qui accepte `-1` pour « rien de
+choisi » : c'est ce que fait `PoserListe`, dans `modPression_Formulaire`.
+
+`verifier_vba.py` refuse désormais toute affectation de `.Text` à un menu créé
+par `Liste c, True`.
+
 ---
 
 ## Encodage des fichiers
