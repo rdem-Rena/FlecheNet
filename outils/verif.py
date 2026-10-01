@@ -405,6 +405,38 @@ for f in FICHIERS:
                           % (f, no, cle, autre, autre))
 
 # ---------------------------------------------------------------------------
+# 13. CHANGER D'ANNEE PERIME TOUS LES CACHES
+#
+# Chaque module qui garde un tableau en memoire expose un invalidateur sans
+# argument, dont le nom finit par Recharger. Datas_PerimerCaches les appelle
+# tous ; en oublier un, c'est afficher les clients d'une annee au-dessus des
+# interventions d'une autre -- sans erreur, et sans que rien ne se voie.
+#
+# Les procedures qui PRENNENT UN ARGUMENT ne sont pas des caches : elles
+# rafraichissent un formulaire, qu'on leur passe.
+# ---------------------------------------------------------------------------
+mp = re.search(r'Sub Datas_PerimerCaches\(.*?\nEnd Sub', rd("modDatas_Classeur.bas"), re.S)
+if not mp:
+    pb.append("Datas_PerimerCaches a disparu : changer d'annee laisserait les "
+              "caches sur le fichier precedent")
+else:
+    for f in FICHIERS:
+        for no, l in lignes_logiques(rd(f)):
+            c = sans_commentaire(l)
+            ms = SIGNAT.match(c)
+            if not ms or re.match(r'\s*Private\b', c, re.I):
+                continue
+            if not ms.group(1).lower().endswith("recharger"):
+                continue
+            if noms_parametres(c):
+                continue
+            if ms.group(1) not in mp.group(0):
+                pb.append("%s:%d %s vide un cache mais Datas_PerimerCaches ne "
+                          "l'appelle pas : apres un changement d'annee ce cache "
+                          "rendrait les donnees de l'annee precedente"
+                          % (f, no, ms.group(1)))
+
+# ---------------------------------------------------------------------------
 print("%d modules, %d procedures publiques"
       % (len(FICHIERS), len(PUB_OU)))
 if pb:

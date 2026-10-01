@@ -129,8 +129,11 @@ Public Function Datas_PeutEcrire() As Boolean
     End If
 
     ' LE VERROU EST PERDU. On bascule en consultation plutôt que de laisser
-    ' croire que la prochaine tentative passera.
+    ' croire que la prochaine tentative passera — et le bandeau de l'accueil le
+    ' dit aussitôt, sans quoi il annoncerait l'écriture pendant toute la suite
+    ' de la séance.
     mLecture = True
+    Accueil_MajBandeau
     MsgBox msg & vbCrLf & vbCrLf & _
            "Les données passent en CONSULTATION SEULE. Fermez puis rouvrez " & _
            "l'application pour reprendre la main quand ce poste aura fini.", _
@@ -257,6 +260,29 @@ Private Sub Oublier()
     mAnnee = 0
     mLecture = False
     mChemin = vbNullString
+    Datas_PerimerCaches
+End Sub
+
+'==============================================================================
+' LES CACHES ONT CHANGÉ DE CLASSEUR
+'------------------------------------------------------------------------------
+' Trois modules gardent un tableau en mémoire pour ne pas relire la feuille à
+' chaque frappe. Changer d'année sans les prévenir, ce serait afficher les
+' clients de 2026 au-dessus des interventions de 2025 — sans la moindre erreur,
+' et sans que rien ne se voie.
+'
+' APPELÉE DEPUIS Oublier, c'est-à-dire à chaque fermeture, et donc aussi au début
+' de chaque ouverture, qui ferme d'abord. Un cache qui survivrait à la fermeture
+' rendrait des données qu'on n'a plus le droit de lire.
+'
+' LES TROIS INVALIDATEURS SONT PARESSEUX : ils posent un drapeau, ils ne
+' relisent rien. C'est ce qui permet de les appeler alors que le classeur de
+' données vient justement de se fermer.
+'==============================================================================
+Public Sub Datas_PerimerCaches()
+    Donnees_Recharger
+    Interv_ToutRecharger
+    Adresses_Recharger
 End Sub
 
 '------------------------------------------------------------------------------

@@ -23,18 +23,27 @@ dossier `src/` : **Fichier ▸ Importer un fichier…** (`Ctrl + M`).
 Ordre indifférent :
 
 ```
-modClients_Theme.bas        modInterv_Theme.bas
-modClients_Schema.bas       modInterv_Schema.bas
-modClients_Donnees.bas      modInterv_Donnees.bas
-modClients_Adresses.bas     modInterv_Calendrier.bas
-modClients_Formulaire.bas   modInterv_Formulaire.bas
+modClients_Theme.bas        modInterv_Theme.bas         modFact_Theme.bas
+modClients_Schema.bas       modInterv_Schema.bas        modFact_Schema.bas
+modClients_Donnees.bas      modInterv_Donnees.bas       modFact_Donnees.bas
+modClients_Adresses.bas     modInterv_Calendrier.bas    modFact_Formulaire.bas
+modClients_Formulaire.bas   modInterv_Formulaire.bas    modFact_Generateur.bas
 modClients_Generateur.bas   modInterv_Generateur.bas
-modClients_Lancement.bas    modInterv_Lancement.bas
+modClients_Lancement.bas    modInterv_Lancement.bas     modStat_Theme.bas
+                            modInterv_Graphique.bas     modStat_Schema.bas
+modChemins.bas                                          modStat_Donnees.bas
+modDatas_Classeur.bas       modAccueil_Theme.bas        modStat_Formulaire.bas
+modDatas_Verrou.bas         modAccueil_Generateur.bas   modStat_Generateur.bas
+                            modAccueil_Verrou.bas
 ```
 
-Les modules `modInterv_*` s'appuient sur les `modClients_*` — palette,
-typographie et utilitaires partagés : importer les sept de gauche même si seul
-le formulaire des interventions vous intéresse.
+`modDatas_Classeur` et `modDatas_Verrou` sont ceux qui vont chercher les
+données dans le fichier partagé : sans eux, plus aucun tableau n'est trouvé —
+voir [`DONNEES.md`](DONNEES.md).
+
+Les modules `modInterv_*`, `modFact_*` et `modStat_*` s'appuient sur les
+`modClients_*` — palette, typographie et utilitaires partagés : importer la
+colonne de gauche même si seul le formulaire des interventions vous intéresse.
 
 Vérification : **Débogage ▸ Compiler VBAProject** ne doit signaler aucune erreur.
 Le projet compile même si le UserForm n'existe pas encore.
@@ -107,9 +116,11 @@ lancer aucune macro : cette suppression se fait forcément à la main.
 
 ## Le classeur dans un dossier OneDrive ou SharePoint
 
-Le classeur fonctionne dans un dossier partagé et synchronisé, à une condition :
-**l'ouvrir depuis l'Explorateur**, dans le dossier synchronisé, et non depuis le
-site web ou depuis Excel en ligne.
+**Les données y sont toujours** — c'est tout l'objet de la séparation décrite
+dans [`DONNEES.md`](DONNEES.md). L'application, elle, est sur le disque de
+chaque poste ; si vous la laissez malgré tout dans un dossier synchronisé, une
+condition s'impose : **l'ouvrir depuis l'Explorateur**, dans le dossier
+synchronisé, et non depuis le site web ou depuis Excel en ligne.
 
 Pourquoi cette condition : dans un dossier synchronisé, `ThisWorkbook.Path` ne
 rend pas un chemin mais une adresse web —

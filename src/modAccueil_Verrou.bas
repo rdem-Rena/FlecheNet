@@ -52,6 +52,13 @@ Public Sub Accueil_Demarrer()
 
     AfficherAccueil
     If AC_KIOSQUE Then Accueil_Verrouiller
+
+    ' LES DONNÉES EN DERNIER, LE KIOSQUE POSÉ. Leur ouverture peut poser une
+    ' question — verrou tenu par un autre poste, version du schéma — et une
+    ' boîte de dialogue devant un classeur à moitié verrouillé laisserait
+    ' l'utilisateur devant ses onglets, à se demander ce qui se passe.
+    Datas_Ouvrir 0, False
+    Accueil_MajBandeau
     Exit Sub
 
 Erreur:
@@ -73,6 +80,11 @@ End Sub
 ' fichier, et c'est ainsi qu'on veut le retrouver à la prochaine ouverture.
 '------------------------------------------------------------------------------
 Public Sub Accueil_Arreter()
+    ' LES DONNÉES D'ABORD : Datas_Fermer les enregistre et REND LE VERROU. Les
+    ' laisser ouvertes derrière un classeur fermé tiendrait tous les autres
+    ' postes à l'écart jusqu'à la péremption des quatre heures.
+    Datas_Fermer
+
     PoserInterface True
     mVerrouille = False
 End Sub
@@ -163,17 +175,31 @@ End Sub
 Public Sub Accueil_Quitter()
     Dim rep As Long
 
-    rep = MsgBox("Enregistrer les modifications avant de quitter ?", _
-                 vbQuestion + vbYesNoCancel, "Quitter")
-    If rep = vbCancel Then Exit Sub
-
-    On Error Resume Next
-    If rep = vbYes Then
-        ThisWorkbook.Save
+    ' CE FICHIER NE PORTE PLUS AUCUNE DONNÉE : la question de l'enregistrement
+    ' ne se pose que s'il a lui-même changé — une feuille regénérée, un module
+    ' modifié — ce qui ne peut arriver que verrou levé. Les données, elles,
+    ' s'enregistrent toutes seules à leur fermeture.
+    If ThisWorkbook.Saved Then
+        If MsgBox("Quitter l'application ?", vbQuestion + vbOKCancel, _
+                  "Quitter") <> vbOK Then Exit Sub
     Else
-        ThisWorkbook.Saved = True        ' pour qu'Excel ne redemande pas
+        rep = MsgBox("Ce fichier d'application a été modifié." & vbCrLf & vbCrLf & _
+                     "L'enregistrer avant de quitter ?", _
+                     vbQuestion + vbYesNoCancel, "Quitter")
+        If rep = vbCancel Then Exit Sub
+        On Error Resume Next
+        If rep = vbYes Then
+            ThisWorkbook.Save
+        Else
+            ThisWorkbook.Saved = True    ' pour qu'Excel ne redemande pas
+        End If
+        On Error GoTo 0
     End If
-    On Error GoTo 0
+
+    ' AVANT DE COMPTER LES CLASSEURS. Tant que les données sont ouvertes,
+    ' Workbooks.Count vaut deux : Excel ne se fermerait pas, et il resterait une
+    ' fenêtre vide, sans ruban, dont on ne sait plus sortir.
+    Datas_Fermer
 
     PoserInterface True
 
@@ -185,6 +211,74 @@ Public Sub Accueil_Quitter()
     End If
     On Error GoTo 0
 End Sub
+
+'==============================================================================
+' LE SÉLECTEUR D'ANNÉE
+'------------------------------------------------------------------------------
+' Lancé en cliquant sur l'année du bandeau, ou sur la ligne qui la commente.
+'
+' UNE BOÎTE DE SAISIE ET NON UN FORMULAIRE. Un cinquième UserForm généré par
+' code, avec son module de thème et son générateur, pour choisir entre deux ou
+' trois nombres : la liste des années tient sur une ligne, et l'année en cours
+' est déjà proposée. On tape rarement autre chose qu'Entrée.
+'==============================================================================
+Public Sub Accueil_ChoisirAnnee()
+    Dim annees As Variant, liste As String, i As Long
+    Dim saisi As String, an As Long, recente As Long
+
+    annees = Datas_Annees()
+    If Not IsArray(annees) Then Exit Sub
+    If UBound(annees) < LBound(annees) Then
+        MsgBox "Aucun fichier de données n'a été trouvé." & vbCrLf & vbCrLf & _
+               "Lancez DiagnostiquerDatas (module modDatas_Classeur) : il dit " & _
+               "où l'application a cherché.", vbExclamation, "Changer d'année"
+        Exit Sub
+    End If
+
+    recente = CLng(annees(LBound(annees)))
+    For i = LBound(annees) To UBound(annees)
+        liste = liste & IIf(Len(liste) > 0, "    ", "") & CStr(annees(i))
+    Next i
+
+    saisi = Trim$(InputBox( _
+            "Années disponibles :" & vbCrLf & vbCrLf & "      " & liste & vbCrLf & _
+            vbCrLf & CStr(recente) & " est l'année en cours : elle seule " & _
+            "s'ouvre en écriture, et par une personne à la fois." & vbCrLf & _
+            "Les précédentes s'ouvrent en consultation, et plusieurs personnes " & _
+            "peuvent les lire en même temps." & vbCrLf & vbCrLf & _
+            "Quelle année ouvrir ?", "Changer d'année", CStr(Interv_AnneeAffichee())))
+
+    If Len(saisi) = 0 Then Exit Sub                  ' annulé, ou vide
+
+    If Len(saisi) <> 4 Or Not QueDesChiffres(saisi) Then
+        MsgBox "Donnez une année sur quatre chiffres.", vbExclamation, _
+               "Changer d'année"
+        Exit Sub
+    End If
+
+    an = CLng(saisi)
+    If Not DansLaListe(an, annees) Then
+        MsgBox "Il n'y a pas de fichier pour " & CStr(an) & "." & vbCrLf & vbCrLf & _
+               "Années disponibles :    " & liste, vbExclamation, "Changer d'année"
+        Exit Sub
+    End If
+
+    If an = Datas_Annee() Then Exit Sub              ' déjà celle-là
+
+    Datas_Ouvrir an, False
+    Accueil_MajBandeau
+End Sub
+
+Private Function DansLaListe(ByVal an As Long, ByRef annees As Variant) As Boolean
+    Dim i As Long
+
+    For i = LBound(annees) To UBound(annees)
+        If CLng(annees(i)) = an Then
+            DansLaListe = True
+            Exit Function
+        End If
+    Next i
+End Function
 
 '==============================================================================
 ' L'INTERFACE D'EXCEL

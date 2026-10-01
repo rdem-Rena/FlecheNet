@@ -1,7 +1,19 @@
 # FlècheNet — Formulaires de gestion
 
-Procédures VBA qui **génèrent** et font fonctionner les formulaires de saisie du
-classeur `FlecheNettoyageSA2026.xlsm` :
+Procédures VBA qui **génèrent** et font fonctionner les formulaires de saisie
+d'un classeur Excel de gestion : clients, interventions, facturation,
+statistiques.
+
+**Deux fichiers**, depuis la séparation données / application :
+
+| | Fichier | Où | Contient |
+|---|---|---|---|
+| **Données** | `FlecheNettoyageSA-2026.xlsx` | OneDrive, dossier `FlecheNettoyageSA` | 5 onglets, **aucune macro** |
+| **Application** | `FlecheNettoyageSA.xlsm` | le disque de chaque poste | l'accueil et les modules, **aucune donnée** |
+
+Un fichier de données **par année**, ouvert par une personne à la fois, les
+années passées restant consultables à plusieurs :
+[`docs/DONNEES.md`](docs/DONNEES.md).
 
 | Écran | Tableau | Ouvert par | Documentation |
 |---|---|---|---|
@@ -130,10 +142,11 @@ chaque valeur, dit ce qu'elle commande et où elle se trouve.
 Même principe, appliqué au tableau `TblInterv` — mais le formulaire est plus
 riche, et deux points méritaient un traitement particulier.
 
-**Quatre fiches empilées.** L'intitulé, repris des cellules nommées
-`TitreInterventions` et `AnneeEnCours` ; les statistiques, avec un graphique
-mensuel dessiné en contrôles et six tuiles de chiffres, tous calculés depuis
-`TblInterv` ; les quinze champs de saisie ; le tableau des interventions.
+**Quatre fiches empilées.** L'intitulé, repris de la cellule nommée
+`TitreInterventions` et du nom du fichier de données ouvert ; les statistiques,
+avec un graphique mensuel dessiné en contrôles et six tuiles de chiffres, tous
+calculés depuis `TblInterv` ; les quinze champs de saisie ; le tableau des
+interventions.
 
 **`CA` est une colonne calculée.** Sa formule va chercher le taux du client dans
 `TblClients`. Le formulaire ne l'écrit jamais — l'écriture se fait cellule par
@@ -184,6 +197,10 @@ formule, les autres feuilles très masquées. Deux petits boutons en pied de pag
 — **Quitter** et **Unlock** — en sortent ; le mot de passe est dans la cellule
 nommée `Mot_de_passe`. Lancer **`InstallerDemarrage`** met le tout en route.
 
+Dans le bandeau, **l'année et la ligne qui la commente sont cliquables** : c'est
+le sélecteur d'année. Il dit aussi si les données sont ouvertes en écriture ou
+en consultation seule.
+
 Ce verrou empêche les fausses manoeuvres, pas la malveillance : macros
 désactivées à l'ouverture, et rien ne se verrouille.
 
@@ -193,15 +210,18 @@ Plan, palette, réglages et détail du kiosque : [`docs/ACCUEIL.md`](docs/ACCUEI
 
 ## Dossier partagé OneDrive
 
-Le classeur fonctionne dans un dossier synchronisé par OneDrive ou SharePoint,
-à condition de l'ouvrir **depuis l'Explorateur** et non depuis le site web.
+Les données vivent dans un dossier synchronisé par OneDrive ou SharePoint, et
+l'application elle-même peut y être, à condition de l'ouvrir **depuis
+l'Explorateur** et non depuis le site web.
 
 Dans un tel dossier, `ThisWorkbook.Path` rend une adresse web et non un chemin ;
 `Dir$`, `Open` et `LoadPicture` ne savent pas la lire, et l'image de fond des
 tuiles restait introuvable sans que rien ne le signale. Le module
 [`modChemins`](src/modChemins.bas) retrouve le chemin local à partir de cette
-adresse, et tout le code passe par lui. En cas de doute :
-**`DiagnostiquerChemins`**.
+adresse, et tout le code passe par lui. Le même module cherche le **dossier
+partagé des données** par son nom, sous les racines de synchronisation du poste.
+En cas de doute : **`DiagnostiquerChemins`** pour l'application,
+**`DiagnostiquerDatas`** pour les données.
 
 Détails et dépannage : [`docs/INSTALLATION.md`](docs/INSTALLATION.md).
 

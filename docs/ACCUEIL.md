@@ -22,7 +22,7 @@ Surface dessinée de **960 × 448 points** — la même largeur que les quatre f
 
 | Bande | Haut | Hauteur | Contenu |
 |---|---|---|---|
-| Bandeau | 0 | 104 | titre, sous-titre, année (cellule nommée `AnneeEnCours`) |
+| Bandeau | 0 | 104 | titre, sous-titre, **année et ligne d'état — cliquables** |
 | Intitulé | 128 | 16 | « MODULES », interlettré |
 | Cartes | 152 | 224 | les quatre modules, côte à côte |
 | Filet | 404 | 1 | séparateur du pied |
@@ -67,12 +67,53 @@ La ligne du bas porte le rappel « Cliquez sur une carte pour ouvrir le module �
 
 | Bouton | Macro | Effet |
 |---|---|---|
-| **Quitter** | `Accueil_Quitter` | propose d'enregistrer, puis ferme le classeur — ou Excel s'il n'y a que lui |
+| **Quitter** | `Accueil_Quitter` | ferme les données, puis le classeur — ou Excel s'il n'y a que lui |
 | **Unlock** | `Accueil_Deverrouiller` | demande le mot de passe et rend le classeur à Excel |
+
+> *Quitter* ferme **les données d'abord**, et avant de compter les classeurs
+> ouverts : tant qu'elles le sont, `Workbooks.Count` vaut deux, Excel ne se
+> fermerait pas, et il resterait une fenêtre vide dont on ne sait plus sortir.
+> Au passage, le verrou est rendu aux autres postes.
 
 Ils sont discrets par choix : ce n'est pas ce qu'on vient faire sur cette page.
 Leur taille se règle par `AC_BT_LARG`, `AC_BT_HAUT` et `AC_BT_GOUT`, et le
 simulateur refuse une largeur qui mangerait le texte du pied.
+
+---
+
+## L'année, dans le bandeau
+
+À droite du bandeau, le millésime en grand, et sous lui une ligne d'état :
+
+```
+                                                      2026
+            données ouvertes en écriture — cliquer pour changer d'année
+```
+
+**Les deux portent la même macro, `Accueil_ChoisirAnnee`** : on clique sur le
+nombre, qui est ce qu'on voit, ou sur la ligne qui l'explique. C'est le
+sélecteur d'année — rien d'autre sur cette page n'annonce qu'il existe, d'où une
+ligne d'état qui dit toujours qu'on peut cliquer.
+
+En consultation seule, elle passe à l'ambre (`COUL_BANDEAU_ALERTE`) et annonce
+`CONSULTATION SEULE`.
+
+`Accueil_MajBandeau` réécrit ces deux lignes **sans redessiner la feuille** :
+redessiner tout pour deux libellés la ferait clignoter et redemanderait la
+protection. Elle est appelée au démarrage, après un changement d'année, et au
+moment où le verrou se perd.
+
+> Elle est **entièrement sous `On Error Resume Next`**, parce qu'elle part de
+> `Workbook_Open` : une feuille pas encore dessinée, une forme renommée à la
+> main, et c'est l'ouverture du classeur qui échouerait — pour un libellé. C'est
+> exactement ainsi que le kiosque avait cessé de démarrer.
+
+Le choix de l'année lui-même se fait dans une **boîte de saisie**, et non dans
+un cinquième UserForm : la liste des années tient sur une ligne, l'année en
+cours est déjà proposée, et on tape rarement autre chose qu'Entrée.
+
+Ce que l'année commande, et pourquoi le fichier le plus récent et non
+`Year(Date)` : [`DONNEES.md`](DONNEES.md).
 
 ---
 
@@ -112,6 +153,10 @@ Le ruban caché, la barre de formule et les onglets sont des réglages de
 instance d'Excel les trouverait cachés lui aussi. `Accueil_Arreter`, appelée à
 la fermeture, remet donc tout en place — et le simulateur vérifie que les trois
 sorties du verrou le font.
+
+Elle **ferme aussi les données**, ce qui les enregistre et rend le verrou. Les
+laisser ouvertes derrière un classeur fermé tiendrait tous les autres postes à
+l'écart jusqu'à la péremption des quatre heures.
 
 ### Installation
 

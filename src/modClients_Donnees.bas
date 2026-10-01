@@ -69,6 +69,18 @@ Private Sub AssurerCache()
     If mIdxColonne Is Nothing Then Donnees_Charger
 End Sub
 
+'------------------------------------------------------------------------------
+' Force la relecture du cache au prochain accès.
+'
+' PARESSEUSE, et non un Donnees_Charger immédiat : on l'appelle en changeant
+' d'année, à un instant où le classeur de données n'est précisément plus ouvert.
+' Donnees_Charger lèverait alors son erreur « tableau introuvable », au milieu
+' d'une fermeture.
+'------------------------------------------------------------------------------
+Public Sub Donnees_Recharger()
+    Set mIdxColonne = Nothing
+End Sub
+
 '==============================================================================
 ' Interrogation du cache
 '==============================================================================

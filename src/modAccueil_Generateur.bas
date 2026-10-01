@@ -151,7 +151,7 @@ End Sub
 ' aucune bordure de tableur pour le trahir.
 '==============================================================================
 Private Sub DessinerBandeau(ws As Worksheet)
-    Dim sh As Object, annee As String
+    Dim sh As Object
 
     Set sh = Forme(ws, MSO_RECT, "shAcBandeau", 0, 0, AC_LARGEUR, AC_BAND_HAUT)
     sh.Fill.ForeColor.RGB = COUL_BANDEAU
@@ -161,17 +161,92 @@ Private Sub DessinerBandeau(ws As Worksheet)
               "Flèche Nettoyage SA", POLICE_DEMI, AC_T_TITRE, COUL_BANDEAU_TXT, _
               MSO_ALIGN_GAUCHE, 0
 
-    Etiquette ws, "lblAcSous", AC_MARGE + 2, AC_SOUS_TOP, 620, 20, _
+    ' 420 et non 620 : la ligne d'état, cliquable, commence à 490, et deux
+    ' zones de texte qui se chevauchent se disputent le clic.
+    Etiquette ws, "lblAcSous", AC_MARGE + 2, AC_SOUS_TOP, 420, 20, _
               "Clients, interventions, facturation et statistiques", _
               POLICE, AC_T_SOUS, COUL_BANDEAU_SOUS, MSO_ALIGN_GAUCHE, 0
 
-    annee = AnneeAccueil()
-    If Len(annee) > 0 Then
-        Etiquette ws, "lblAcAnnee", AC_ANNEE_X, AC_ANNEE_TOP, AC_ANNEE_LARG, 46, _
-                  annee, POLICE_LEGERE, AC_T_ANNEE, COUL_BANDEAU_SOUS, _
-                  MSO_ALIGN_DROITE, 0
-    End If
+    ' L'ANNÉE ET SON ÉTAT SONT LE SÉLECTEUR D'ANNÉE. Les deux portent la même
+    ' macro : on clique sur le nombre, qui est ce qu'on voit, ou sur la ligne
+    ' qui l'explique.
+    Set sh = Etiquette(ws, "lblAcAnnee", AC_ANNEE_X, AC_ANNEE_TOP, AC_ANNEE_LARG, _
+                       46, AnneeAccueil(), POLICE_LEGERE, AC_T_ANNEE, _
+                       COUL_BANDEAU_SOUS, MSO_ALIGN_DROITE, 0)
+    sh.OnAction = "Accueil_ChoisirAnnee"
+
+    Set sh = Etiquette(ws, "lblAcEtat", AC_ETAT_X, AC_ETAT_TOP, AC_ETAT_LARG, 14, _
+                       EtatDatas(), POLICE, AC_T_ETAT, COUL_BANDEAU_SOUS, _
+                       MSO_ALIGN_DROITE, 0)
+    sh.OnAction = "Accueil_ChoisirAnnee"
 End Sub
+
+'==============================================================================
+' LE BANDEAU SE MET À JOUR SANS TOUT REDESSINER
+'------------------------------------------------------------------------------
+' L'année et l'état des données changent en cours de session : à l'ouverture, et
+' chaque fois qu'on change d'année. Redessiner la feuille entière pour deux
+' lignes de texte la ferait clignoter et redemanderait toute la protection.
+'
+' SOUS On Error Resume Next DU DÉBUT À LA FIN. Elle est appelée depuis
+' Workbook_Open : une feuille pas encore dessinée, une forme renommée à la main,
+' et c'est l'OUVERTURE DU CLASSEUR qui échouerait — pour un libellé. C'est
+' exactement ainsi que le kiosque ne démarrait plus.
+'==============================================================================
+Public Sub Accueil_MajBandeau()
+    Dim ws As Worksheet
+
+    On Error Resume Next
+
+    Set ws = ThisWorkbook.Worksheets(NOM_FEUILLE_ACCUEIL)
+    If ws Is Nothing Then Exit Sub
+
+    ' UserInterfaceOnly ne survit pas à l'enregistrement : au deuxième
+    ' démarrage la feuille est protégée pour de bon, et le texte refuse de
+    ' changer. On lève, on écrit, on repose.
+    ws.Unprotect
+
+    PoserTexte ws, "lblAcAnnee", AnneeAccueil(), COUL_BANDEAU_SOUS
+    PoserTexte ws, "lblAcEtat", EtatDatas(), _
+               IIf(Datas_LectureSeule(), COUL_BANDEAU_ALERTE, COUL_BANDEAU_SOUS)
+
+    ws.EnableSelection = XL_AUCUNE_SELECTION
+    ws.Protect UserInterfaceOnly:=True
+
+    On Error GoTo 0
+End Sub
+
+'------------------------------------------------------------------------------
+' Le texte et la couleur d'une étiquette déjà dessinée.
+'------------------------------------------------------------------------------
+Private Sub PoserTexte(ws As Worksheet, ByVal nom As String, ByVal texte As String, _
+                       ByVal couleur As Long)
+    Dim sh As Object
+
+    On Error Resume Next
+    Set sh = ws.Shapes(nom)
+    If sh Is Nothing Then Exit Sub
+    sh.TextFrame2.TextRange.Text = texte
+    sh.TextFrame2.TextRange.Font.Fill.ForeColor.RGB = couleur
+    On Error GoTo 0
+End Sub
+
+'------------------------------------------------------------------------------
+' La ligne d'état : quelles données sont ouvertes, et ce qu'on peut en faire.
+'
+' ELLE DIT TOUJOURS QU'ON PEUT CLIQUER. Un sélecteur d'année invisible n'est pas
+' un sélecteur : rien d'autre, sur cette page, n'annonce qu'il existe.
+'------------------------------------------------------------------------------
+Private Function EtatDatas() As String
+    If Not Datas_Ouverte() Then
+        EtatDatas = "données non ouvertes  " & ChrW(8212) & "  cliquer ici"
+    ElseIf Datas_LectureSeule() Then
+        EtatDatas = "CONSULTATION SEULE  " & ChrW(8212) & "  cliquer pour changer d'année"
+    Else
+        EtatDatas = "données ouvertes en écriture  " & ChrW(8212) & _
+                    "  cliquer pour changer d'année"
+    End If
+End Function
 
 '------------------------------------------------------------------------------
 ' L'année affichée : celle du fichier de données ouvert, la même que celle des

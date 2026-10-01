@@ -100,6 +100,13 @@ Public Const AC_ANNEE_X As Single = 700
 Public Const AC_ANNEE_TOP As Single = 28
 Public Const AC_ANNEE_LARG As Single = 230
 
+' La ligne d'état, sous l'année : quel fichier de données est ouvert, et si l'on
+' peut y écrire. Elle est CLIQUABLE, comme l'année au-dessus d'elle : c'est le
+' sélecteur d'année, là où on le cherche.
+Public Const AC_ETAT_X As Single = 490
+Public Const AC_ETAT_TOP As Single = 76
+Public Const AC_ETAT_LARG As Single = 440
+
 ' Intitulé de section
 Public Const AC_SECTION_TOP As Single = 128
 
@@ -141,6 +148,7 @@ Public Const POLICE_LEGERE As String = "Segoe UI Light"
 Public Const AC_T_TITRE As Single = 24
 Public Const AC_T_SOUS As Single = 10.5
 Public Const AC_T_ANNEE As Single = 32
+Public Const AC_T_ETAT As Single = 8.5
 Public Const AC_T_SECTION As Single = 8.5
 Public Const AC_T_PASTILLE As Single = 19
 Public Const AC_T_TITRE_C As Single = 14.5
@@ -161,6 +169,10 @@ Public Const AC_SECTION_ESPACE As Single = 1.6
 '==============================================================================
 Public Const COUL_MENU_FACTURE As Long = &H1E7AC7&   ' #C77A1E  ambre
 Public Const COUL_MENU_STAT As Long = &HA34F6B&      ' #6B4FA3  violet
+
+' L'ambre clair de la ligne d'état quand les données sont en consultation seule.
+' Plus clair que l'ambre des cartes, qui se perdrait sur le bleu du bandeau.
+Public Const COUL_BANDEAU_ALERTE As Long = &H5AB0E8& ' #E8B05A  ambre clair
 
 '==============================================================================
 ' L'OMBRE PORTÉE DES CARTES

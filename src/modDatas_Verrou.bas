@@ -48,6 +48,10 @@ Public Const EXT_VERROU As String = ".verrou"
 ' en contenir.
 Private Const SEP As String = "|"
 
+' Ce que rend Lire quand le fichier existe mais refuse de s'ouvrir. Un seul
+' caractère : aucune marque véritable ne lui ressemble.
+Private Const MARQUE_ILLISIBLE As String = "?"
+
 '--- Les deux durées ----------------------------------------------------------
 ' Au-delà, le verrou est tenu pour abandonné.
 Private Const PEREMPTION_HEURES As Double = 4#
@@ -103,6 +107,8 @@ Public Sub Verrou_Rendre(ByVal chemin As String)
     v = CheminVerrou(chemin)
     If Len(v) = 0 Then Exit Sub
 
+    ' SEULEMENT S'IL EST ENCORE EXACTEMENT LE NÔTRE. Illisible, il ne s'efface
+    ' pas non plus : on ne sait pas à qui on l'enlèverait.
     If StrComp(Lire(v), mMarque, vbBinaryCompare) = 0 Then Supprimer v
 
     mMarque = vbNullString
@@ -127,6 +133,11 @@ Public Function Verrou_Etat(ByVal chemin As String) As String
     marque = Lire(v)
     If Len(marque) = 0 Then
         Verrou_Etat = "libre"
+        Exit Function
+    End If
+
+    If marque = MARQUE_ILLISIBLE Then
+        Verrou_Etat = "présent, mais il refuse de s'ouvrir"
         Exit Function
     End If
 
@@ -184,17 +195,29 @@ Private Function Saisir(ByVal chemin As String, ByRef msg As String, _
     reprise = (StrComp(marque, mMarque, vbBinaryCompare) <> 0) Or Len(mMarque) = 0
 
     If reprise And Len(marque) > 0 Then
-        age = AgeHeures(marque)
-
-        ' UN HORODATAGE ILLISIBLE VAUT PÉRIMÉ (AgeHeures rend -1). C'est ce que
-        ' laisse une écriture interrompue, et le tenir pour valable bloquerait
-        ' les données sans aucune issue.
-        If age >= 0 And age <= PEREMPTION_HEURES Then
-            msg = "Les données sont en cours d'utilisation par " & _
-                  Morceau(marque, 0) & " (poste " & Morceau(marque, 1) & _
-                  "), depuis " & Morceau(marque, 2) & "."
+        If marque = MARQUE_ILLISIBLE Then
+            ' LE FICHIER EXISTE MAIS NE S'OUVRE PAS. C'est très exactement ce
+            ' que donne un autre poste en train de l'écrire : on le respecte,
+            ' au lieu de passer par-dessus. Si cela devait durer, la péremption
+            ' de quatre heures y met fin toute seule.
+            msg = "Le fichier verrou existe, mais refuse de s'ouvrir :" & vbCrLf & _
+                  v & vbCrLf & vbCrLf & "Un autre poste est sans doute en train " & _
+                  "de le prendre à l'instant même."
             If Not interactif Then Exit Function
             If Not PrendreLaMain(msg) Then Exit Function
+        Else
+            age = AgeHeures(marque)
+
+            ' UN HORODATAGE ILLISIBLE VAUT PÉRIMÉ (AgeHeures rend -1). C'est ce
+            ' que laisse une écriture interrompue, et le tenir pour valable
+            ' bloquerait les données sans aucune issue.
+            If age >= 0 And age <= PEREMPTION_HEURES Then
+                msg = "Les données sont en cours d'utilisation par " & _
+                      Morceau(marque, 0) & " (poste " & Morceau(marque, 1) & _
+                      "), depuis " & Morceau(marque, 2) & "."
+                If Not interactif Then Exit Function
+                If Not PrendreLaMain(msg) Then Exit Function
+            End If
         End If
     End If
 
@@ -220,8 +243,13 @@ Private Function Saisir(ByVal chemin As String, ByRef msg As String, _
     Patienter DELAI_RELECTURE
     apres = Lire(v)
     If StrComp(apres, mMarque, vbBinaryCompare) <> 0 Then
-        msg = "Les données viennent d'être prises par " & Morceau(apres, 0) & _
-              " (poste " & Morceau(apres, 1) & "), à l'instant même."
+        If apres = MARQUE_ILLISIBLE Then
+            msg = "Le fichier verrou, qu'on vient d'écrire, ne se relit déjà " & _
+                  "plus : un autre poste est en train de l'écrire à son tour."
+        Else
+            msg = "Les données viennent d'être prises par " & Morceau(apres, 0) & _
+                  " (poste " & Morceau(apres, 1) & "), à l'instant même."
+        End If
         mMarque = vbNullString
         Exit Function
     End If
@@ -350,15 +378,16 @@ Private Function Lire(ByVal v As String) As String
     Exit Function
 
 Erreur:
-    ' UN VERROU QU'ON NE PEUT PAS LIRE N'EST PAS UN VERROU LIBRE : un autre
-    ' poste l'ouvre peut-être au même instant. On rend une marque illisible,
-    ' qui vaut « périmé » — reprenable, mais pas ignorée en silence.
+    ' UN VERROU QU'ON NE PEUT PAS LIRE N'EST PAS UN VERROU LIBRE : c'est le plus
+    ' souvent un autre poste qui l'écrit à cet instant même. On le dit, et
+    ' Saisir le respecte — le tenir pour libre serait précisément écrire
+    ' par-dessus l'autre.
     If f <> 0 Then
         On Error Resume Next
         Close #f
         On Error GoTo 0
     End If
-    Lire = "?" & SEP & "?" & SEP & "?" & SEP & "0"
+    Lire = MARQUE_ILLISIBLE
 End Function
 
 Private Sub Supprimer(ByVal v As String)
