@@ -674,6 +674,65 @@ if mr and not re.search(r'v\s*=\s*mVerrou\b', code_seul(mr.group(0))):
               "qui arrive quand l'appelant a perdu le sien -- elle ne rendrait rien")
 
 # ---------------------------------------------------------------------------
+# 18. LE KIOSQUE NE MARQUE PAS LE CLASSEUR MODIFIE
+#
+# Masquer des feuilles, proteger la structure, retirer le ruban, reecrire le
+# bandeau : chacun de ces gestes touche le classeur ou sa fenetre, et Excel le
+# marque aussitot « modifie ». En quittant, il demandait donc A CHAQUE FOIS s'il
+# fallait l'enregistrer -- pour un ruban, dans un fichier qui ne contient plus
+# aucune donnee.
+#
+# Et la question n'etait pas que du bruit : repondue « oui » par habitude, elle
+# finit par graver dans un fichier un etat qu'on ne voulait pas. C'est ainsi que
+# le classeur de donnees s'est retrouve avec sa fenetre masquee. Une question de
+# trop apprend a cliquer sans lire.
+#
+# Toute procedure qui touche l'interface doit donc remettre le drapeau ou il
+# etait, APRES l'avoir touchee -- le remettre avant ne servirait a rien.
+# ---------------------------------------------------------------------------
+POSE = re.compile(r'\bPoserInterface\b')
+REMET = re.compile(r'\bAppli_PoserModifiee\b')
+
+for quoi in ("Appli_Modifiee", "Appli_PoserModifiee"):
+    if not re.search(r'Function %s\(|Sub %s\(' % (quoi, quoi), rd("modAccueil_Verrou.bas")):
+        pb.append("%s a disparu : le kiosque remarquerait le classeur modifie, et "
+                  "Excel demanderait a chaque fermeture s'il faut l'enregistrer"
+                  % quoi)
+
+for f in FICHIERS:
+    proc, lignes_p, debut = None, [], 0
+    for no, l in lignes_logiques(rd(f)):
+        c = sans_commentaire(l)
+        ms = SIGNAT.match(c)
+        if ms:
+            proc, lignes_p, debut = ms.group(1), [], no
+            continue
+        if FIN_PROC.match(c):
+            if proc and proc != "PoserInterface":
+                pose = [i for i, x in enumerate(lignes_p) if POSE.search(x)]
+                remet = [i for i, x in enumerate(lignes_p) if REMET.search(x)]
+                if pose and not remet:
+                    pb.append("%s:%d %s touche l'interface sans remettre le drapeau "
+                              "de modification : Excel demandera s'il faut "
+                              "enregistrer, pour un ruban" % (f, debut, proc))
+                elif pose and remet and max(remet) < max(pose):
+                    pb.append("%s:%d %s remet le drapeau de modification AVANT de "
+                              "toucher l'interface : celle-ci le remarque modifie "
+                              "juste apres" % (f, debut, proc))
+            proc, lignes_p = None, []
+            continue
+        if proc:
+            lignes_p.append(c)
+
+mb = re.search(r'Sub Accueil_MajBandeau\(.*?\nEnd Sub', rd("modAccueil_Generateur.bas"), re.S)
+if not mb:
+    pb.append("Accueil_MajBandeau a disparu")
+elif "Appli_PoserModifiee" not in code_seul(mb.group(0)):
+    pb.append("Accueil_MajBandeau ne remet pas le drapeau de modification : elle "
+              "leve la protection de la feuille et y pose du texte a chaque "
+              "demarrage, ce qui suffit a faire poser la question")
+
+# ---------------------------------------------------------------------------
 print("%d modules, %d procedures publiques"
       % (len(FICHIERS), len(PUB_OU)))
 if pb:

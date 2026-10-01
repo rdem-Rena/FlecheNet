@@ -37,6 +37,38 @@ Private mVerrouille As Boolean
 Private Const PROC_NORMALE As Long = 0
 
 '==============================================================================
+' CE QUE LE KIOSQUE FAIT N'EST PAS UNE MODIFICATION DU FICHIER
+'------------------------------------------------------------------------------
+' Masquer des feuilles, protéger la structure, retirer le ruban, réécrire le
+' bandeau : chacun de ces gestes touche le classeur ou sa fenêtre, et Excel le
+' marque aussitôt « modifié ». En quittant, il demande donc s'il faut
+' l'enregistrer — pour un ruban, dans un fichier qui ne contient plus aucune
+' donnée.
+'
+' ET CETTE QUESTION N'EST PAS QUE DU BRUIT. Répondue « oui » par habitude, elle
+' finit par graver dans un fichier un état qu'on ne voulait pas : c'est
+' exactement ainsi que le classeur de données s'est retrouvé avec sa fenêtre
+' masquée, illisible pour qui l'ouvrait à la main. Une question de trop apprend
+' à cliquer sans lire.
+'
+' LE KIOSQUE SE REPOSE ENTIÈREMENT À CHAQUE OUVERTURE : son état n'a jamais besoin
+' d'être enregistré. On relève donc le drapeau avant d'agir et on le remet
+' après. CE QUE L'UTILISATEUR A CHANGÉ, LUI, RESTE SIGNALÉ — une feuille
+' regénérée, un module modifié : on ne le lui fera pas perdre en silence.
+'==============================================================================
+Public Function Appli_Modifiee() As Boolean
+    On Error Resume Next
+    Appli_Modifiee = Not ThisWorkbook.Saved
+    On Error GoTo 0
+End Function
+
+Public Sub Appli_PoserModifiee(ByVal modifiee As Boolean)
+    On Error Resume Next
+    ThisWorkbook.Saved = Not modifiee
+    On Error GoTo 0
+End Sub
+
+'==============================================================================
 ' LES DEUX POINTS D'ENTRÉE DU CLASSEUR
 '------------------------------------------------------------------------------
 ' À appeler depuis ThisWorkbook. InstallerDemarrage écrit ces deux appels.
@@ -46,9 +78,13 @@ Private Const PROC_NORMALE As Long = 0
 ' À l'ouverture : la feuille d'accueil, puis le verrou si AC_KIOSQUE le veut.
 '------------------------------------------------------------------------------
 Public Sub Accueil_Demarrer()
+    Dim modifiee As Boolean
+
     On Error GoTo Erreur
 
     If FeuilleAccueilManquante() Then Exit Sub
+
+    modifiee = Appli_Modifiee()
 
     AfficherAccueil
     If AC_KIOSQUE Then Accueil_Verrouiller
@@ -59,6 +95,8 @@ Public Sub Accueil_Demarrer()
     ' l'utilisateur devant ses onglets, à se demander ce qui se passe.
     Datas_Ouvrir 0, False
     Accueil_MajBandeau
+
+    Appli_PoserModifiee modifiee
     Exit Sub
 
 Erreur:
@@ -66,6 +104,7 @@ Erreur:
     ' dire : l'utilisateur verrait ses onglets et croirait le verrou inactif.
     ' On rend d'abord l'interface, puis on explique.
     PoserInterface True
+    Appli_PoserModifiee modifiee
     MsgBox "Le verrouillage n'a pas pu se faire :" & vbCrLf & vbCrLf & _
            Err.Number & " - " & Err.Description & vbCrLf & vbCrLf & _
            "Le classeur reste ouvert normalement. Lancez DiagnostiquerVerrou " & _
@@ -80,6 +119,10 @@ End Sub
 ' fichier, et c'est ainsi qu'on veut le retrouver à la prochaine ouverture.
 '------------------------------------------------------------------------------
 Public Sub Accueil_Arreter()
+    Dim modifiee As Boolean
+
+    modifiee = Appli_Modifiee()
+
     ' EXCEL RETROUVE SON RUBAN D'ABORD, ET QUOI QU'IL ARRIVE ENSUITE. Le ruban
     ' caché, la barre de formule et la barre d'état sont des réglages
     ' D'EXCEL : s'ils ne sont pas rendus, l'utilisateur se retrouve devant un
@@ -88,6 +131,11 @@ Public Sub Accueil_Arreter()
     ' pouvoir coûter cela — c'est déjà ce qui est arrivé une fois.
     PoserInterface True
     mVerrouille = False
+
+    ' RENDRE LE RUBAN A MARQUÉ LE CLASSEUR MODIFIÉ : sans cette ligne, Excel
+    ' demande s'il faut l'enregistrer — pour un ruban, à la fermeture, alors
+    ' qu'on n'a rien changé.
+    Appli_PoserModifiee modifiee
 
     ' PUIS LES DONNÉES : Datas_Fermer les enregistre et REND LE VERROU. Les
     ' laisser ouvertes derrière un classeur fermé tiendrait tous les autres
@@ -103,11 +151,13 @@ End Sub
 ' VERROUILLER ET DÉVERROUILLER
 '==============================================================================
 Public Sub Accueil_Verrouiller()
-    Dim ws As Worksheet
+    Dim ws As Worksheet, modifiee As Boolean
 
     ' SANS FEUILLE D'ACCUEIL, ON NE VERROUILLE RIEN. Masquer toutes les feuilles
     ' sans en laisser une visible laisse un classeur qu'Excel refuse d'afficher.
     If FeuilleAccueilManquante() Then Exit Sub
+
+    modifiee = Appli_Modifiee()
 
     AfficherAccueil
 
@@ -133,13 +183,14 @@ Public Sub Accueil_Verrouiller()
     On Error GoTo 0
 
     mVerrouille = True
+    Appli_PoserModifiee modifiee
 End Sub
 
 '------------------------------------------------------------------------------
 ' Le bouton « Unlock » de la feuille d'accueil.
 '------------------------------------------------------------------------------
 Public Sub Accueil_Deverrouiller()
-    Dim mdp As String, saisi As String, ws As Worksheet
+    Dim mdp As String, saisi As String, ws As Worksheet, modifiee As Boolean
 
     mdp = MotDePasse()
     If Len(mdp) > 0 Then
@@ -150,6 +201,8 @@ Public Sub Accueil_Deverrouiller()
             Exit Sub
         End If
     End If
+
+    modifiee = Appli_Modifiee()
 
     On Error Resume Next
     ThisWorkbook.Unprotect mdp
@@ -168,6 +221,13 @@ Public Sub Accueil_Deverrouiller()
 
     mVerrouille = False
 
+    ' DÉVERROUILLER N'EST PAS DAVANTAGE UNE MODIFICATION : ce qu'on vient de
+    ' défaire, le prochain démarrage le refera. Ce que l'utilisateur changera
+    ' ENSUITE, verrou levé, sera signalé normalement — et c'est précisément pour
+    ' cela qu'on ne force pas le drapeau à « non modifié », on le remet où il
+    ' était.
+    Appli_PoserModifiee modifiee
+
     MsgBox "Le classeur est déverrouillé." & vbCrLf & vbCrLf & _
            IIf(Len(mdp) = 0, "Aucun mot de passe n'est défini dans la cellule " & _
                              "nommée " & CEL_MOT_DE_PASSE & "." & vbCrLf & vbCrLf, "") & _
@@ -185,11 +245,15 @@ End Sub
 Public Sub Accueil_Quitter()
     Dim rep As Long
 
-    ' CE FICHIER NE PORTE PLUS AUCUNE DONNÉE : la question de l'enregistrement
-    ' ne se pose que s'il a lui-même changé — une feuille regénérée, un module
+    ' CE FICHIER NE PORTE PLUS AUCUNE DONNÉE : la question de l'enregistrement ne
+    ' se pose que s'il a LUI-MÊME changé — une feuille regénérée, un module
     ' modifié — ce qui ne peut arriver que verrou levé. Les données, elles,
     ' s'enregistrent toutes seules à leur fermeture.
-    If ThisWorkbook.Saved Then
+    '
+    ' ET LE DRAPEAU DIT ENFIN LA VÉRITÉ : tant que le kiosque le marquait modifié
+    ' en se posant, la question tombait À CHAQUE fois, et ne voulait plus rien
+    ' dire.
+    If Not Appli_Modifiee() Then
         If MsgBox("Quitter l'application ?", vbQuestion + vbOKCancel, _
                   "Quitter") <> vbOK Then Exit Sub
     Else
@@ -198,20 +262,21 @@ Public Sub Accueil_Quitter()
                      vbQuestion + vbYesNoCancel, "Quitter")
         If rep = vbCancel Then Exit Sub
         On Error Resume Next
-        If rep = vbYes Then
-            ThisWorkbook.Save
-        Else
-            ThisWorkbook.Saved = True    ' pour qu'Excel ne redemande pas
-        End If
+        If rep = vbYes Then ThisWorkbook.Save
         On Error GoTo 0
     End If
+
+    PoserInterface True
 
     ' AVANT DE COMPTER LES CLASSEURS. Tant que les données sont ouvertes,
     ' Workbooks.Count vaut deux : Excel ne se fermerait pas, et il resterait une
     ' fenêtre vide, sans ruban, dont on ne sait plus sortir.
     Datas_Fermer
 
-    PoserInterface True
+    ' PLUS AUCUNE QUESTION APRÈS CELLE-CI. Le sort de ce fichier vient d'être
+    ' décidé, et PoserInterface vient de le re-marquer modifié : Application.Quit
+    ' redemanderait, juste après qu'on a répondu.
+    Appli_PoserModifiee False
 
     On Error Resume Next
     If Workbooks.Count <= 1 Then

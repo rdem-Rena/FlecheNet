@@ -334,5 +334,6 @@ le sélecteur propose.
 | Les formulaires s'ouvrent vides | le fichier de données est ouvert mais ses tableaux manquent : `VerifierClasseur` |
 | Le fichier de données s'ouvre sans onglets, ruban grisé | sa **fenêtre** est masquée : *Affichage ▸ Fenêtre ▸ Afficher* |
 | Deux questions « enregistrer ? » en quittant le kiosque | un classeur de données orphelin — voir la section ci-dessus |
+| Une question « enregistrer ? » à chaque fois | le kiosque marquait le classeur modifié en se posant — voir [`ACCUEIL.md`](ACCUEIL.md) |
 | Excel reste nu pour tous les classeurs | **Ctrl + F1**, et *Affichage ▸ Barre de formule* |
 | Les images des tuiles manquent | `DiagnostiquerChemins` — c'est le dossier de l'**application**, pas celui des données |

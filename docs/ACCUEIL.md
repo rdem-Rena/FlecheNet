@@ -146,6 +146,29 @@ Dans la cellule nommée **`Mot_de_passe`**. S'il n'y en a pas, le bouton *Unlock
 déverrouille **sans rien demander** : un classeur dont on ne peut plus sortir
 serait pire que pas de verrou du tout.
 
+### Pourquoi le kiosque ne marque pas le classeur « modifié »
+
+Masquer des feuilles, protéger la structure, retirer le ruban, réécrire le
+bandeau : chacun de ces gestes touche le classeur ou sa fenêtre, et **Excel le
+marque aussitôt modifié**. En quittant, il demandait donc **à chaque fois** s'il
+fallait enregistrer — pour un ruban, dans un fichier qui ne contient plus aucune
+donnée.
+
+Et la question n'était pas que du bruit : répondue *oui* par habitude, elle finit
+par graver dans un fichier un état qu'on ne voulait pas. **C'est exactement ainsi
+que le classeur de données s'est retrouvé avec sa fenêtre masquée**, illisible
+pour qui l'ouvrait à la main. Une question de trop apprend à cliquer sans lire.
+
+Le kiosque se repose entièrement à chaque ouverture : son état n'a jamais besoin
+d'être enregistré. `Appli_Modifiee` relève donc le drapeau avant d'agir, et
+`Appli_PoserModifiee` le remet **après** — le remettre avant ne servirait à rien,
+l'interface le remarquerait modifié juste derrière.
+
+**Ce que l'utilisateur a changé, lui, reste signalé** : une feuille regénérée, un
+module modifié. On ne remet pas le drapeau à « non modifié », on le remet *où il
+était*. La question « ce fichier a été modifié, l'enregistrer ? » ne tombe donc
+plus que quand elle veut dire quelque chose.
+
 ### Ce qui doit être rendu à Excel
 
 Le ruban caché, la barre de formule et les onglets sont des réglages de

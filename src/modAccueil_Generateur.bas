@@ -194,12 +194,19 @@ End Sub
 ' exactement ainsi que le kiosque ne démarrait plus.
 '==============================================================================
 Public Sub Accueil_MajBandeau()
-    Dim ws As Worksheet
+    Dim ws As Worksheet, modifiee As Boolean
 
     On Error Resume Next
 
     Set ws = ThisWorkbook.Worksheets(NOM_FEUILLE_ACCUEIL)
     If ws Is Nothing Then Exit Sub
+
+    ' RÉÉCRIRE DEUX LIBELLÉS N'EST PAS UNE MODIFICATION DU FICHIER. Lever la
+    ' protection, poser du texte, reposer la protection : Excel marque le classeur
+    ' modifié, et demande ensuite s'il faut l'enregistrer. Le bandeau se réécrit
+    ' à chaque démarrage et à chaque changement d'année : il n'a jamais besoin
+    ' d'être enregistré.
+    modifiee = Appli_Modifiee()
 
     ' UserInterfaceOnly ne survit pas à l'enregistrement : au deuxième
     ' démarrage la feuille est protégée pour de bon, et le texte refuse de
@@ -213,6 +220,7 @@ Public Sub Accueil_MajBandeau()
     ws.EnableSelection = XL_AUCUNE_SELECTION
     ws.Protect UserInterfaceOnly:=True
 
+    Appli_PoserModifiee modifiee
     On Error GoTo 0
 End Sub
 
