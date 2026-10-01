@@ -316,6 +316,95 @@ for f in FICHIERS:
         pb.append("%s est en fins de ligne LF : l'editeur VBA attend CRLF" % f)
 
 # ---------------------------------------------------------------------------
+# 10. L'APPLICATION NE VA PLUS CHERCHER LES DONNEES CHEZ ELLE
+#
+# Les donnees ont quitte le .xlsm pour FlecheNettoyageSA-AAAA.xlsx. Un
+# ThisWorkbook.Worksheets oublie quelque part lirait donc le classeur de
+# l'application -- qui ne contient plus aucun tableau. Pas d'erreur : un
+# ListObject introuvable, une liste vide, un formulaire qui s'ouvre sur rien.
+#
+# Trois modules y ont droit, et eux seuls : les deux qui s'occupent de la
+# feuille d'accueil, qui est bien dans l'application, et celui qui tient le
+# classeur de donnees.
+# ---------------------------------------------------------------------------
+CHEZ_SOI = ("modAccueil_Generateur.bas", "modAccueil_Verrou.bas",
+            "modDatas_Classeur.bas")
+TW = re.compile(r'ThisWorkbook\s*\.\s*(?:Worksheets|Sheets|Names)\b', re.I)
+for f in FICHIERS:
+    if f in CHEZ_SOI:
+        continue
+    for no, l in lignes_logiques(rd(f)):
+        if TW.search(sans_commentaire(l)):
+            pb.append("%s:%d lit les feuilles ou les noms de ThisWorkbook : les "
+                      "donnees sont dans le classeur de Datas_Classeur, celui-ci "
+                      "n'en contient plus" % (f, no))
+
+# ---------------------------------------------------------------------------
+# 11. TOUTE ECRITURE DANS UN TABLEAU PASSE PAR LE GARDE-FOU
+#
+# Une annee passee s'ouvre en consultation, et l'annee en cours peut etre prise
+# par un autre poste. Une fonction qui ecrirait sans demander Datas_PeutEcrire
+# modifierait un classeur ouvert en lecture seule : Excel leve une 1004 au
+# milieu de la saisie, ou -- pire -- l'ecriture passe dans une copie locale que
+# OneDrive transformera en « fichier en conflit » que personne ne relira.
+# ---------------------------------------------------------------------------
+ECRIT = re.compile(r'(?:ListRows\s*\.\s*Add'
+                   r'|ListRows\s*\([^)]*\)\s*\.\s*Delete'
+                   r'|\.Range\s*\.\s*Value\s*=)', re.I)
+for f in FICHIERS:
+    proc, corps, debut = None, [], 0
+    for no, l in lignes_logiques(rd(f)):
+        c = sans_commentaire(l)
+        ms = SIGNAT.match(c)
+        if ms:
+            proc, corps, debut = ms.group(1), [], no
+        elif FIN_PROC.match(c):
+            if proc and any(ECRIT.search(x) for x in corps) \
+                    and not any("Datas_PeutEcrire" in x for x in corps):
+                pb.append("%s:%d %s ecrit dans un tableau sans passer par "
+                          "Datas_PeutEcrire : elle ecrirait dans des donnees "
+                          "ouvertes en consultation seule" % (f, debut, proc))
+            proc, corps = None, []
+        elif proc:
+            corps.append(c)
+
+# ---------------------------------------------------------------------------
+# 12. CHAQUE CELLULE NOMMEE EST LUE DU BON COTE
+#
+# Deux fichiers, donc deux lecteurs. Les confondre ne leve aucune erreur : le
+# nom n'existe pas dans l'autre classeur, la fonction rend Empty, et l'objectif
+# annuel vaut 0 ou le mot de passe devient vide -- ce dernier DEVERROUILLANT LE
+# CLASSEUR SANS RIEN DEMANDER.
+#
+# Interv_CelluleNommee, qui lisait indifferemment l'un pour l'autre, n'existe
+# plus : la citer est en soi le defaut.
+# ---------------------------------------------------------------------------
+COTE = {"CEL_MOT_DE_PASSE": "App_CelluleNommee",
+        "CEL_DOSSIER_DATAS": "App_CelluleNommee",
+        "CEL_TITRE": "App_CelluleNommee",
+        "CEL_OBJECTIF": "Datas_CelluleNommee",
+        "CEL_DATAS_VERSION": "Datas_CelluleNommee"}
+LECTEURS = ("App_CelluleNommee", "Datas_CelluleNommee")
+for f in FICHIERS:
+    for no, l in lignes_logiques(rd(f)):
+        c = sans_commentaire(l)
+        if "Interv_CelluleNommee" in c:
+            pb.append("%s:%d cite Interv_CelluleNommee : elle lisait les deux "
+                      "classeurs sans distinguer, et n'existe plus -- choisir "
+                      "App_CelluleNommee ou Datas_CelluleNommee" % (f, no))
+            continue
+        if re.match(r'\s*Public\s+Const\b', c):
+            continue
+        for cle, attendu in COTE.items():
+            if not re.search(r'\b%s\b' % cle, c):
+                continue
+            autre = [x for x in LECTEURS if x != attendu][0]
+            if autre in c:
+                pb.append("%s:%d %s est lue par %s : elle est dans l'autre "
+                          "classeur, et %s rendrait Empty sans rien dire"
+                          % (f, no, cle, autre, autre))
+
+# ---------------------------------------------------------------------------
 print("%d modules, %d procedures publiques"
       % (len(FICHIERS), len(PUB_OU)))
 if pb:

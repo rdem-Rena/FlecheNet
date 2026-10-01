@@ -50,7 +50,7 @@ Public Sub Interv_Initialiser(f As Object)
     Interv_Charger
 
     ' --- fiche 1 : intitulé ---------------------------------------------------
-    ICtl(f, "lblTitreGlobal").Caption = EnTexte(Interv_CelluleNommee(CEL_TITRE))
+    ICtl(f, "lblTitreGlobal").Caption = TitreGlobal()
     ICtl(f, "lblAnnee").Caption = AnneeAffichee()
 
     ' --- fiche 2 : statistiques -----------------------------------------------
@@ -119,26 +119,22 @@ Public Sub Interv_Activer(f As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Année de référence, lue dans la cellule nommée AnneeEnCours et affichée sur
-' quatre chiffres.
+' Année de référence : celle du fichier de données ouvert.
 '------------------------------------------------------------------------------
 Private Function AnneeAffichee() As String
-    Dim v As Variant
-    v = Interv_CelluleNommee(CEL_ANNEE)
-    If IsEmpty(v) Or IsNull(v) Then Exit Function
-    If VarType(v) = vbDate Then
-        AnneeAffichee = Format$(v, "yyyy")
-    ElseIf IsNumeric(v) Then
-        ' un nombre à quatre chiffres est déjà une année ; au-delà c'est une
-        ' date au format numérique d'Excel
-        If CDbl(v) > 3000 Then
-            AnneeAffichee = Format$(CDate(CDbl(v)), "yyyy")
-        Else
-            AnneeAffichee = Format$(CLng(v), "0000")
-        End If
-    Else
-        AnneeAffichee = CStr(v)
-    End If
+    AnneeAffichee = Interv_AnneeTexte()
+End Function
+
+'------------------------------------------------------------------------------
+' L'intitulé du bandeau, dans la cellule nommée de l'APPLICATION.
+'
+' CÔTÉ APPLICATION : c'est un libellé d'écran, pas une donnée, et il n'a rien à
+' faire dans un fichier partagé qui change tous les ans. La cellule absente, on
+' affiche le libellé par défaut plutôt qu'un bandeau vide.
+'------------------------------------------------------------------------------
+Private Function TitreGlobal() As String
+    TitreGlobal = Trim$(EnTexte(App_CelluleNommee(CEL_TITRE)))
+    If Len(TitreGlobal) = 0 Then TitreGlobal = TITRE_INTERV_DEFAUT
 End Function
 
 '------------------------------------------------------------------------------
@@ -1365,12 +1361,21 @@ Private Sub MajCompteurInterv(f As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Active ou grise Modifier, Supprimer et Facturer selon qu'une intervention est
-' sélectionnée.
+' Active ou grise les boutons qui ÉCRIVENT.
+'
+' DEUX CONDITIONS, ET NON UNE. Une fiche doit être sélectionnée pour Modifier et
+' Supprimer, c'était déjà le cas ; et les données doivent être ouvertes en
+' écriture. Datas_PeutEcrire refuserait de toute façon l'écriture — mais APRÈS la
+' saisie, et c'est alors le travail de l'utilisateur qu'on jette. Le bouton gris
+' le dit avant.
 '------------------------------------------------------------------------------
 Private Sub MajBoutonsInterv(f As Object)
-    Dim actif As Boolean
-    actif = (Len(mNoCourant) > 0)
+    Dim actif As Boolean, ecriture As Boolean
+
+    ecriture = Not Datas_LectureSeule()
+    actif = (Len(mNoCourant) > 0) And ecriture
+
+    ActiverBoutonI f, "btnIAjouter", ecriture
     ActiverBoutonI f, "btnIModifier", actif
     ActiverBoutonI f, "btnISupprimer", actif
     ActiverBoutonI f, "btnFacturer", actif

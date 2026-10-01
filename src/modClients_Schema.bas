@@ -286,17 +286,30 @@ End Function
 ' Accès aux tableaux structurés du classeur
 '==============================================================================
 '------------------------------------------------------------------------------
-' Cherche un tableau structuré dans tout le classeur, feuille par feuille.
+' Cherche un tableau structuré dans le CLASSEUR DE DONNÉES, feuille par feuille.
 '   nomTable : nom du tableau, par exemple TblClients
 '   renvoie  : le ListObject, ou Nothing s'il n'existe pas
 '
 ' Passer par le nom du tableau plutôt que par un nom de feuille ou une plage de
 ' cellules : le tableau peut être déplacé, renommé de feuille ou décalé, le code
 ' continue de le trouver.
+'
+' LA LIGNE QUI A SÉPARÉ L'APPLICATION DES DONNÉES. Elle parcourait les feuilles
+' de ThisWorkbook — le classeur qui porte les macros. Elle parcourt maintenant
+' celles de Datas_Classeur, le fichier partagé de l'année ouverte. C'est tout ce
+' qu'il a fallu changer pour les six tableaux et les trente modules, parce
+' qu'aucun autre endroit du classeur ne va chercher une feuille lui-même.
+'
+' Datas_Classeur OUVRE LE FICHIER SI BESOIN : le premier formulaire lancé déclenche
+' l'ouverture, même si l'accueil ne l'a pas faite.
 '------------------------------------------------------------------------------
 Public Function ObtenirTable(ByVal nomTable As String) As ListObject
-    Dim ws As Worksheet, lo As ListObject
-    For Each ws In ThisWorkbook.Worksheets
+    Dim wb As Workbook, ws As Worksheet, lo As ListObject
+
+    Set wb = Datas_Classeur()
+    If wb Is Nothing Then Exit Function
+
+    For Each ws In wb.Worksheets
         For Each lo In ws.ListObjects
             If StrComp(lo.Name, nomTable, vbTextCompare) = 0 Then
                 Set ObtenirTable = lo

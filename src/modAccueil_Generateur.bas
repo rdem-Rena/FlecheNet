@@ -174,24 +174,11 @@ Private Sub DessinerBandeau(ws As Worksheet)
 End Sub
 
 '------------------------------------------------------------------------------
-' L'année affichée, prise dans la cellule nommée du classeur — la même que celle
-' des quatre formulaires. Vide si la cellule manque : le bandeau s'en passe.
+' L'année affichée : celle du fichier de données ouvert, la même que celle des
+' quatre formulaires.
 '------------------------------------------------------------------------------
 Private Function AnneeAccueil() As String
-    Dim v As Variant
-
-    v = Interv_CelluleNommee(CEL_ANNEE)
-    If IsEmpty(v) Then Exit Function
-
-    On Error Resume Next
-    If IsDate(v) Then
-        AnneeAccueil = Format$(v, "yyyy")
-    ElseIf IsNumeric(v) Then
-        AnneeAccueil = Format$(CLng(v), "0000")
-    Else
-        AnneeAccueil = EnTexte(v)
-    End If
-    On Error GoTo 0
+    AnneeAccueil = Interv_AnneeTexte()
 End Function
 
 '==============================================================================

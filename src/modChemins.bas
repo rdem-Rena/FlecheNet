@@ -37,6 +37,12 @@ Option Explicit
 Private mDossier As String
 Private mResolu As Boolean
 
+' Le dernier dossier partagé cherché sous OneDrive, et son nom. L'ouverture en
+' demande plusieurs, et chaque recherche relit toutes les racines.
+Private mNomPartage As String
+Private mDossierPartage As String
+Private mPartageCherche As Boolean
+
 ' Combien de sous-dossiers on accepte de lire dans une racine. Une racine
 ' OneDrive normale en compte quelques dizaines ; la borne protège d'un dossier
 ' pathologique, pas d'un usage courant.
@@ -72,12 +78,77 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Force une nouvelle recherche au prochain appel. Utile après avoir déplacé le
-' classeur sans fermer Excel.
+' classeur — ou accepté un dossier partagé — sans fermer Excel.
 '------------------------------------------------------------------------------
 Public Sub OublierDossierClasseur()
     mDossier = vbNullString
     mResolu = False
+    mNomPartage = vbNullString
+    mDossierPartage = vbNullString
+    mPartageCherche = False
 End Sub
+
+'==============================================================================
+' UN DOSSIER PARTAGÉ, CHERCHÉ PAR SON NOM
+'------------------------------------------------------------------------------
+' Le classeur de données ne vit pas à côté de l'application : il est dans un
+' dossier partagé, que chaque poste synchronise où il veut. On ne peut donc pas
+' le déduire du chemin de l'application — on le cherche PAR SON NOM, sous les
+' mêmes racines de synchronisation.
+'
+' LA RACINE ELLE-MÊME COMPTE. Un dossier partagé reçu d'un collègue se range
+' tantôt sous la racine — « OneDrive\FlecheNettoyageSA » — tantôt comme racine
+' à part entière, et RacinesCandidates rend les deux niveaux : il faut donc
+' aussi regarder si la racine PORTE déjà ce nom.
+'
+'   nom     : le nom du dossier, « FlecheNettoyageSA » par exemple
+'   renvoie : son chemin local, ou une chaîne vide s'il n'est nulle part
+'==============================================================================
+Public Function DossierOneDrive(ByVal nom As String) As String
+    Dim racines As Variant, i As Long, cand As String
+
+    If Len(nom) = 0 Then Exit Function
+
+    ' L'ÉCHEC SE RETIENT AUSSI : sans cela, un dossier absent ferait relire les
+    ' racines à chaque appel, et l'ouverture en fait plusieurs.
+    If mPartageCherche Then
+        If StrComp(nom, mNomPartage, vbTextCompare) = 0 Then
+            DossierOneDrive = mDossierPartage
+            Exit Function
+        End If
+    End If
+
+    racines = Split(RacinesCandidates(), vbTab)
+    For i = LBound(racines) To UBound(racines)
+        cand = vbNullString
+        If Len(racines(i)) > 0 Then
+            If StrComp(DernierSegment(CStr(racines(i))), nom, vbTextCompare) = 0 Then
+                cand = CStr(racines(i))
+            Else
+                cand = racines(i) & "\" & nom
+                If Not DossierExiste(cand) Then cand = vbNullString
+            End If
+        End If
+        If Len(cand) > 0 Then Exit For
+    Next i
+
+    mNomPartage = nom
+    mDossierPartage = cand
+    mPartageCherche = True
+    DossierOneDrive = cand
+End Function
+
+'------------------------------------------------------------------------------
+' Le dernier nom d'un chemin : « C:\Users\rd\OneDrive » donne « OneDrive ».
+'------------------------------------------------------------------------------
+Private Function DernierSegment(ByVal chemin As String) As String
+    Dim c As String, p As Long
+
+    c = SansBarreFinale(chemin)
+    p = InStrRev(c, "\")
+    If p > 0 Then c = Mid$(c, p + 1)
+    DernierSegment = c
+End Function
 
 '==============================================================================
 ' EXISTENCE

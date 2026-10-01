@@ -198,8 +198,17 @@ Public Function Fact_Enregistrer(ByVal numero As String, ByVal lignes As Variant
     If Len(Trim$(numero)) = 0 Then Exit Function
     If Not IsArray(lignes) Then Exit Function
 
+    ' UNE SEULE FOIS, AVANT LA BOUCLE. IntervBD_Modifier le redemandera pour
+    ' chaque ligne — c'est voulu, le verrou se rajeunit à chaque écriture — mais
+    ' c'est ici que le refus doit s'expliquer, une fois, et non cinquante.
+    If Not Datas_PeutEcrire() Then Exit Function
+
     On Error GoTo Fin
     For i = LBound(lignes) To UBound(lignes)
+        ' LE VERROU PEUT SE PERDRE EN COURS DE ROUTE : une facture de cinquante
+        ' lignes prend du temps. On s'arrête alors, plutôt que d'afficher
+        ' quarante-neuf fois le même message.
+        If Datas_LectureSeule() Then Exit For
         noInterv = EnTexte(Interv_Valeur(CLng(lignes(i)), IC_NO))
         If Len(noInterv) > 0 Then
             Set valeurs = CreateObject("Scripting.Dictionary")

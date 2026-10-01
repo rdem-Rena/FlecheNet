@@ -421,19 +421,7 @@ Private Function FMoisChoisi(f As Object) As Long
 End Function
 
 Private Function FAnneeAffichee() As String
-    Dim v As Variant
-
-    v = Interv_CelluleNommee(CEL_ANNEE)
-    If IsEmpty(v) Then Exit Function
-    On Error Resume Next
-    If IsDate(v) Then
-        FAnneeAffichee = Format$(v, "yyyy")
-    ElseIf IsNumeric(v) Then
-        FAnneeAffichee = Format$(CLng(v), "0000")
-    Else
-        FAnneeAffichee = EnTexte(v)
-    End If
-    On Error GoTo 0
+    FAnneeAffichee = Interv_AnneeTexte()
 End Function
 
 ' Un contrôle du formulaire, ou Nothing s'il n'existe pas. La collection

@@ -1003,11 +1003,21 @@ Private Sub MajCompteur(f As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Active ou grise Modifier et Supprimer selon qu'une fiche est sélectionnée.
+' Active ou grise les boutons qui ÉCRIVENT.
+'
+' DEUX CONDITIONS, ET NON UNE. Une fiche doit être sélectionnée pour Modifier et
+' Supprimer, c'était déjà le cas ; et les données doivent être ouvertes en
+' écriture. Datas_PeutEcrire refuserait de toute façon l'écriture — mais APRÈS la
+' saisie, et c'est alors le travail de l'utilisateur qu'on jette. Le bouton gris
+' le dit avant.
 '------------------------------------------------------------------------------
 Private Sub MajBoutons(f As Object)
-    Dim actif As Boolean
-    actif = (Len(mClefCourante) > 0)
+    Dim actif As Boolean, ecriture As Boolean
+
+    ecriture = Not Datas_LectureSeule()
+    actif = (Len(mClefCourante) > 0) And ecriture
+
+    ActiverBouton f, "btnAjouter", ecriture
     ActiverBouton f, "btnModifier", actif
     ActiverBouton f, "btnSupprimer", actif
 End Sub

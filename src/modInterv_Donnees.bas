@@ -367,6 +367,10 @@ End Function
 Public Function IntervBD_Ajouter(ByVal valeurs As Object) As String
     Dim lo As ListObject, lr As ListRow, noInterv As String
 
+    ' TOUTE ÉCRITURE COMMENCE PAR LÀ. Datas_PeutEcrire vérifie la consultation
+    ' seule ET rajeunit le verrou ; elle a déjà tout expliqué si elle dit non.
+    If Not Datas_PeutEcrire() Then Exit Function
+
     AssurerInterv
     Set lo = TableInterventions()
     noInterv = Interv_NouveauNumero()
@@ -394,6 +398,10 @@ End Function
 Public Function IntervBD_Modifier(ByVal noInterv As String, ByVal valeurs As Object) As Boolean
     Dim lo As ListObject, i As Long
 
+    ' TOUTE ÉCRITURE COMMENCE PAR LÀ. Datas_PeutEcrire vérifie la consultation
+    ' seule ET rajeunit le verrou ; elle a déjà tout expliqué si elle dit non.
+    If Not Datas_PeutEcrire() Then Exit Function
+
     AssurerInterv
     i = Interv_TrouverLigne(noInterv)
     If i = 0 Then Exit Function
@@ -418,6 +426,10 @@ End Function
 '------------------------------------------------------------------------------
 Public Function IntervBD_Supprimer(ByVal noInterv As String) As Boolean
     Dim lo As ListObject, i As Long
+
+    ' TOUTE ÉCRITURE COMMENCE PAR LÀ. Datas_PeutEcrire vérifie la consultation
+    ' seule ET rajeunit le verrou ; elle a déjà tout expliqué si elle dit non.
+    If Not Datas_PeutEcrire() Then Exit Function
 
     AssurerInterv
     i = Interv_TrouverLigne(noInterv)
@@ -552,33 +564,33 @@ Public Function Interv_EstimerCA(ByVal taux As Double, ByVal forfait As Boolean,
 End Function
 
 '==============================================================================
-' FEUILLE STATISTIQUES
+' L'ANNÉE OUVERTE
+'------------------------------------------------------------------------------
+' ELLE VIENT DU NOM DU FICHIER, et non d'une cellule nommée. Les données sont
+' désormais dans FlecheNettoyageSA-AAAA.xlsx, un fichier par année : l'année
+' EST le fichier ouvert, et une cellule qui dirait autre chose ne pourrait que
+' mentir — c'est exactement ce qui arrivait quand on recopiait le classeur de
+' l'an passé en oubliant de la changer.
+'
+' Les cinq endroits qui affichaient l'année la lisaient chacun à sa façon,
+' date ou nombre, avec cinq reprises d'erreur différentes. Il n'en reste
+' qu'une, et elle n'a plus rien à démêler.
 '==============================================================================
-'------------------------------------------------------------------------------
-' Valeur d'une cellule nommée du classeur.
-'   renvoie : la valeur, ou Empty si le nom n'existe pas
-'------------------------------------------------------------------------------
-Public Function Interv_CelluleNommee(ByVal nom As String) As Variant
-    On Error Resume Next
-    Interv_CelluleNommee = ThisWorkbook.Names(nom).RefersToRange.Value
-    On Error GoTo 0
-End Function
 
 '------------------------------------------------------------------------------
 ' L'année du jeu de données ouvert.
-'   renvoie : l'année de la cellule nommée, ou celle du jour si elle manque
+'   renvoie : l'année ouverte, ou celle du jour si rien ne l'est encore
 '------------------------------------------------------------------------------
 Public Function Interv_AnneeAffichee() As Long
-    Dim v As Variant
+    Interv_AnneeAffichee = Datas_Annee()
+    If Interv_AnneeAffichee = 0 Then Interv_AnneeAffichee = Year(Date)
+End Function
 
-    v = Interv_CelluleNommee(CEL_ANNEE)
-    If IsDate(v) Then
-        Interv_AnneeAffichee = Year(CDate(v))
-    ElseIf IsNumeric(v) Then
-        Interv_AnneeAffichee = CLng(v)
-    Else
-        Interv_AnneeAffichee = Year(Date)
-    End If
+'------------------------------------------------------------------------------
+' La même, sur quatre chiffres, pour les bandeaux.
+'------------------------------------------------------------------------------
+Public Function Interv_AnneeTexte() As String
+    Interv_AnneeTexte = Format$(Interv_AnneeAffichee(), "0000")
 End Function
 
 '==============================================================================

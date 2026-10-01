@@ -28,9 +28,12 @@ Public Const ITU_MOIS_PREC As String = "MoisPrecedent"
 Public Const ITU_MOIS As String = "Mois"
 Public Const ITU_MOIS_NON_FACTURE As String = "MoisNonFacture"
 
-'--- Cellules nommées ---------------------------------------------------------
+'--- Cellule nommée de l'APPLICATION ------------------------------------------
+' L'intitulé du bandeau. Il n'y a plus de cellule AnneeEnCours : l'année est
+' celle du fichier de données ouvert, FlecheNettoyageSA-AAAA.xlsx, et une
+' cellule qui dirait autre chose ne pourrait que se tromper.
 Public Const CEL_TITRE As String = "TitreInterventions"
-Public Const CEL_ANNEE As String = "AnneeEnCours"
+Public Const TITRE_INTERV_DEFAUT As String = "GESTION DES INTERVENTIONS"
 
 '--- Colonnes de TblInterv ----------------------------------------------------
 Public Const IC_NO As String = "NoInterv"

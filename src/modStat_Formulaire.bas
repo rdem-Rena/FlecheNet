@@ -482,19 +482,7 @@ Private Function STriEtat(f As Object, ByVal nom As String) As Long
 End Function
 
 Private Function SAnneeAffichee() As String
-    Dim v As Variant
-
-    v = Interv_CelluleNommee(CEL_ANNEE)
-    If IsEmpty(v) Then Exit Function
-    On Error Resume Next
-    If IsDate(v) Then
-        SAnneeAffichee = Format$(v, "yyyy")
-    ElseIf IsNumeric(v) Then
-        SAnneeAffichee = Format$(CLng(v), "0000")
-    Else
-        SAnneeAffichee = EnTexte(v)
-    End If
-    On Error GoTo 0
+    SAnneeAffichee = Interv_AnneeTexte()
 End Function
 
 ' La collection Controls d'un UserForm est plate : elle trouve aussi ce qui est

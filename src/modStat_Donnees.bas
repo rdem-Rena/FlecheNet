@@ -132,9 +132,13 @@ End Function
 '------------------------------------------------------------------------------
 ' L'objectif annuel, lu dans sa cellule nommée ; 0 si elle manque ou n'est pas
 ' un nombre — la barre de progression reste alors vide et le dit.
+'
+' CÔTÉ DONNÉES, dans l'onglet Parametres : l'objectif change d'une année à
+' l'autre, et chaque fichier porte donc le sien. Dans l'application, il serait
+' le même pour toutes les années consultées — et différent d'un poste à l'autre.
 '------------------------------------------------------------------------------
 Public Function Stat_ObjectifAnnuel() As Double
-    Stat_ObjectifAnnuel = Fact_EnNombre(Interv_CelluleNommee(CEL_OBJECTIF))
+    Stat_ObjectifAnnuel = Fact_EnNombre(Datas_CelluleNommee(CEL_OBJECTIF))
 End Function
 
 '==============================================================================

@@ -258,10 +258,21 @@ End Sub
 '==============================================================================
 ' OUTILS
 '==============================================================================
-Private Function MotDePasse() As String
+'------------------------------------------------------------------------------
+' Le mot de passe, dans la cellule nommée de l'APPLICATION.
+'
+' CÔTÉ APPLICATION ET NON CÔTÉ DONNÉES : chaque poste a son fichier
+' d'application, et le mot de passe n'a donc pas à voyager dans le dossier
+' partagé, où n'importe qui le lirait en ouvrant le classeur.
+'
+' Publique parce que modDatas_Verrou la demande aussi : prendre la main sur les
+' données d'un autre poste est un geste du même ordre que déverrouiller le
+' classeur, et les deux doivent répondre au même mot de passe.
+'------------------------------------------------------------------------------
+Public Function MotDePasse() As String
     Dim v As Variant
 
-    v = Interv_CelluleNommee(CEL_MOT_DE_PASSE)
+    v = App_CelluleNommee(CEL_MOT_DE_PASSE)
     If IsEmpty(v) Then Exit Function
     MotDePasse = Trim$(EnTexte(v))
 End Function

@@ -211,6 +211,10 @@ Public Function Donnees_Ajouter(ByVal valeurs As Object) As String
     Dim lo As ListObject, lr As ListRow, ligne() As Variant
     Dim clef As String
 
+    ' TOUTE ÉCRITURE COMMENCE PAR LÀ. Datas_PeutEcrire vérifie la consultation
+    ' seule ET rajeunit le verrou ; elle a déjà tout expliqué si elle dit non.
+    If Not Datas_PeutEcrire() Then Exit Function
+
     AssurerCache
     Set lo = TableClients()
     clef = Donnees_NouvelleClef()
@@ -248,6 +252,10 @@ End Function
 Public Function Donnees_Modifier(ByVal clef As String, ByVal valeurs As Object) As Boolean
     Dim lo As ListObject, i As Long, ligne() As Variant, ic As Long, c As Variant
 
+    ' TOUTE ÉCRITURE COMMENCE PAR LÀ. Datas_PeutEcrire vérifie la consultation
+    ' seule ET rajeunit le verrou ; elle a déjà tout expliqué si elle dit non.
+    If Not Datas_PeutEcrire() Then Exit Function
+
     AssurerCache
     i = Donnees_TrouverLigne(clef)
     If i = 0 Then Exit Function
@@ -284,6 +292,10 @@ End Function
 '------------------------------------------------------------------------------
 Public Function Donnees_Supprimer(ByVal clef As String) As Boolean
     Dim lo As ListObject, i As Long
+
+    ' TOUTE ÉCRITURE COMMENCE PAR LÀ. Datas_PeutEcrire vérifie la consultation
+    ' seule ET rajeunit le verrou ; elle a déjà tout expliqué si elle dit non.
+    If Not Datas_PeutEcrire() Then Exit Function
 
     AssurerCache
     i = Donnees_TrouverLigne(clef)

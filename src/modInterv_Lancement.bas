@@ -227,7 +227,9 @@ Public Sub VerifierClasseurInterventions()
     ' --- cellules nommées -----------------------------------------------------
     ' Les six indicateurs ne sont plus des cellules nommées : ils se calculent
     ' depuis TblInterv, il n'y a donc plus rien à vérifier pour eux.
-    msg = msg & vbCrLf & LigneNom(CEL_TITRE) & LigneNom(CEL_ANNEE)
+    msg = msg & vbCrLf & LigneNom(CEL_TITRE)
+    msg = msg & "[OK] Année ouverte : " & Interv_AnneeTexte() & _
+          "  (le nom du fichier de données, non une cellule)" & vbCrLf
 
     ' --- image ----------------------------------------------------------------
     If Len(Interv_CheminImageTuile()) > 0 Then
@@ -259,12 +261,12 @@ Private Function LigneTableI(ByVal nomTable As String, ByVal usage As String) As
 End Function
 
 '------------------------------------------------------------------------------
-' Une ligne du diagnostic pour une cellule nommée, avec sa valeur si elle
-' existe.
+' Une ligne du diagnostic pour une cellule nommée de l'APPLICATION, avec sa
+' valeur si elle existe.
 '------------------------------------------------------------------------------
 Private Function LigneNom(ByVal nom As String) As String
     Dim v As Variant
-    v = Interv_CelluleNommee(nom)
+    v = App_CelluleNommee(nom)
     If IsEmpty(v) Then
         LigneNom = "[X] Cellule nommée " & nom & " : introuvable" & vbCrLf
     Else
