@@ -76,6 +76,9 @@ l'attend, écrivez le chemin dans cette cellule et l'application s'y tient.
 
 ## Faire la séparation, une fois
 
+0. **Déverrouiller d'abord** : bouton **Unlock** de la feuille d'accueil. C'est
+   l'étape qu'on oublie, et elle n'est pas facultative — voir l'encadré
+   ci-dessous.
 1. **Copier** `FlecheNettoyageSA2026.xlsm`. La copie deviendra le fichier de
    données, l'original l'application.
 2. Dans la copie : supprimer la feuille `Accueil`, puis
@@ -99,6 +102,64 @@ l'attend, écrivez le chemin dans cette cellule et l'application s'y tient.
 
 Si quelque chose ne se trouve pas, lancez **`DiagnostiquerDatas`** (`Alt + F8`) :
 il dit où l'application a cherché, ce qu'elle a trouvé, et qui tient le verrou.
+
+### Pourquoi déverrouiller avant de copier
+
+**Trois des réglages du kiosque sont enregistrés dans le classeur**, et non dans
+Excel. Copier l'application pendant qu'elle est verrouillée les emporte donc
+dans le fichier de données :
+
+| Réglage | Portée | Dans le fichier ? |
+|---|---|---|
+| ruban caché (`SHOW.TOOLBAR`) | Excel | non |
+| barre de formule, barre d'état | Excel | non |
+| dimensions de la fenêtre | Excel | non |
+| onglets, quadrillage, en-têtes, ascenseurs | **fenêtre du classeur** | **oui** |
+| feuilles `xlSheetVeryHidden` | **feuille** | **oui** |
+| structure protégée par mot de passe | **classeur** | **oui** |
+
+Ouvert à la main dans Excel, un tel fichier ne montre **aucun onglet**, aucune
+donnée — la surface est nue — et la moitié du ruban est grisée. Et
+« très masquée » **ne se défait pas par le menu Afficher** : seul le code, ou
+l'éditeur VBA, y revient. Dans un fichier sans macro, c'est déroutant.
+
+Le bouton *Unlock* (`Accueil_Deverrouiller`) défait les trois d'un coup :
+il réaffiche les feuilles, lève la protection de structure et rend à la fenêtre
+ses onglets. **Copier ensuite.**
+
+> **L'application le répare aussi toute seule.** `NormaliserDonnees` remet le
+> fichier d'aplomb à chaque ouverture en écriture, et `Datas_Fermer`
+> l'enregistre : un fichier passé une fois par l'application s'ouvre ensuite
+> normalement dans Excel. Ce fichier doit rester consultable **sans**
+> l'application — c'est tout l'intérêt de n'y avoir mis aucune macro.
+
+### Débloquer un fichier de données déjà fabriqué en kiosque
+
+Le plus simple : **laisser l'application l'ouvrir une fois** en écriture, puis
+la fermer par *Quitter*. Elle le normalise et l'enregistre.
+
+À la main, si vous préférez :
+
+1. **Révision ▸ Protéger le classeur** → décocher. Le mot de passe est celui de
+   la cellule `Mot_de_passe`.
+2. **Alt + F11**, puis **Ctrl + G** pour la fenêtre *Exécution*. Taper cette
+   ligne et **Entrée** — elle fonctionne dans un `.xlsx`, qui ne peut pas
+   *stocker* de macro mais sait toujours en exécuter une tapée là :
+
+   ```vba
+   For Each s In ActiveWorkbook.Sheets: s.Visible = True: Next
+   ```
+
+3. **Fichier ▸ Options ▸ Options avancées ▸ Afficher les options pour ce
+   classeur** → cocher **Afficher les onglets de classeur**.
+4. **Affichage** → cocher **Quadrillage** et **Titres**.
+5. Enregistrer.
+
+Et si c'est **Excel lui-même** qui reste nu — ruban replié, pas de barre de
+formule, et ce pour tous les classeurs : ces trois réglages-là appartiennent à
+l'application, pas au fichier. Un kiosque ouvert dans la même instance les
+impose à tout le monde. **Ctrl + F1** ramène le ruban, et
+**Affichage ▸ Barre de formule** la barre de formule.
 
 ---
 
@@ -188,4 +249,5 @@ le sélecteur propose.
 | « Ces données ne sont pas de la même version » | l'application du poste est plus ancienne que le fichier : la remplacer |
 | Les données s'ouvrent toujours en consultation | quelqu'un d'autre les tient — `DiagnostiquerDatas` dit qui |
 | Les formulaires s'ouvrent vides | le fichier de données est ouvert mais ses tableaux manquent : `VerifierClasseur` |
+| Le fichier de données s'ouvre sans onglets, ruban grisé | il a été copié en état de kiosque — voir *Débloquer un fichier de données déjà fabriqué en kiosque* |
 | Les images des tuiles manquent | `DiagnostiquerChemins` — c'est le dossier de l'**application**, pas celui des données |

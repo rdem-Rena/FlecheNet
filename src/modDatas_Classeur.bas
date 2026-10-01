@@ -216,6 +216,8 @@ Public Function Datas_Ouvrir(ByVal annee As Long, ByVal forcer As Boolean) As Bo
     mAnnee = annee
     mLecture = lecture Or mClasseur.ReadOnly      ' Excel a le dernier mot
 
+    If Not mLecture Then NormaliserDonnees mClasseur
+
     If Not VersionCompatible() Then
         Datas_Fermer
         GoTo Fin
@@ -318,6 +320,55 @@ Erreur:
     End If
     Application.ScreenUpdating = maj
 End Function
+
+'==============================================================================
+' UN FICHIER DE DONNÉES NE SE PRÉSENTE JAMAIS EN KIOSQUE
+'------------------------------------------------------------------------------
+' TROIS DES RÉGLAGES DU KIOSQUE SONT ENREGISTRÉS DANS LE CLASSEUR, et non dans
+' Excel : les feuilles « très masquées », les propriétés de la FENÊTRE — onglets,
+' quadrillage, en-têtes, ascenseurs — et la protection de structure.
+'
+' Le premier fichier de données a été fabriqué en copiant l'application pendant
+' qu'elle était verrouillée : il a donc emporté les trois. Ouvert à la main dans
+' Excel, il ne montrait AUCUN ONGLET, aucune donnée, et la moitié du ruban était
+' grisée. Et « très masquée » ne se défait pas par le menu Afficher : seul le
+' code, ou l'éditeur VBA, y revient — dans un fichier sans macro.
+'
+' On remet donc le fichier d'aplomb à chaque ouverture en écriture, et
+' Datas_Fermer l'enregistre. Ce n'est pas de la cosmétique : CE FICHIER DOIT
+' RESTER CONSULTABLE SANS L'APPLICATION, c'est tout l'intérêt de n'y avoir mis
+' aucune macro.
+'
+' EN ÉCRITURE SEULEMENT. Un classeur ouvert en lecture seule ne garderait rien de
+' ces corrections, et les y appliquer ne ferait que le marquer modifié.
+'
+' On ne touche pas à la protection des FEUILLES : le kiosque n'en protège
+' qu'une, celle de l'accueil, qui n'est pas dans ce fichier. Une feuille de
+' données protégée l'a donc été exprès, et ce n'est pas à nous de la rouvrir.
+'==============================================================================
+Private Sub NormaliserDonnees(wb As Workbook)
+    Dim ws As Worksheet, fen As Object
+
+    On Error Resume Next
+
+    ' avec le mot de passe de l'application, puis sans : elle n'en avait
+    ' peut-être pas, et Unprotect refuse un mot de passe de trop
+    wb.Unprotect MotDePasse()
+    wb.Unprotect
+
+    For Each ws In wb.Worksheets
+        If ws.Visible <> xlSheetVisible Then ws.Visible = xlSheetVisible
+    Next ws
+
+    Set fen = wb.Windows(1)
+    fen.DisplayWorkbookTabs = True
+    fen.DisplayHorizontalScrollBar = True
+    fen.DisplayVerticalScrollBar = True
+    fen.DisplayHeadings = True
+    fen.DisplayGridlines = True
+
+    On Error GoTo 0
+End Sub
 
 '------------------------------------------------------------------------------
 ' La version du schéma des données doit être celle que cette application attend.

@@ -134,6 +134,13 @@ def noms_module(ligne):
     md = DECL_MOD.match(ligne)
     return noms_de_la_liste(md.group(1)) if md else set()
 
+def code_seul(bloc):
+    """le corps d'une procedure sans ses commentaires : chercher un nom dans
+    un bloc brut le trouve aussi dans la phrase qui l'explique, et le
+    controle passe alors sur du code absent"""
+    return "\n".join(sans_commentaire(l)
+                     for l in bloc.replace("\r\n", "\n").split("\n"))
+
 def sans_chaine(l):
     """retire le contenu des chaines : un nom cite dans un message n'est pas
     un nom employe"""
@@ -511,6 +518,49 @@ for f in FICHIERS:
                 pb.append("%s:%d %s n'est declaree ni au module ni dans la "
                           "procedure : « Variable non definie » a la compilation"
                           % (f, no, n))
+
+# ---------------------------------------------------------------------------
+# 15. UN FICHIER DE DONNEES NE SE PRESENTE JAMAIS EN KIOSQUE
+#
+# Trois des reglages du kiosque sont enregistres DANS le classeur : les feuilles
+# tres masquees, les proprietes de la FENETRE, et la protection de structure. Le
+# premier fichier de donnees, fabrique en copiant l'application verrouillee, les
+# a donc emportes : ouvert a la main dans Excel, il ne montrait aucun onglet et
+# refusait la moitie du ruban.
+#
+# Toute propriete de fenetre que PoserInterface eteint doit etre rallumee par
+# NormaliserDonnees : ce fichier doit rester consultable SANS l'application.
+# ---------------------------------------------------------------------------
+datas = rd("modDatas_Classeur.bas")
+mn = re.search(r'Sub NormaliserDonnees\(.*?\nEnd Sub', datas, re.S)
+mp = re.search(r'Sub PoserInterface\(.*?\nEnd Sub', rd("modAccueil_Verrou.bas"), re.S)
+corps_n = code_seul(mn.group(0)) if mn else ""
+corps_p = code_seul(mp.group(0)) if mp else ""
+
+if not mn:
+    pb.append("NormaliserDonnees a disparu : un fichier de donnees garderait les "
+              "reglages du kiosque, et s'ouvrirait sans onglets dans Excel")
+elif len(re.findall(r'\bNormaliserDonnees\b', code_seul(datas))) < 2:
+    pb.append("NormaliserDonnees n'est appelee par personne : elle ne sert a rien")
+elif not mp:
+    pb.append("PoserInterface est introuvable : impossible de verifier ce que "
+              "NormaliserDonnees doit rallumer")
+else:
+    # celles posees sur la FENETRE, les seules qui s'enregistrent dans le fichier
+    fen = sorted(set(re.findall(r'(?m)^\s*fen\.(Display\w+)\s*=', corps_p)))
+    if not fen:
+        pb.append("aucune propriete de fenetre reconnue dans PoserInterface : la "
+                  "variable a du changer de nom, et le controle ne verifie plus rien")
+    for prop in fen:
+        if prop not in corps_n:
+            pb.append("le kiosque eteint %s, que NormaliserDonnees ne rallume pas : "
+                      "le fichier de donnees garderait ce reglage, et s'ouvrirait "
+                      "nu dans Excel" % prop)
+    for quoi, mal in (("Unprotect", "sa structure resterait protegee, ruban grise"),
+                      ("xlSheetVisible", "ses feuilles resteraient tres masquees, "
+                                         "et le menu Afficher ne les propose pas")):
+        if quoi not in corps_n:
+            pb.append("NormaliserDonnees ne fait rien de %s : %s" % (quoi, mal))
 
 # ---------------------------------------------------------------------------
 print("%d modules, %d procedures publiques"
