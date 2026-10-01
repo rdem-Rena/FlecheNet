@@ -565,16 +565,107 @@ Public Function Interv_CelluleNommee(ByVal nom As String) As Variant
 End Function
 
 '------------------------------------------------------------------------------
-' Montant d'une cellule nommée, mis en forme pour l'affichage.
+' L'année du jeu de données ouvert.
+'   renvoie : l'année de la cellule nommée, ou celle du jour si elle manque
 '------------------------------------------------------------------------------
-Public Function Interv_MontantNomme(ByVal nom As String) As String
+Public Function Interv_AnneeAffichee() As Long
     Dim v As Variant
-    v = Interv_CelluleNommee(nom)
-    If IsNumeric(v) Then
-        Interv_MontantNomme = Format$(CDbl(v), "#,##0") & " CHF"
+
+    v = Interv_CelluleNommee(CEL_ANNEE)
+    If IsDate(v) Then
+        Interv_AnneeAffichee = Year(CDate(v))
+    ElseIf IsNumeric(v) Then
+        Interv_AnneeAffichee = CLng(v)
     Else
-        Interv_MontantNomme = "-"
+        Interv_AnneeAffichee = Year(Date)
     End If
+End Function
+
+'==============================================================================
+' LES SIX INDICATEURS DE LA FICHE 2, ET LE CHIFFRE D'AFFAIRES PAR MOIS
+'------------------------------------------------------------------------------
+' CALCULÉS DEPUIS TblInterv, et non lus dans une feuille de totaux. Cette
+' feuille refaisait en formules Excel ce que le code sait déjà faire, avec deux
+' défauts : il fallait ouvrir le classeur dans Excel pour qu'elle se recalcule,
+' et rien ne garantissait qu'elle dise la même chose que le formulaire des
+' statistiques, qui compte, lui, depuis le tableau.
+'
+' Le chiffre d'affaires d'une ligne, son mois et son état de facturation
+' viennent de Fact_CADeLaLigne, Fact_MoisDeLaLigne et Fact_EstFacturee : ce sont
+' les SEULES définitions de ces trois notions dans le classeur, et en écrire une
+' deuxième ici rouvrirait la porte à la divergence.
+'==============================================================================
+
+'------------------------------------------------------------------------------
+' Les six montants, en UN SEUL parcours du tableau.
+'
+' Un parcours par tuile serait six fois le travail, et la fiche se rafraîchit à
+' chaque enregistrement.
+'
+'   renvoie : un dictionnaire indexé par les clés ITU_*
+'------------------------------------------------------------------------------
+Public Function Interv_TotauxTuiles() As Object
+    Dim d As Object, i As Long, ca As Double, mois As Long, facturee As Boolean
+    Dim moisCourant As Long, moisPrec As Long, cles As Variant, k As Long
+
+    Set d = CreateObject("Scripting.Dictionary")
+    cles = Array(ITU_CA, ITU_FACTURE, ITU_NON_FACTURE, _
+                 ITU_MOIS_PREC, ITU_MOIS, ITU_MOIS_NON_FACTURE)
+    For k = LBound(cles) To UBound(cles)
+        d(CStr(cles(k))) = 0#
+    Next k
+
+    moisCourant = Month(Date)
+    moisPrec = IIf(moisCourant = 1, 12, moisCourant - 1)
+
+    For i = 1 To Interv_NbLignes()
+        ca = Fact_CADeLaLigne(i)
+        mois = Fact_MoisDeLaLigne(i)
+        facturee = Fact_EstFacturee(i)
+
+        d(ITU_CA) = d(ITU_CA) + ca
+        If facturee Then
+            d(ITU_FACTURE) = d(ITU_FACTURE) + ca
+        Else
+            d(ITU_NON_FACTURE) = d(ITU_NON_FACTURE) + ca
+        End If
+        If mois = moisPrec Then d(ITU_MOIS_PREC) = d(ITU_MOIS_PREC) + ca
+        If mois = moisCourant Then
+            d(ITU_MOIS) = d(ITU_MOIS) + ca
+            If Not facturee Then _
+                d(ITU_MOIS_NON_FACTURE) = d(ITU_MOIS_NON_FACTURE) + ca
+        End If
+    Next i
+
+    Set Interv_TotauxTuiles = d
+End Function
+
+'------------------------------------------------------------------------------
+' Le montant d'une tuile, mis en forme pour l'affichage.
+'------------------------------------------------------------------------------
+Public Function Interv_MontantTuile(totaux As Object, ByVal cle As String) As String
+    If totaux Is Nothing Then
+        Interv_MontantTuile = "-"
+    ElseIf Not totaux.Exists(cle) Then
+        Interv_MontantTuile = "-"
+    Else
+        Interv_MontantTuile = Format$(CDbl(totaux(cle)), "#,##0") & " CHF"
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Le chiffre d'affaires de janvier à décembre, pour le graphique de la fiche 2.
+'   renvoie : douze valeurs, indexées de 1 à 12
+'------------------------------------------------------------------------------
+Public Function Interv_CAParMois() As Variant
+    Dim t(1 To 12) As Double, i As Long, mois As Long
+
+    For i = 1 To Interv_NbLignes()
+        mois = Fact_MoisDeLaLigne(i)
+        If mois >= 1 And mois <= 12 Then t(mois) = t(mois) + Fact_CADeLaLigne(i)
+    Next i
+
+    Interv_CAParMois = t
 End Function
 
 '------------------------------------------------------------------------------

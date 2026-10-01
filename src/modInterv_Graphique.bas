@@ -12,9 +12,9 @@ Option Explicit
 ' formulaire, ne laisse aucun fichier temporaire et ne dépend ni de Chart.Export
 ' ni de LoadPicture — les deux points qui avaient déjà posé problème.
 '
-' En contrepartie, le formulaire ne suit plus la mise en forme donnée au
-' graphique CAGraphique dans Excel : seules ses DONNÉES sont reprises, lues dans
-' le tableau Tableau7 de la feuille Statistiques.
+' Les douze valeurs se CALCULENT depuis TblInterv, comme celles du formulaire
+' des statistiques : une seule source, et plus de feuille de totaux à tenir à
+' jour par des formules.
 '
 ' Choix de représentation : douze valeurs mensuelles, une seule série, à
 ' comparer entre elles — des barres verticales. Une seule teinte, donc pas de
@@ -45,9 +45,11 @@ Public Sub Graph_Tracer(f As Object)
 
     Set c = GCtl(f, "lblGrLegende")
     If Not c Is Nothing Then
+        ' le tableau des interventions introuvable est le seul cas où les
+        ' douze mois ne se calculent pas
         If mNbMois = 0 Then
             c.Caption = "Chiffre d'affaires par mois  -  données indisponibles (" & _
-                        NOM_TABLE_GRAPH & " introuvable)"
+                        NOM_TABLE_INTERVENTIONS & " introuvable)"
         Else
             c.Caption = "Chiffre d'affaires par mois"
         End If
@@ -198,38 +200,29 @@ Private Function TexteValeur(ByVal i As Long) As String
 End Function
 
 '==============================================================================
-' Lecture des douze valeurs mensuelles dans le tableau Tableau7 de la feuille
-' Statistiques — celui-là même qui alimente le graphique Excel.
+' Les douze valeurs mensuelles, CALCULÉES depuis TblInterv.
+'
+' Elles venaient d'une feuille de totaux tenue par des formules Excel. Les
+' calculer ici garantit qu'elles disent la même chose que le formulaire des
+' statistiques, qui compte déjà depuis le tableau, et supprime une feuille
+' entière du classeur.
+'
+' Douze mois toujours, même vides : un graphique annuel se lit de janvier à
+' décembre, et les mois sans intervention sont une information.
 '==============================================================================
 Private Sub LireDonnees()
-    Dim lo As ListObject, v As Variant, i As Long
-    Dim icMois As Long, icCA As Long, n As Long
+    Dim v As Variant, i As Long, annee As Long
 
     mNbMois = 0
-    For i = 1 To 12
-        mCA(i) = 0
-    Next i
-
-    Set lo = ObtenirTable(NOM_TABLE_GRAPH)
-    If lo Is Nothing Then Exit Sub
-    If lo.ListRows.Count = 0 Then Exit Sub
-
-    icMois = IndexColonne(lo, "Mois")
-    icCA = IndexColonne(lo, "CA")
-    If icMois = 0 Or icCA = 0 Then Exit Sub
-
-    v = lo.DataBodyRange.Value
+    annee = Interv_AnneeAffichee()
+    v = Interv_CAParMois()
     If Not IsArray(v) Then Exit Sub
 
-    For i = LBound(v, 1) To UBound(v, 1)
-        If n >= 12 Then Exit For
-        If IsDate(v(i, icMois)) Then
-            n = n + 1
-            mMois(n) = CDate(v(i, icMois))
-            If IsNumeric(v(i, icCA)) Then mCA(n) = CDbl(v(i, icCA))
-        End If
+    For i = 1 To 12
+        mMois(i) = DateSerial(annee, i, 1)
+        mCA(i) = v(i)
     Next i
-    mNbMois = n
+    mNbMois = 12
 End Sub
 
 '==============================================================================

@@ -59,24 +59,26 @@ La cellule `AnneeEnCours` contient une **date** (1ᵉʳ janvier de l'année) et 
 
 ## Fiche 2 — statistiques
 
-Le graphique du chiffre d'affaires est **dessiné en contrôles MSForms** par [`modInterv_Graphique`](../src/modInterv_Graphique.bas) : douze libellés rectangulaires, un par mois, dont la hauteur est proportionnelle au montant. Les valeurs sont lues dans la table **`Tableau7`** de la feuille Statistiques — celle-là même qui alimente le graphique Excel. Le tracé est refait après chaque ajout, modification ou suppression.
+Le graphique du chiffre d'affaires est **dessiné en contrôles MSForms** par [`modInterv_Graphique`](../src/modInterv_Graphique.bas) : douze libellés rectangulaires, un par mois, dont la hauteur est proportionnelle au montant. Les douze valeurs sont **calculées depuis `TblInterv`** par `Interv_CAParMois`, comme celles du formulaire des statistiques : une seule source, et plus de feuille de totaux à tenir à jour par des formules. Le tracé est refait après chaque ajout, modification ou suppression.
 
 > **Pourquoi ne plus passer par une image.** Un graphique Excel exporté sort à la taille qu'il occupe sur la feuille : agrandi dans le formulaire, il devient flou. Et `LoadPicture`, qui vient de la bibliothèque OLE, ne lit que bmp, ico, wmf, emf, gif et jpg — un PNG s'exportait sans erreur puis restait illisible, le cadre demeurant vide sans le moindre message. Le tracé, lui, est net à toute taille, prend les couleurs du formulaire et ne laisse aucun fichier temporaire.
 
 Une seule série, donc **une seule teinte et aucune légende de couleurs** : le titre nomme ce qui est représenté. La grille reste discrète et seul le sommet de l'échelle est écrit ; les autres montants se lisent **au survol d'une barre**, qui affiche « Mai 2026 — 13'260 CHF » à la place du titre. Le sommet de l'échelle est arrondi vers le haut sur les échelons 1 – 1,5 – 2 – 2,5 – 5 – 10, pour que la plus grande barre occupe rarement moins des deux tiers de la hauteur disponible.
 
-Les six tuiles lisent des cellules nommées :
+Les six tuiles sont **calculées depuis `TblInterv`**, en un seul parcours, par `Interv_TotauxTuiles` :
 
-| Tuile | Cellule Excel |
-|---|---|
-| CA total | `CATotal` |
-| Facturé | `CATotalFacture` |
-| Non facturé | `CATotalNonFacture` |
-| Mois précédent | `CATotalMmoisPrecedent` |
-| Mois actuel | `CATotalMmoisActuel` |
-| Mois non facturé | `CATotalMoisActuelNonFacture` |
+| Tuile | Clé | Ce qui est additionné |
+|---|---|---|
+| CA total | `ITU_CA` | toutes les lignes |
+| Facturé | `ITU_FACTURE` | celles qui portent un n° de facture |
+| Non facturé | `ITU_NON_FACTURE` | celles qui n'en portent pas |
+| Mois précédent | `ITU_MOIS_PREC` | le mois civil précédent |
+| Mois actuel | `ITU_MOIS` | le mois civil en cours |
+| Mois non facturé | `ITU_MOIS_NON_FACTURE` | le mois en cours, sans n° de facture |
 
-> **Un nom corrigé.** La demande indiquait `CATotalMmoisActuel` pour « CA mois actuel non facturé », nom déjà employé par « CA mois actuel ». La cellule réellement définie dans le classeur est **`CATotalMoisActuelNonFacture`** (Statistiques!$C$24) : c'est celle-là qui est lue.
+Le chiffre d'affaires d'une ligne, son mois et son état de facturation viennent de `Fact_CADeLaLigne`, `Fact_MoisDeLaLigne` et `Fact_EstFacturee` : ce sont les **seules** définitions de ces trois notions dans le classeur.
+
+> **Une feuille en moins.** Ces six montants venaient d'une feuille `Statistiques` tenue par des formules Excel. Elle refaisait ce que le code sait faire, avec deux défauts : il fallait ouvrir le classeur dans Excel pour qu'elle se recalcule, et rien ne garantissait qu'elle dise la même chose que le formulaire des statistiques. Seul `Objectif_annuel_CA` en subsiste — c'est un réglage, pas un résultat — et il va dans l'onglet `Parametres`.
 
 Chaque tuile est un contrôle Image portant **`CartePremium.jpg`** (sous-dossier `Images`, à côté du classeur), surmonté de deux libellés à fond blanc — l'image donne les coins arrondis, les libellés portent le texte. Si l'image est absente, la tuile retombe sur un aplat blanc et reste lisible ; `VerifierClasseurInterventions` le signale.
 

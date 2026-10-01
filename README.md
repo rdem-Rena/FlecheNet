@@ -131,9 +131,9 @@ Même principe, appliqué au tableau `TblInterv` — mais le formulaire est plus
 riche, et deux points méritaient un traitement particulier.
 
 **Quatre fiches empilées.** L'intitulé, repris des cellules nommées
-`TitreInterventions` et `AnneeEnCours` ; les statistiques, avec le graphique
-`CAGraphique` exporté en image et six tuiles de chiffres ; les quinze champs de
-saisie ; le tableau des interventions.
+`TitreInterventions` et `AnneeEnCours` ; les statistiques, avec un graphique
+mensuel dessiné en contrôles et six tuiles de chiffres, tous calculés depuis
+`TblInterv` ; les quinze champs de saisie ; le tableau des interventions.
 
 **`CA` est une colonne calculée.** Sa formule va chercher le taux du client dans
 `TblClients`. Le formulaire ne l'écrit jamais — l'écriture se fait cellule par
@@ -157,9 +157,9 @@ Deux écarts avec la demande, l'un imposé, l'autre corrigé :
 - le tableau affiche **dix** des onze colonnes demandées — une `ListBox`
   MSForms n'en accepte pas davantage. `Titre` a été laissée de côté, elle reste
   visible dans la fiche ;
-- « CA mois actuel non facturé » désignait la cellule `CATotalMmoisActuel`,
-  déjà employée par « CA mois actuel ». C'est **`CATotalMoisActuelNonFacture`**
-  qui est lue, la cellule effectivement définie dans le classeur.
+- les six tuiles et le graphique mensuel ne lisent plus de feuille de totaux :
+  ils se **calculent depuis `TblInterv`**, comme le formulaire des statistiques.
+  Une feuille de formules en moins, et deux écrans qui ne peuvent plus diverger.
 
 Les boutons **Facturer** et **Info** ouvrent `UF_Facture` et `UF_Statistiques`.
 

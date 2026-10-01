@@ -257,6 +257,65 @@ for f in FICHIERS:
                 vu_on_error = True
 
 # ---------------------------------------------------------------------------
+# 7. LES SIX INDICATEURS DE LA FICHE 2 SE CALCULENT TOUS
+#
+# Ils venaient d'une feuille de totaux tenue par des formules Excel, supprimee
+# depuis. Une cle declaree au schema mais oubliee par le calcul afficherait un
+# tiret a la place d'un montant, sans la moindre erreur.
+# ---------------------------------------------------------------------------
+schema = rd("modInterv_Schema.bas")
+donnees = rd("modInterv_Donnees.bas")
+form = rd("modInterv_Formulaire.bas")
+
+cles = re.findall(r'Public Const (ITU_\w+) As String', schema)
+if not cles:
+    pb.append("aucune cle ITU_* au schema : les tuiles ne savent plus quoi calculer")
+mt = re.search(r'Function Interv_TotauxTuiles\(.*?\nEnd Function', donnees, re.S)
+if not mt:
+    pb.append("Interv_TotauxTuiles a disparu")
+else:
+    for cle in cles:
+        if cle not in mt.group(0):
+            pb.append("%s est declaree au schema mais Interv_TotauxTuiles ne la "
+                      "calcule pas : la tuile afficherait un tiret" % cle)
+mf = re.search(r'Function TuilesStatistiques\(.*?\nEnd Function', form, re.S)
+if mf:
+    for cle in cles:
+        if cle not in mf.group(0):
+            pb.append("%s se calcule mais aucune tuile ne l'affiche" % cle)
+
+# ---------------------------------------------------------------------------
+# 8. PLUS RIEN NE DOIT VISER LA FEUILLE DE TOTAUX SUPPRIMEE
+# ---------------------------------------------------------------------------
+for f in FICHIERS:
+    texte = rd(f)
+    for no, l in enumerate(texte.replace("\r\n", "\n").split("\n"), 1):
+        for mot in ("Tableau7", "NOM_TABLE_GRAPH", "NOM_FEUILLE_STATS"):
+            if mot in l:
+                pb.append("%s:%d vise encore %s : la feuille de totaux a ete "
+                          "supprimee, tout se calcule depuis TblInterv"
+                          % (f, no, mot))
+
+# ---------------------------------------------------------------------------
+# 9. ENCODAGE ET FINS DE LIGNE
+#
+# L'editeur VBA attend du Windows-1252 et des fins de ligne CRLF. Un fichier
+# converti en UTF-8 deforme tous les accents a l'import ; des fins de ligne
+# melangees font coller deux instructions.
+# ---------------------------------------------------------------------------
+for f in FICHIERS:
+    brut = open(os.path.join(SRC, f), 'rb').read()
+    try:
+        brut.decode('cp1252')
+    except UnicodeDecodeError as e:
+        pb.append("%s n'est pas lisible en Windows-1252 (%s)" % (f, e))
+        continue
+    if b"\r\n" in brut and brut.replace(b"\r\n", b"").count(b"\n"):
+        pb.append("%s melange les fins de ligne CRLF et LF" % f)
+    elif b"\n" in brut and b"\r\n" not in brut:
+        pb.append("%s est en fins de ligne LF : l'editeur VBA attend CRLF" % f)
+
+# ---------------------------------------------------------------------------
 print("%d modules, %d procedures publiques"
       % (len(FICHIERS), len(PUB_OU)))
 if pb:

@@ -175,10 +175,13 @@ End Sub
 '------------------------------------------------------------------------------
 Public Sub Interv_MajStatistiques(f As Object)
     Dim chemin As String, img As Object, lb As Object
-    Dim tuiles As Variant, i As Long, fond As Object
+    Dim tuiles As Variant, i As Long, fond As Object, totaux As Object
 
     tuiles = TuilesStatistiques()
     chemin = Interv_CheminImageTuile()
+
+    ' les six montants en un seul parcours, avant la boucle d'affichage
+    Set totaux = Interv_TotauxTuiles()
 
     ' --- tuiles : image de fond, puis montant ---------------------------------
     If Len(chemin) > 0 Then
@@ -197,7 +200,8 @@ Public Sub Interv_MajStatistiques(f As Object)
             End If
         End If
         Set lb = ICtl(f, "lblStatVal_" & CStr(i + 1))
-        If Not lb Is Nothing Then lb.Caption = Interv_MontantNomme(CStr(tuiles(i)(1)))
+        If Not lb Is Nothing Then _
+            lb.Caption = Interv_MontantTuile(totaux, CStr(tuiles(i)(1)))
     Next i
 
     ' --- graphique ------------------------------------------------------------
@@ -207,23 +211,20 @@ Public Sub Interv_MajStatistiques(f As Object)
 End Sub
 
 '------------------------------------------------------------------------------
-' Les six indicateurs affichés : libellé, puis nom de la cellule Excel.
+' Les six indicateurs affichés : libellé, puis CLÉ de calcul.
 '
-' Attention au nom de la sixième : la demande mentionnait CATotalMmoisActuel,
-' déjà employé par « CA mois actuel ». La cellule réellement définie dans le
-' classeur pour le mois actuel non facturé est CATotalMoisActuelNonFacture,
-' c'est donc celle-là qui est lue.
+' Des clés, et non des noms de cellules : les montants se calculent depuis
+' TblInterv, par Interv_TotauxTuiles. Les libellés restent courts, les tuiles
+' étant étroites.
 '------------------------------------------------------------------------------
 Public Function TuilesStatistiques() As Variant
-    ' Libellés courts : les tuiles sont étroites, et la grille se lit d'elle-même
-    ' — la première ligne donne les totaux, la seconde les mois.
     TuilesStatistiques = Array( _
-        Array("CA total", "CATotal"), _
-        Array("Facturé", "CATotalFacture"), _
-        Array("Non facturé", "CATotalNonFacture"), _
-        Array("Mois précédent", "CATotalMmoisPrecedent"), _
-        Array("Mois actuel", "CATotalMmoisActuel"), _
-        Array("Mois non facturé", "CATotalMoisActuelNonFacture"))
+        Array("CA total", ITU_CA), _
+        Array("Facturé", ITU_FACTURE), _
+        Array("Non facturé", ITU_NON_FACTURE), _
+        Array("Mois précédent", ITU_MOIS_PREC), _
+        Array("Mois actuel", ITU_MOIS), _
+        Array("Mois non facturé", ITU_MOIS_NON_FACTURE))
 End Function
 
 '==============================================================================

@@ -225,17 +225,11 @@ Public Sub VerifierClasseurInterventions()
     msg = msg & LigneTableI(NOM_TABLE_TEXTES, "textes de facture")
 
     ' --- cellules nommées -----------------------------------------------------
+    ' Les six indicateurs ne sont plus des cellules nommées : ils se calculent
+    ' depuis TblInterv, il n'y a donc plus rien à vérifier pour eux.
     msg = msg & vbCrLf & LigneNom(CEL_TITRE) & LigneNom(CEL_ANNEE)
-    tuiles = TuilesStatistiques()
-    For i = LBound(tuiles) To UBound(tuiles)
-        msg = msg & LigneNom(CStr(tuiles(i)(1)))
-    Next i
 
-    ' --- graphique et image ---------------------------------------------------
-    ' Le graphique est dessiné par le formulaire : ce ne sont plus les formes de
-    ' la feuille qui comptent, mais la table qui porte ses valeurs.
-    msg = msg & LigneTableI(NOM_TABLE_GRAPH, "valeurs du graphique du chiffre d'affaires")
-
+    ' --- image ----------------------------------------------------------------
     If Len(Interv_CheminImageTuile()) > 0 Then
         msg = msg & "[OK] Image " & IMAGE_TUILE & " : trouvée" & vbCrLf
     Else
