@@ -48,11 +48,20 @@ Fenêtre de **960 × 748 points** de surface utile (≈ 1280 × 997 pixels à 96
 
 | Élément | Source |
 |---|---|
-| Titre, à gauche | cellule nommée `TitreInterventions` (feuille Parametres) |
-| Année, à droite | cellule nommée `AnneeEnCours`, affichée au format `aaaa` |
+| Titre, à gauche | cellule nommée `TitreInterventions`, dans le fichier d'**application** |
+| Année, à droite | le **nom du fichier de données ouvert**, au format `aaaa` |
 | Ligne d'état | message du programme : nouvelle fiche, fiche sélectionnée, résultat de la dernière opération |
 
-La cellule `AnneeEnCours` contient une **date** (1ᵉʳ janvier de l'année) et non un nombre. Les deux cas sont traités : une valeur à quatre chiffres est prise pour une année, au-delà c'est une date dont seule l'année est affichée.
+L'année ne vient plus d'une cellule nommée. Les données sont dans
+`FlecheNettoyageSA-2026.xlsx`, un fichier par année : l'année **est** le fichier
+ouvert, et une cellule qui dirait autre chose ne pourrait que mentir — c'est
+exactement ce qui arrivait quand on recopiait le classeur de l'an passé en
+oubliant de la changer. Voir [`DONNEES.md`](DONNEES.md).
+
+`TitreInterventions` reste une cellule nommée, mais du côté de l'application :
+c'est un libellé d'écran, pas une donnée, et il n'a rien à faire dans un fichier
+partagé qui change tous les ans. Absente, le bandeau affiche
+`GESTION DES INTERVENTIONS` plutôt que rien.
 
 
 ---
