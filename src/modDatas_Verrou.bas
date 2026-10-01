@@ -112,7 +112,6 @@ Public Sub Verrou_Rendre(ByVal chemin As String)
     If StrComp(Lire(v), mMarque, vbBinaryCompare) = 0 Then Supprimer v
 
     mMarque = vbNullString
-    mChemin = vbNullString
 End Sub
 
 '==============================================================================

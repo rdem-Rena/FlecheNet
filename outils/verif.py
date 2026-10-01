@@ -100,13 +100,10 @@ Until Variant Wend While With WithEvents Xor
 DECL = re.compile(r'^\s*(?:Public |Private |Friend )?(?:Dim|Static|Const)\s+(.*)$', re.I)
 UN_NOM = re.compile(r'^\s*(\w+)\s*(?:\([^)]*\))?\s*(?:As\b|=|$)', re.I)
 
-def noms_declares(ligne):
-    """une declaration porte souvent PLUSIEURS noms : Dim a As X, b As Y"""
-    md = DECL.match(ligne)
-    if not md:
-        return set()
+def noms_de_la_liste(reste):
+    """les noms d'une liste « a As X, b(1 To 3) As Y, c »"""
     out, prof, cur = set(), 0, ""
-    for ch in md.group(1) + ",":
+    for ch in reste + ",":
         if ch == "(":
             prof += 1
         elif ch == ")":
@@ -119,6 +116,35 @@ def noms_declares(ligne):
         else:
             cur += ch
     return out
+
+def noms_declares(ligne):
+    """une declaration porte souvent PLUSIEURS noms : Dim a As X, b As Y"""
+    md = DECL.match(ligne)
+    return noms_de_la_liste(md.group(1)) if md else set()
+
+# Une variable de MODULE n'a pas de Dim : « Private mMarque As String ». Il faut
+# donc ecarter a la main tout ce qu'un Public ou un Private peut annoncer
+# d'autre -- une constante, un type, une procedure.
+DECL_MOD = re.compile(r'^\s*(?:Public|Private|Global|Dim|Static)\s+'
+                      r'(?:WithEvents\s+)?'
+                      r'(?!Const\b|Type\b|Enum\b|Sub\b|Function\b'
+                      r'|Property\b|Declare\b|Event\b)(.*)$', re.I)
+
+def noms_module(ligne):
+    md = DECL_MOD.match(ligne)
+    return noms_de_la_liste(md.group(1)) if md else set()
+
+def sans_chaine(l):
+    """retire le contenu des chaines : un nom cite dans un message n'est pas
+    un nom employe"""
+    out, dans = [], False
+    for c in l:
+        if c == '"':
+            dans = not dans
+            continue
+        if not dans:
+            out.append(c)
+    return "".join(out)
 
 def noms_parametres(signature):
     return set(re.findall(r'[(,]\s*(?:ByVal |ByRef |Optional |ParamArray )*(\w+)\s+As\b',
@@ -435,6 +461,56 @@ else:
                           "l'appelle pas : apres un changement d'annee ce cache "
                           "rendrait les donnees de l'annee precedente"
                           % (f, no, ms.group(1)))
+
+# ---------------------------------------------------------------------------
+# 14. UNE VARIABLE DE MODULE EST DECLAREE DANS SON MODULE
+#
+# Option Explicit repond « Variable non definie », mais SEULEMENT a la
+# compilation, module par module, et seulement une fois qu'on y arrive. Deplacer
+# un etat d'un module a l'autre en laissant derriere soi la ligne qui l'affecte
+# ne se voit donc pas en relisant le fichier -- c'est exactement ce qui est
+# arrive a mChemin, parti dans modDatas_Classeur et reste dans Verrou_Rendre.
+#
+# Le classeur nomme ses variables de module mQuelqueChose : c'est a cette
+# convention que le controle s'accroche. Un nom employe doit etre declare, au
+# module ou dans la procedure qui l'emploie.
+# ---------------------------------------------------------------------------
+MVAR = re.compile(r'\bm[A-Z]\w*\b')
+for f in FICHIERS:
+    lignes = lignes_logiques(rd(f))
+
+    # les declarations de module tiennent avant la premiere procedure
+    module = set()
+    for no, l in lignes:
+        c = sans_commentaire(l)
+        if SIGNAT.match(c):
+            break
+        module |= noms_module(c)
+
+    # les locales de chaque procedure, AVANT de verifier : VBA accepte un Dim
+    # place plus bas que le premier emploi
+    ou, locales, proc = [], {}, None
+    for no, l in lignes:
+        c = sans_commentaire(l)
+        ms = SIGNAT.match(c)
+        if ms:
+            proc = no
+            locales[proc] = noms_parametres(c)
+        elif FIN_PROC.match(c):
+            ou.append((no, c, proc))
+            proc = None
+            continue
+        elif proc:
+            locales[proc] |= noms_declares(c)
+        ou.append((no, c, proc))
+
+    for no, c, proc in ou:
+        connus = module | locales.get(proc, set())
+        for n in MVAR.findall(sans_chaine(c)):
+            if n not in connus:
+                pb.append("%s:%d %s n'est declaree ni au module ni dans la "
+                          "procedure : « Variable non definie » a la compilation"
+                          % (f, no, n))
 
 # ---------------------------------------------------------------------------
 print("%d modules, %d procedures publiques"
