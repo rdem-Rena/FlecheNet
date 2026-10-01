@@ -80,13 +80,23 @@ End Sub
 ' fichier, et c'est ainsi qu'on veut le retrouver à la prochaine ouverture.
 '------------------------------------------------------------------------------
 Public Sub Accueil_Arreter()
-    ' LES DONNÉES D'ABORD : Datas_Fermer les enregistre et REND LE VERROU. Les
-    ' laisser ouvertes derrière un classeur fermé tiendrait tous les autres
-    ' postes à l'écart jusqu'à la péremption des quatre heures.
-    Datas_Fermer
-
+    ' EXCEL RETROUVE SON RUBAN D'ABORD, ET QUOI QU'IL ARRIVE ENSUITE. Le ruban
+    ' caché, la barre de formule et la barre d'état sont des réglages
+    ' D'EXCEL : s'ils ne sont pas rendus, l'utilisateur se retrouve devant un
+    ' Excel où il ne reste que les noms des onglets, pour tous ses classeurs et
+    ' aux séances suivantes. Une erreur en fermant les données ne doit pas
+    ' pouvoir coûter cela — c'est déjà ce qui est arrivé une fois.
     PoserInterface True
     mVerrouille = False
+
+    ' PUIS LES DONNÉES : Datas_Fermer les enregistre et REND LE VERROU. Les
+    ' laisser ouvertes derrière un classeur fermé tiendrait tous les autres
+    ' postes à l'écart jusqu'à la péremption des quatre heures — et Excel
+    ' finirait par demander s'il faut les enregistrer, question à laquelle un
+    ' « oui » grave la fenêtre masquée dans le fichier.
+    On Error Resume Next
+    Datas_Fermer
+    On Error GoTo 0
 End Sub
 
 '==============================================================================

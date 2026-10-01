@@ -133,12 +133,60 @@ ses onglets. **Copier ensuite.**
 > normalement dans Excel. Ce fichier doit rester consultable **sans**
 > l'application — c'est tout l'intérêt de n'y avoir mis aucune macro.
 
-### Débloquer un fichier de données déjà fabriqué en kiosque
+## Le fichier de données s'ouvre et on ne voit RIEN
 
-Le plus simple : **laisser l'application l'ouvrir une fois** en écriture, puis
-la fermer par *Quitter*. Elle le normalise et l'enregistre.
+Fond gris ou noir, aucun onglet, aucune donnée, et presque tout le ruban grisé.
+**La cause la plus fréquente, et de loin : le fichier a été enregistré fenêtre
+masquée.**
 
-À la main, si vous préférez :
+L'application ouvre le classeur de données **fenêtre masquée**, pour qu'il ne
+tombe pas par-dessus le kiosque avec ses onglets et son quadrillage. Or l'état
+de la fenêtre est écrit **dans le fichier**, en clair :
+
+```xml
+<workbookView visibility="hidden" ... showSheetTabs="0" ...>
+```
+
+Un classeur enregistré ainsi s'ouvre ensuite **sans aucune fenêtre**. Il n'y a
+donc rien à montrer, et faute de classeur actif Excel grise la quasi-totalité du
+ruban. Le fichier paraît mort, et rien dans Excel ne dit pourquoi.
+
+**La réparation tient en un geste :**
+
+> **Affichage ▸ Fenêtre ▸ Afficher** *(Unhide)* → choisir le classeur → **OK**,
+> puis **enregistrer**.
+
+Ce n'est pas *Affichage ▸ Afficher les feuilles* : c'est la **fenêtre** du
+classeur qui est masquée, pas ses feuilles.
+
+L'application le répare aussi toute seule : `MontrerFenetre` rend sa fenêtre au
+classeur **avant chaque enregistrement**, et `NormaliserDonnees` la rend à un
+fichier qui arrive déjà masqué. Laissez l'application l'ouvrir une fois en
+écriture et la fermer par *Quitter*.
+
+### Ce qui pouvait s'enregistrer masqué
+
+Deux chemins, tous deux bouchés :
+
+- **à la fermeture**, `Datas_Fermer` enregistrait sans rendre la fenêtre ;
+- **par Excel lui-même**, quand le classeur de données restait ouvert sans que
+  l'application sache encore qu'il était là. `mClasseur` est une variable de
+  module : réimporter un module, taper *Fin* dans l'éditeur, ou une erreur non
+  interceptée, et **VBA remet à zéro tout l'état du projet**. Le classeur restait
+  alors ouvert, fenêtre masquée, orphelin. Excel finissait par demander s'il
+  fallait l'enregistrer — et un « oui » gravait la fenêtre masquée dans le
+  fichier.
+
+> **Deux questions « enregistrer ? » en quittant le kiosque, c'est le signe de
+> cet orphelin.** Normalement il n'y en a aucune : l'application enregistre et
+> ferme les données elle-même. `ClasseurOrphelin` retrouve maintenant le
+> classeur par son nom quand la variable l'a perdu.
+
+### Si les feuilles aussi sont masquées
+
+Cela arrive quand le fichier de données a été **copié depuis l'application
+verrouillée** — voir l'encadré plus haut. Les feuilles sont alors
+*très masquées*, et **le menu Afficher ne les propose pas** :
 
 1. **Révision ▸ Protéger le classeur** → décocher. Le mot de passe est celui de
    la cellule `Mot_de_passe`.
@@ -155,11 +203,18 @@ la fermer par *Quitter*. Elle le normalise et l'enregistre.
 4. **Affichage** → cocher **Quadrillage** et **Titres**.
 5. Enregistrer.
 
-Et si c'est **Excel lui-même** qui reste nu — ruban replié, pas de barre de
-formule, et ce pour tous les classeurs : ces trois réglages-là appartiennent à
-l'application, pas au fichier. Un kiosque ouvert dans la même instance les
-impose à tout le monde. **Ctrl + F1** ramène le ruban, et
-**Affichage ▸ Barre de formule** la barre de formule.
+### Si c'est Excel lui-même qui reste nu
+
+Ruban réduit aux seuls noms d'onglets, pas de barre de formule, **et pour tous
+les classeurs** : ces trois réglages-là appartiennent à **Excel**, pas au
+fichier, et Excel les garde d'une séance à l'autre.
+
+- **Ctrl + F1** ramène le ruban ;
+- **Affichage ▸ Barre de formule** la barre de formule.
+
+`Accueil_Arreter` les rend désormais **en premier**, avant même de fermer les
+données : une erreur en fermant les données ne doit pas pouvoir coûter le ruban
+de tous vos classeurs.
 
 ---
 
@@ -249,5 +304,7 @@ le sélecteur propose.
 | « Ces données ne sont pas de la même version » | l'application du poste est plus ancienne que le fichier : la remplacer |
 | Les données s'ouvrent toujours en consultation | quelqu'un d'autre les tient — `DiagnostiquerDatas` dit qui |
 | Les formulaires s'ouvrent vides | le fichier de données est ouvert mais ses tableaux manquent : `VerifierClasseur` |
-| Le fichier de données s'ouvre sans onglets, ruban grisé | il a été copié en état de kiosque — voir *Débloquer un fichier de données déjà fabriqué en kiosque* |
+| Le fichier de données s'ouvre sans onglets, ruban grisé | sa **fenêtre** est masquée : *Affichage ▸ Fenêtre ▸ Afficher* |
+| Deux questions « enregistrer ? » en quittant le kiosque | un classeur de données orphelin — voir la section ci-dessus |
+| Excel reste nu pour tous les classeurs | **Ctrl + F1**, et *Affichage ▸ Barre de formule* |
 | Les images des tuiles manquent | `DiagnostiquerChemins` — c'est le dossier de l'**application**, pas celui des données |

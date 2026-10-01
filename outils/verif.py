@@ -563,6 +563,63 @@ else:
             pb.append("NormaliserDonnees ne fait rien de %s : %s" % (quoi, mal))
 
 # ---------------------------------------------------------------------------
+# 16. UN CLASSEUR NE S'ENREGISTRE JAMAIS FENETRE MASQUEE
+#
+# Window.Visible = False s'ecrit DANS le fichier, en clair :
+#
+#     <workbookView visibility="hidden" ... showSheetTabs="0" ...>
+#
+# Un classeur enregistre ainsi s'ouvre ensuite SANS AUCUNE FENETRE. Excel montre
+# son fond gris, aucun onglet, et grise la quasi-totalite du ruban faute de
+# classeur actif. Le fichier parait mort, et rien dans Excel ne dit pourquoi.
+#
+# On masque pourtant la fenetre du classeur de donnees, le temps de la seance,
+# pour qu'elle ne tombe pas par-dessus le kiosque. Tout enregistrement doit donc
+# etre precede de MontrerFenetre -- et ailleurs que dans modDatas_Classeur, un
+# enregistrement du classeur de donnees n'a rien a faire.
+# ---------------------------------------------------------------------------
+COTE_APP = ("modAccueil_Verrou.bas", "modAccueil_Generateur.bas")
+SAUVE = re.compile(r'\.Save\b')
+datas_v = rd("modDatas_Classeur.bas")
+
+for quoi in ("MasquerFenetre", "MontrerFenetre"):
+    if not re.search(r'Sub %s\(' % quoi, datas_v):
+        pb.append("%s a disparu de modDatas_Classeur : la fenetre du classeur de "
+                  "donnees n'est plus pilotee, et il s'enregistrera masque" % quoi)
+
+mnorm = re.search(r'Sub NormaliserDonnees\(.*?\nEnd Sub', datas_v, re.S)
+if mnorm and "MontrerFenetre" not in code_seul(mnorm.group(0)):
+    pb.append("NormaliserDonnees ne rend pas sa fenetre au classeur : un fichier "
+              "deja enregistre masque resterait invisible a l'ouverture")
+
+for f in FICHIERS:
+    if f in COTE_APP:
+        continue                      # ThisWorkbook.Save : l'application, jamais masquee
+    proc, vu, debut = None, False, 0
+    for no, l in lignes_logiques(rd(f)):
+        c = sans_commentaire(l)
+        ms = SIGNAT.match(c)
+        if ms:
+            proc, vu, debut = ms.group(1), False, no
+            continue
+        if FIN_PROC.match(c):
+            proc = None
+            continue
+        if not proc:
+            continue
+        if "MontrerFenetre" in c:
+            vu = True
+        if SAUVE.search(c):
+            if f != "modDatas_Classeur.bas":
+                pb.append("%s:%d %s enregistre un classeur : seul "
+                          "modDatas_Classeur sait que la fenetre des donnees est "
+                          "masquee, et qu'il faut la rendre avant" % (f, no, proc))
+            elif not vu:
+                pb.append("%s:%d %s enregistre sans avoir appele MontrerFenetre : "
+                          "le fichier garderait sa fenetre masquee et s'ouvrirait "
+                          "vide, ruban grise" % (f, no, proc))
+
+# ---------------------------------------------------------------------------
 print("%d modules, %d procedures publiques"
       % (len(FICHIERS), len(PUB_OU)))
 if pb:

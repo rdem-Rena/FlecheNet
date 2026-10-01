@@ -216,8 +216,6 @@ Public Function Datas_Ouvrir(ByVal annee As Long, ByVal forcer As Boolean) As Bo
     mAnnee = annee
     mLecture = lecture Or mClasseur.ReadOnly      ' Excel a le dernier mot
 
-    If Not mLecture Then NormaliserDonnees mClasseur
-
     If Not VersionCompatible() Then
         Datas_Fermer
         GoTo Fin
@@ -229,32 +227,102 @@ Fin:
     mEnOuverture = False
 End Function
 
+'==============================================================================
+' FERMER LES DONNÉES ET RENDRE LE VERROU
 '------------------------------------------------------------------------------
-' Ferme les données et rend le verrou.
-'
 ' ON ENREGISTRE AVANT DE FERMER. Les formulaires écrivent directement dans les
 ' cellules : tout ce qui est dans le classeur à cet instant y a été mis
 ' volontairement, et poser la question « enregistrer ? » reviendrait à offrir
 ' de perdre la journée par mégarde.
-'------------------------------------------------------------------------------
+'
+' LA FENÊTRE REDEVIENT VISIBLE AVANT L'ENREGISTREMENT, et ce n'est pas un détail
+' d'affichage : un classeur enregistré FENÊTRE MASQUÉE s'ouvre ensuite SANS
+' AUCUNE FENÊTRE. Excel affiche son fond gris, aucun onglet, et grise la
+' quasi-totalité du ruban faute de classeur actif. Le fichier paraît mort.
+'
+' SI mClasseur A ÉTÉ PERDU, ON RETROUVE LE CLASSEUR PAR SON NOM. C'est le cas qui
+' a abouti au fichier illisible : voir ClasseurOrphelin.
+'==============================================================================
 Public Sub Datas_Fermer()
-    Dim chemin As String
+    Dim wb As Workbook, chemin As String, maj As Boolean
 
-    If mClasseur Is Nothing Then
+    Set wb = mClasseur
+    If wb Is Nothing Then Set wb = ClasseurOrphelin()
+    If wb Is Nothing Then
         Oublier
         Exit Sub
     End If
 
     chemin = mChemin
+    If Len(chemin) = 0 Then chemin = wb.FullName
 
+    maj = Application.ScreenUpdating
     On Error Resume Next
-    If Not mLecture Then mClasseur.Save
-    mClasseur.Close SaveChanges:=False
+    Application.ScreenUpdating = False
+    If Not mLecture Then
+        MontrerFenetre wb
+        wb.Save
+    End If
+    wb.Close SaveChanges:=False
+    Application.ScreenUpdating = maj
     On Error GoTo 0
 
     Set mClasseur = Nothing
     If Not mLecture Then Verrou_Rendre chemin
     Oublier
+End Sub
+
+'------------------------------------------------------------------------------
+' LE CLASSEUR DE DONNÉES RETROUVÉ SANS LA VARIABLE QUI LE TENAIT.
+'
+' mClasseur est une variable de module. Réimporter un module, taper Fin dans
+' l'éditeur, ou une erreur non interceptée, et VBA REMET À ZÉRO TOUT L'ÉTAT DU
+' PROJET. Le classeur reste alors ouvert, fenêtre masquée, et plus personne ne
+' sait qu'il est là : Datas_Fermer croyait n'avoir rien à fermer.
+'
+' Excel finit par demander s'il faut l'enregistrer, et un « oui » écrit alors la
+' fenêtre masquée dans le fichier. C'est ainsi que le premier fichier de données
+' est devenu illisible, et c'est pourquoi on ne laisse plus d'orphelin derrière
+' soi.
+'
+' AnneeDuNom plutôt que le préfixe seul : c'est le même test que pour lister les
+' années, et il ne peut pas confondre l'application avec ses données.
+'------------------------------------------------------------------------------
+Private Function ClasseurOrphelin() As Workbook
+    Dim wb As Workbook
+
+    For Each wb In Workbooks
+        If Not wb Is ThisWorkbook Then
+            If AnneeDuNom(wb.Name) > 0 Then
+                Set ClasseurOrphelin = wb
+                Exit Function
+            End If
+        End If
+    Next wb
+End Function
+
+'------------------------------------------------------------------------------
+' La fenêtre du classeur de données, cachée pendant qu'on travaille, rendue
+' avant tout enregistrement.
+'
+' MASQUÉE PENDANT LE TRAVAIL : visible, elle apparaîtrait comme une seconde
+' fenêtre Excel, avec ses onglets et son quadrillage, et ferait tomber le
+' kiosque, qui ne règle que la sienne.
+'
+' RENDUE AVANT D'ENREGISTRER : l'état de la fenêtre est écrit DANS le fichier —
+' <workbookView visibility="hidden"> — et ce qui est masqué au moment de
+' l'enregistrement le reste pour tous ceux qui ouvriront le fichier ensuite.
+'------------------------------------------------------------------------------
+Private Sub MasquerFenetre(wb As Workbook)
+    On Error Resume Next
+    wb.Windows(1).Visible = False
+    On Error GoTo 0
+End Sub
+
+Private Sub MontrerFenetre(wb As Workbook)
+    On Error Resume Next
+    wb.Windows(1).Visible = True
+    On Error GoTo 0
 End Sub
 
 Private Sub Oublier()
@@ -288,8 +356,14 @@ Public Sub Datas_PerimerCaches()
 End Sub
 
 '------------------------------------------------------------------------------
-' Ouvre le fichier, FENÊTRE MASQUÉE : visible, elle apparaîtrait comme une
-' seconde fenêtre Excel et ferait tomber le kiosque, qui ne règle que la sienne.
+' Ouvre le fichier, le remet d'aplomb, puis masque sa fenêtre.
+'
+' DANS CET ORDRE. NormaliserDonnees rend sa fenêtre à un fichier qu'on avait
+' enregistré masqué ; la masquer ensuite est notre affaire, le temps de la
+' séance, et MontrerFenetre la rendra avant d'enregistrer.
+'
+' TOUT SOUS ScreenUpdating À FAUX : entre l'ouverture et le masquage, la fenêtre
+' du classeur de données existe, et elle apparaîtrait par-dessus le kiosque.
 '
 ' AddToMru:=False : le classeur de données n'a rien à faire dans la liste des
 ' documents récents, où un double clic l'ouvrirait hors de l'application, sans
@@ -305,9 +379,9 @@ Private Function OuvrirFichier(ByVal chemin As String, ByVal lecture As Boolean)
     Set wb = Workbooks.Open(Filename:=chemin, ReadOnly:=lecture, UpdateLinks:=0, _
                             Notify:=False, AddToMru:=False, _
                             IgnoreReadOnlyRecommended:=True)
-    On Error Resume Next
-    wb.Windows(1).Visible = False
-    On Error GoTo Erreur
+
+    If Not (lecture Or wb.ReadOnly) Then NormaliserDonnees wb
+    MasquerFenetre wb
 
     Set mClasseur = wb
     OuvrirFichier = True
@@ -322,22 +396,29 @@ Erreur:
 End Function
 
 '==============================================================================
-' UN FICHIER DE DONNÉES NE SE PRÉSENTE JAMAIS EN KIOSQUE
+' UN FICHIER DE DONNÉES DOIT S'OUVRIR SEUL, DANS EXCEL, SANS L'APPLICATION
 '------------------------------------------------------------------------------
-' TROIS DES RÉGLAGES DU KIOSQUE SONT ENREGISTRÉS DANS LE CLASSEUR, et non dans
-' Excel : les feuilles « très masquées », les propriétés de la FENÊTRE — onglets,
-' quadrillage, en-têtes, ascenseurs — et la protection de structure.
+' C'est tout l'intérêt de n'y avoir mis aucune macro, et ce n'est donc pas de la
+' cosmétique. Trois choses peuvent l'en empêcher, et TOUTES LES TROIS SONT
+' ENREGISTRÉES DANS LE CLASSEUR, pas dans Excel.
 '
-' Le premier fichier de données a été fabriqué en copiant l'application pendant
-' qu'elle était verrouillée : il a donc emporté les trois. Ouvert à la main dans
-' Excel, il ne montrait AUCUN ONGLET, aucune donnée, et la moitié du ruban était
-' grisée. Et « très masquée » ne se défait pas par le menu Afficher : seul le
-' code, ou l'éditeur VBA, y revient — dans un fichier sans macro.
+' 1. LA FENÊTRE MASQUÉE. C'est celle qui a réellement cassé le premier fichier,
+'    et c'est NOUS qui la masquons, pour qu'elle ne tombe pas par-dessus le
+'    kiosque. L'état de la fenêtre s'écrit dans le fichier, en clair :
 '
-' On remet donc le fichier d'aplomb à chaque ouverture en écriture, et
-' Datas_Fermer l'enregistre. Ce n'est pas de la cosmétique : CE FICHIER DOIT
-' RESTER CONSULTABLE SANS L'APPLICATION, c'est tout l'intérêt de n'y avoir mis
-' aucune macro.
+'        <workbookView visibility="hidden" ... showSheetTabs="0" ...>
+'
+'    Un classeur enregistré ainsi s'ouvre ensuite SANS AUCUNE FENÊTRE : fond
+'    gris, aucun onglet, et presque tout le ruban grisé faute de classeur actif.
+'    Rien dans Excel ne dit pourquoi. On la rend donc avant tout enregistrement
+'    — voir MontrerFenetre — et on la rend ici à un fichier qui arrive déjà
+'    masqué.
+'
+' 2. LES FEUILLES « TRÈS MASQUÉES » et 3. LA PROTECTION DE STRUCTURE, qui
+'    viennent du kiosque : copier l'application pendant qu'elle était
+'    verrouillée les emporte dans la copie. Et « très masquée » ne se défait
+'    pas par le menu Afficher : seul le code, ou l'éditeur VBA, y revient — dans
+'    un fichier sans macro.
 '
 ' EN ÉCRITURE SEULEMENT. Un classeur ouvert en lecture seule ne garderait rien de
 ' ces corrections, et les y appliquer ne ferait que le marquer modifié.
@@ -359,6 +440,10 @@ Private Sub NormaliserDonnees(wb As Workbook)
     For Each ws In wb.Worksheets
         If ws.Visible <> xlSheetVisible Then ws.Visible = xlSheetVisible
     Next ws
+
+    ' LA FENÊTRE D'ABORD. OuvrirFichier la remasque juste après, pour la durée de
+    ' la séance seulement.
+    MontrerFenetre wb
 
     Set fen = wb.Windows(1)
     fen.DisplayWorkbookTabs = True
