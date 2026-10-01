@@ -620,6 +620,60 @@ for f in FICHIERS:
                           "vide, ruban grise" % (f, no, proc))
 
 # ---------------------------------------------------------------------------
+# 17. LE VERROU SE REND DANS TOUS LES CAS
+#
+# Un verrou qui ne se rend pas bloque les donnees QUATRE HEURES, et le poste
+# bloque est d'abord le notre : au demarrage suivant, l'application demande a
+# l'utilisateur s'il veut « prendre la main » sur lui-meme.
+#
+# Deux defauts l'ont provoque, et chacun a sa ligne ici :
+#
+#   Datas_Fermer sortait AVANT de rendre le verrou quand elle ne trouvait pas de
+#   classeur a fermer -- or c'est exactement le cas ou le verrou reste ;
+#
+#   Verrou_Rendre n'effacait le fichier que si mMarque correspondait, et mMarque
+#   est une variable de module : l'etat du projet remis a zero, plus personne ne
+#   pouvait prouver que le verrou etait le notre. D'ou EstDeCePoste, qui le
+#   reconnait a l'utilisateur et au poste.
+# ---------------------------------------------------------------------------
+verrou_v = rd("modDatas_Verrou.bas")
+mf = re.search(r'Sub Datas_Fermer\(.*?\nEnd Sub', rd("modDatas_Classeur.bas"), re.S)
+if not mf:
+    pb.append("Datas_Fermer a disparu")
+else:
+    lf = code_seul(mf.group(0)).split("\n")
+    rendu = next((i for i, l in enumerate(lf) if "Verrou_Rendre" in l), -1)
+    if rendu < 0:
+        pb.append("Datas_Fermer ne rend plus le verrou : il bloquerait les "
+                  "donnees quatre heures, en commencant par ce poste-ci")
+    else:
+        for i, l in enumerate(lf[:rendu]):
+            if re.match(r'\s*Exit\s+Sub\b', l, re.I):
+                pb.append("modDatas_Classeur.bas Datas_Fermer sort (Exit Sub) AVANT "
+                          "de rendre le verrou : sur ce chemin-la le verrou reste, "
+                          "et c'est justement celui ou il n'y a plus de classeur a "
+                          "fermer")
+                break
+
+if not re.search(r'Function EstDeCePoste\(', verrou_v):
+    pb.append("EstDeCePoste a disparu : un verrou laisse par une seance precedente "
+              "de ce poste ne serait plus reconnu, et bloquerait quatre heures")
+else:
+    for proc in ("Verrou_Rendre", "Saisir"):
+        mb = re.search(r'(?:Sub|Function) %s\(.*?\nEnd (?:Sub|Function)' % proc,
+                       verrou_v, re.S)
+        if mb and "EstDeCePoste" not in code_seul(mb.group(0)):
+            pb.append("%s ne consulte pas EstDeCePoste : un verrou laisse par une "
+                      "seance precedente de ce poste y resterait %s"
+                      % (proc, "sur le disque" if proc == "Verrou_Rendre"
+                         else "et ferait demander de prendre la main sur soi-meme"))
+
+mr = re.search(r'Sub Verrou_Rendre\(.*?\nEnd Sub', verrou_v, re.S)
+if mr and not re.search(r'v\s*=\s*mVerrou\b', code_seul(mr.group(0))):
+    pb.append("Verrou_Rendre ne retombe pas sur mVerrou : appelee sans chemin -- ce "
+              "qui arrive quand l'appelant a perdu le sien -- elle ne rendrait rien")
+
+# ---------------------------------------------------------------------------
 print("%d modules, %d procedures publiques"
       % (len(FICHIERS), len(PUB_OU)))
 if pb:

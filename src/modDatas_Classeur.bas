@@ -244,31 +244,41 @@ End Function
 ' a abouti au fichier illisible : voir ClasseurOrphelin.
 '==============================================================================
 Public Sub Datas_Fermer()
-    Dim wb As Workbook, chemin As String, maj As Boolean
+    Dim wb As Workbook, chemin As String, lecture As Boolean, maj As Boolean
+
+    ' RELEVÉS AVANT TOUT : Oublier les remet à zéro, et le verrou se rend après.
+    chemin = mChemin
+    lecture = mLecture
 
     Set wb = mClasseur
     If wb Is Nothing Then Set wb = ClasseurOrphelin()
-    If wb Is Nothing Then
-        Oublier
-        Exit Sub
+
+    If Not wb Is Nothing Then
+        If Len(chemin) = 0 Then chemin = wb.FullName
+
+        maj = Application.ScreenUpdating
+        On Error Resume Next
+        Application.ScreenUpdating = False
+        If Not lecture Then
+            MontrerFenetre wb
+            wb.Save
+        End If
+        wb.Close SaveChanges:=False
+        Application.ScreenUpdating = maj
+        On Error GoTo 0
     End If
 
-    chemin = mChemin
-    If Len(chemin) = 0 Then chemin = wb.FullName
-
-    maj = Application.ScreenUpdating
-    On Error Resume Next
-    Application.ScreenUpdating = False
-    If Not mLecture Then
-        MontrerFenetre wb
-        wb.Save
-    End If
-    wb.Close SaveChanges:=False
-    Application.ScreenUpdating = maj
-    On Error GoTo 0
+    ' LE VERROU SE REND MÊME QUAND IL N'Y A PLUS DE CLASSEUR À FERMER, et c'est
+    ' justement le cas où il restait. Excel avait déjà fermé le classeur de son
+    ' côté, ou l'état du projet avait été remis à zéro : Datas_Fermer croyait
+    ' n'avoir rien à faire et sortait AVANT de rendre le verrou, qui dormait
+    ' alors quatre heures sur le disque — en bloquant notre propre poste.
+    '
+    ' AUCUN Exit Sub AVANT CETTE LIGNE : c'est la seule chose dont la fermeture
+    ' réponde vis-à-vis des autres postes.
+    If Not lecture Then Verrou_Rendre chemin
 
     Set mClasseur = Nothing
-    If Not mLecture Then Verrou_Rendre chemin
     Oublier
 End Sub
 

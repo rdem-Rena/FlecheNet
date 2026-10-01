@@ -62,10 +62,19 @@ Private Const PEREMPTION_HEURES As Double = 4#
 Private Const DELAI_RELECTURE As Long = 1
 
 '--- Ce qu'on a écrit ---------------------------------------------------------
-' LA MARQUE EXACTE, et non « est-ce mon nom ». Deux sessions d'Excel ouvertes
+' LA MARQUE EXACTE, et non « est-ce mon nom » : deux sessions d'Excel ouvertes
 ' par le même utilisateur sur le même poste porteraient le même nom et le même
-' poste : seule la marque entière, horodatage compris, les distingue.
+' poste, et seule la marque entière, horodatage compris, les distingue.
+'
+' ET LE CHEMIN DU VERROU QU'ELLE TIENT, pour pouvoir le rendre même si
+' l'appelant a perdu le sien.
+'
+' CES DEUX VARIABLES NE SURVIVENT PAS À TOUT. Réimporter un module, taper Fin
+' dans l'éditeur, ou une erreur non interceptée, et VBA remet à zéro tout l'état
+' du projet. Le fichier verrou reste alors sur le disque, et plus personne ici ne
+' peut prouver qu'il est le nôtre : d'où EstDeCePoste.
 Private mMarque As String
+Private mVerrou As String
 
 '==============================================================================
 ' PRENDRE LE VERROU
@@ -97,22 +106,53 @@ End Function
 '==============================================================================
 ' LE RENDRE
 '------------------------------------------------------------------------------
-' SEULEMENT S'IL EST ENCORE LE NÔTRE. Effacer le verrou d'un autre poste à la
-' fermeture serait le pire des services : il se croirait seul et ne le serait
-' plus.
+' DEUX RAISONS DE L'EFFACER, ET NON UNE SEULE.
+'
+' LA MARQUE EXACTE qu'on a écrite, d'abord. Mais mMarque est une variable de
+' module : l'état du projet remis à zéro, le fichier verrou reste sur le disque
+' et plus personne ne peut prouver qu'il est le nôtre. IL BLOQUE ALORS NOTRE
+' PROPRE POSTE PENDANT QUATRE HEURES, en nous demandant au démarrage si l'on veut
+' « prendre la main » sur nous-mêmes.
+'
+' L'IDENTITÉ ensuite : même utilisateur, même poste. Ce n'est plus notre session,
+' mais c'est notre machine, et aucun collègue ne peut être derrière.
+'
+' Ce qu'on n'efface toujours pas : le verrou d'un AUTRE poste. L'enlever serait
+' le pire des services — il se croirait seul et ne le serait plus.
 '==============================================================================
 Public Sub Verrou_Rendre(ByVal chemin As String)
-    Dim v As String
+    Dim v As String, marque As String
 
     v = CheminVerrou(chemin)
+    If Len(v) = 0 Then v = mVerrou          ' l'appelant a perdu le chemin, pas nous
     If Len(v) = 0 Then Exit Sub
 
-    ' SEULEMENT S'IL EST ENCORE EXACTEMENT LE NÔTRE. Illisible, il ne s'efface
-    ' pas non plus : on ne sait pas à qui on l'enlèverait.
-    If StrComp(Lire(v), mMarque, vbBinaryCompare) = 0 Then Supprimer v
+    marque = Lire(v)
+    If StrComp(marque, mMarque, vbBinaryCompare) = 0 Then
+        Supprimer v
+    ElseIf EstDeCePoste(marque) Then
+        Supprimer v
+    End If
 
     mMarque = vbNullString
+    mVerrou = vbNullString
 End Sub
+
+'------------------------------------------------------------------------------
+' True si la marque vient de CET utilisateur sur CE poste.
+'
+' Un verrou illisible ne compte pas : on ne sait pas de qui il est. Une marque
+' abîmée dont le poste est vide non plus — sinon deux champs vides suffiraient à
+' faire passer n'importe quel verrou pour le nôtre.
+'------------------------------------------------------------------------------
+Private Function EstDeCePoste(ByVal marque As String) As Boolean
+    If marque = MARQUE_ILLISIBLE Then Exit Function
+    If Len(Morceau(marque, 1)) = 0 Then Exit Function
+
+    EstDeCePoste = _
+        (StrComp(Morceau(marque, 0), Environ$("USERNAME"), vbTextCompare) = 0) And _
+        (StrComp(Morceau(marque, 1), Environ$("COMPUTERNAME"), vbTextCompare) = 0)
+End Function
 
 '==============================================================================
 ' CE QU'IL EN EST, EN UNE LIGNE
@@ -141,7 +181,13 @@ Public Function Verrou_Etat(ByVal chemin As String) As String
     End If
 
     If StrComp(marque, mMarque, vbBinaryCompare) = 0 Then
-        Verrou_Etat = "pris par ce poste depuis " & Morceau(marque, 2)
+        Verrou_Etat = "pris par cette séance depuis " & Morceau(marque, 2)
+        Exit Function
+    End If
+
+    If EstDeCePoste(marque) Then
+        Verrou_Etat = "laissé par une séance précédente de ce poste, le " & _
+                      Morceau(marque, 2) & "  -  sera repris sans rien demander"
         Exit Function
     End If
 
@@ -204,6 +250,17 @@ Private Function Saisir(ByVal chemin As String, ByRef msg As String, _
                   "de le prendre à l'instant même."
             If Not interactif Then Exit Function
             If Not PrendreLaMain(msg) Then Exit Function
+        ElseIf EstDeCePoste(marque) Then
+            ' UN VERROU DE CE POSTE EST LE NÔTRE, et on le reprend SANS RIEN
+            ' DEMANDER. La session qui l'a posé n'existe plus — Excel fermé de
+            ' travers, projet VBA remis à zéro — mais aucun collègue ne peut être
+            ' derrière : c'est notre machine et notre compte.
+            '
+            ' Demander « voulez-vous prendre la main ? » à quelqu'un qui vient de
+            ' redémarrer sa propre application ne lui apprend rien, et l'invite à
+            ' répondre oui sans lire — ce qui est précisément l'habitude qu'il ne
+            ' faut pas prendre, le jour où le verrou sera vraiment celui d'un
+            ' autre.
         Else
             age = AgeHeures(marque)
 
@@ -226,6 +283,8 @@ Private Function Saisir(ByVal chemin As String, ByRef msg As String, _
         mMarque = vbNullString
         Exit Function
     End If
+
+    mVerrou = v
 
     ' LE VERROU DÉJÀ NÔTRE NE SE RELIT PAS. Verrou_Confirmer passe ici à chaque
     ' enregistrement ; y attendre une seconde ferait traîner toute l'application

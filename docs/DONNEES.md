@@ -244,6 +244,12 @@ rdem|PC-BUREAU|01.10.2026 14:32:05| 46296.6056
   éteint, et il resterait là pour toujours. Quatre heures suffisent parce qu'**il
   se renouvelle à chaque écriture** : un poste qui travaille vraiment le
   rajeunit sans cesse, seul un poste parti le laisse vieillir.
+- **Un verrou laissé par VOTRE poste se reprend sans rien demander.** Même
+  utilisateur, même machine : la séance qui l'a posé n'existe plus, et aucun
+  collègue ne peut être derrière. Poser la question « voulez-vous prendre la
+  main ? » à quelqu'un qui redémarre sa propre application ne lui apprend rien,
+  et l'habitue à répondre oui sans lire — précisément ce qu'il ne faut pas, le
+  jour où le verrou sera vraiment celui d'un autre.
 - **On peut le forcer**, derrière le mot de passe, quand on sait que l'autre
   poste a été éteint sans fermer l'application.
 - Il est **relu après écriture** : deux postes peuvent l'écrire presque en même
@@ -254,6 +260,27 @@ rdem|PC-BUREAU|01.10.2026 14:32:05| 46296.6056
 Ce verrou n'empêche pas quelqu'un qui ouvrirait le fichier de données à la main,
 et ne voit rien d'un poste resté hors ligne. C'était le besoin : empêcher deux
 personnes de se marcher dessus, pas se défendre.
+
+### Si un verrou reste quand même en travers
+
+**Supprimez le fichier `.verrou`** dans le dossier partagé, à côté des données.
+C'est un fichier texte ordinaire : ouvrez-le d'abord dans le Bloc-notes pour
+voir qui le tient, et depuis quand.
+
+`DiagnostiquerDatas` le dit aussi, en une ligne — y compris quand il a été
+laissé par une séance précédente de votre poste et sera donc repris tout seul.
+
+> **Un verrou qui ne se rend pas bloque d'abord VOTRE poste**, et c'est à quoi on
+> le reconnaît : au démarrage, l'application vous demande si vous voulez prendre
+> la main sur vous-même. Deux défauts l'avaient provoqué, tous deux corrigés —
+> `Datas_Fermer` sortait avant de rendre le verrou quand elle ne trouvait pas de
+> classeur à fermer, ce qui est justement le cas où il reste ; et `Verrou_Rendre`
+> exigeait la marque exacte, perdue dès que l'état du projet VBA est remis à
+> zéro.
+>
+> **Tant qu'un verrou traîne, le fichier de données ne se répare pas** :
+> `NormaliserDonnees` ne travaille qu'en écriture, et le verrou force la
+> consultation seule.
 
 ---
 
@@ -303,6 +330,7 @@ le sélecteur propose.
 | « Le dossier des données est introuvable » | `DiagnostiquerDatas` ; sinon écrire le chemin dans `Dossier_Donnees` |
 | « Ces données ne sont pas de la même version » | l'application du poste est plus ancienne que le fichier : la remplacer |
 | Les données s'ouvrent toujours en consultation | quelqu'un d'autre les tient — `DiagnostiquerDatas` dit qui |
+| « Prendre la main ? » alors que c'est votre propre poste | un verrou laissé par une séance précédente : il se reprend seul ; sinon supprimez le fichier `.verrou` |
 | Les formulaires s'ouvrent vides | le fichier de données est ouvert mais ses tableaux manquent : `VerifierClasseur` |
 | Le fichier de données s'ouvre sans onglets, ruban grisé | sa **fenêtre** est masquée : *Affichage ▸ Fenêtre ▸ Afficher* |
 | Deux questions « enregistrer ? » en quittant le kiosque | un classeur de données orphelin — voir la section ci-dessus |
